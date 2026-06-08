@@ -830,7 +830,7 @@ body::before{
 /* ═══════════════════════════════
    OFFERS SECTION
 ═══════════════════════════════ */
-.offers-wrap{display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:20px;width:100%;padding:0 24px 28px;}
+.offers-wrap{display:grid;grid-template-columns:repeat(7,1fr);gap:20px;width:100%;padding:0 24px 28px;}
 
 .offer-card{
   background:#0d0d0d;
@@ -1188,6 +1188,9 @@ body::before{
   <!-- PUZ ROYALE $200 SOLO -->
   <div class="offer-card" style="--oc:var(--red);--os:var(--red2);"><div style="width:100%;height:200px;overflow:hidden;margin-bottom:12px;background:#000;border:2px solid rgba(255,71,87,0.3);"><div style="width:100%;height:100%;position:relative;"><div style="display:flex;justify-content:space-between;padding:3px 6px;background:rgba(0,0,0,0.95);font-family:'Press Start 2P',monospace;font-size:5px;position:absolute;top:0;left:0;right:0;z-index:2;"><span id="oc1-hp" style="color:#4CFF6C">HP:100</span><span id="oc1-ammo" style="color:#FFD700">30/30</span><span id="oc1-alive" style="color:rgba(255,255,255,0.6)">8▶</span><span id="oc1-zone" style="color:#FF6B6B">30s</span></div><canvas id="oc1-canvas" style="display:block;width:100%;height:100%;position:absolute;top:14px;left:0;"></canvas></div></div><div class="offer-game-tag" style="color:var(--red);border-color:var(--red2);background:rgba(255,71,87,.08);">PUZ ROYALE</div><div class="offer-type">SOLO VS BOTS</div><div class="offer-amount" style="color:var(--red);text-shadow:2px 2px 0 var(--red2);">$200</div><div class="offer-desc">You vs 7 bots. Survive the shrinking zone. Last one standing wins.</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;"><div style="background:rgba(255,176,32,.15);border:2px solid var(--amber);padding:8px 10px;text-align:center;"><div style="font-size:5px;color:var(--amber);letter-spacing:1px;margin-bottom:4px;">ENTRY FEE</div><div style="font-size:12px;color:var(--amber);text-shadow:1px 1px 0 var(--amber2);">$4.99</div></div><div style="background:rgba(255,71,87,.15);border:2px solid var(--red);padding:8px 10px;text-align:center;"><div style="font-size:5px;color:var(--red);letter-spacing:1px;margin-bottom:4px;">YOU WIN</div><div style="font-size:12px;color:var(--red);text-shadow:1px 1px 0 var(--red2);">$200</div></div></div><a href="https://battle-royale-4ltk.onrender.com/play?mode=solo" class="btn btn-red" style="width:100%;justify-content:center;font-size:7px;margin-top:14px;display:block;text-align:center;text-decoration:none;background:var(--red);color:#fff;border:2px solid var(--red2);box-shadow:3px 3px 0 var(--red2);">▶ PLAY SOLO</a></div>
 
+  <!-- PONG $200 SOLO -->
+  <div class="offer-card" style="--oc:var(--blue);--os:var(--blue2);"><div style="width:100%;height:200px;overflow:hidden;margin-bottom:12px;background:#000;border:2px solid rgba(61,158,255,0.3);position:relative;"><canvas id="pong-solo-canvas" style="width:100%;height:100%;display:block;"></canvas></div><div class="offer-game-tag" style="color:var(--blue);border-color:var(--blue2);background:rgba(61,158,255,.08);">PONG</div><div class="offer-type">SOLO CHALLENGE</div><div class="offer-amount" style="color:var(--blue);text-shadow:2px 2px 0 var(--blue2);">$200</div><div class="offer-desc">20 matches vs AI. Win = +$10, Lose = -$10. Walk away with your final balance. Max payout $200.</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;"><div style="background:rgba(255,176,32,.15);border:2px solid var(--amber);padding:8px 10px;text-align:center;"><div style="font-size:5px;color:var(--amber);letter-spacing:1px;margin-bottom:4px;">ENTRY FEE</div><div style="font-size:12px;color:var(--amber);">$9.99</div></div><div style="background:rgba(61,158,255,.15);border:2px solid var(--blue);padding:8px 10px;text-align:center;"><div style="font-size:5px;color:var(--blue);letter-spacing:1px;margin-bottom:4px;">MAX WIN</div><div style="font-size:12px;color:var(--blue);">$200</div></div></div><a href="#" class="btn" style="width:100%;justify-content:center;font-size:7px;margin-top:14px;display:block;text-align:center;text-decoration:none;background:var(--blue);color:#fff;border:2px solid var(--blue2);box-shadow:3px 3px 0 var(--blue2);">▶ PLAY SOLO</a></div>
+
   <!-- KURVER $100 SOLO -->
   <div class="offer-card" style="--oc:var(--teal);--os:var(--teal2);">
     <div style="width:100%;height:200px;overflow:hidden;margin-bottom:12px;background:#000;border:2px solid rgba(0,245,212,0.3);"><img src="https://curvytron77.onrender.com/images/tuto/turn.gif" style="width:100%;height:100%;object-fit:contain;background:#000;" alt="Kurver gameplay"/></div>
@@ -1201,6 +1204,9 @@ body::before{
 
   <!-- PUZ ROYALE $20 MULTIPLAYER -->
   <div class="offer-card" style="--oc:var(--pink);--os:#aa0066;"><div style="width:100%;height:200px;overflow:hidden;margin-bottom:12px;background:#000;border:2px solid rgba(255,79,160,0.3);"><div style="width:100%;height:100%;position:relative;"><div style="display:flex;justify-content:space-between;padding:3px 6px;background:rgba(0,0,0,0.95);font-family:'Press Start 2P',monospace;font-size:5px;position:absolute;top:0;left:0;right:0;z-index:2;"><span id="oc2-hp" style="color:#4CFF6C">HP:100</span><span id="oc2-ammo" style="color:#FFD700">30/30</span><span id="oc2-alive" style="color:rgba(255,255,255,0.6)">8▶</span><span id="oc2-zone" style="color:#FF6B6B">30s</span></div><canvas id="oc2-canvas" style="display:block;width:100%;height:100%;position:absolute;top:14px;left:0;"></canvas></div></div><div class="offer-game-tag" style="color:var(--pink);border-color:#aa0066;background:rgba(255,79,160,.08);">PUZ ROYALE</div><div class="offer-type">MULTIPLAYER</div><div class="offer-amount" style="color:var(--pink);text-shadow:2px 2px 0 #aa0066;">$20</div><div class="offer-desc">Real players. Create a room, share the code. Winner takes all.</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;"><div style="background:rgba(255,176,32,.15);border:2px solid var(--amber);padding:8px 10px;text-align:center;"><div style="font-size:5px;color:var(--amber);letter-spacing:1px;margin-bottom:4px;">ENTRY FEE</div><div style="font-size:12px;color:var(--amber);text-shadow:1px 1px 0 var(--amber2);">$2.99</div></div><div style="background:rgba(255,79,160,.15);border:2px solid var(--pink);padding:8px 10px;text-align:center;"><div style="font-size:5px;color:var(--pink);letter-spacing:1px;margin-bottom:4px;">YOU WIN</div><div style="font-size:12px;color:var(--pink);text-shadow:1px 1px 0 #aa0066;">$20</div></div></div><a href="https://battle-royale-4ltk.onrender.com/play?mode=multiplayer" class="btn" style="width:100%;justify-content:center;font-size:7px;margin-top:14px;display:block;text-align:center;text-decoration:none;background:var(--pink);color:#fff;border:2px solid #aa0066;box-shadow:3px 3px 0 #aa0066;">▶ PLAY MULTIPLAYER</a></div>
+
+  <!-- PONG $8 MULTIPLAYER -->
+  <div class="offer-card" style="--oc:#7b2fff;--os:#4400bb;"><div style="width:100%;height:200px;overflow:hidden;margin-bottom:12px;background:#000;border:2px solid rgba(123,47,255,0.3);position:relative;"><canvas id="pong-mp-canvas" style="width:100%;height:100%;display:block;"></canvas></div><div class="offer-game-tag" style="color:#7b2fff;border-color:#4400bb;background:rgba(123,47,255,.08);">PONG</div><div class="offer-type">MULTIPLAYER 1V1</div><div class="offer-amount" style="color:#7b2fff;text-shadow:2px 2px 0 #4400bb;">$8</div><div class="offer-desc">Private room, 4-digit code. Both players pay $4.99. First to 3 points wins the pot.</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;"><div style="background:rgba(255,176,32,.15);border:2px solid var(--amber);padding:8px 10px;text-align:center;"><div style="font-size:5px;color:var(--amber);letter-spacing:1px;margin-bottom:4px;">ENTRY FEE</div><div style="font-size:12px;color:var(--amber);">$4.99</div></div><div style="background:rgba(123,47,255,.15);border:2px solid #7b2fff;padding:8px 10px;text-align:center;"><div style="font-size:5px;color:#7b2fff;letter-spacing:1px;margin-bottom:4px;">WINNER GETS</div><div style="font-size:12px;color:#7b2fff;">$8.00</div></div></div><a href="#" class="btn" style="width:100%;justify-content:center;font-size:7px;margin-top:14px;display:block;text-align:center;text-decoration:none;background:#7b2fff;color:#fff;border:2px solid #4400bb;box-shadow:3px 3px 0 #4400bb;">▶ PLAY 1V1</a></div>
 
   <!-- KURVER $10 MULTIPLAYER -->
   <div class="offer-card" style="--oc:var(--green);--os:var(--green2);">
@@ -1356,13 +1362,13 @@ body::before{
               <div class="gc-fade"></div>
               <div class="gc-ov"><div class="gc-play-px">▶ PLAY</div></div>
               <div class="gc-badge b-new">NEW</div>
-              <div class="gc-prize-tag">PLAY FREE</div>
+              <div class="gc-prize-tag">UP TO $200</div>
             </div>
             <div class="gc-info">
               <div class="gc-name">Pong</div>
-              <div class="gc-desc">Classic precision reflex game. Free to play — prize coming soon.</div>
+              <div class="gc-desc">Beat AI across 20 matches. Win = +$10, Lose = -$10. Walk away with your balance. Max $200.</div>
               <div class="gc-row">
-                <span class="gc-prize-txt">Free to Play</span>
+                <span class="gc-prize-txt">$200 Solo · $8 MP</span>
                 <span class="gc-players">541 playing</span>
               </div>
             </div>
@@ -1500,6 +1506,81 @@ function createGame(canvasId, hudIds, W, H) {
 createGame('gc-canvas',{hp:'gc-hp',ammo:'gc-ammo',alive:'gc-alive',zone:'gc-zone'},200,267);
 createGame('oc1-canvas',{hp:'oc1-hp',ammo:'oc1-ammo',alive:'oc1-alive',zone:'oc1-zone'},300,186);
 createGame('oc2-canvas',{hp:'oc2-hp',ammo:'oc2-ammo',alive:'oc2-alive',zone:'oc2-zone'},300,186);
+
+function createPongPreview(canvasId, W, H, color1, color2) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  let ballX = W/2, ballY = H/2;
+  let ballVX = (Math.random()>0.5?1:-1)*3.5;
+  let ballVY = (Math.random()>0.5?1:-1)*2.5;
+  const ballR = 5;
+  const padW = 6, padH = 40;
+  let p1Y = H/2 - padH/2;
+  let p2Y = H/2 - padH/2;
+  let score1 = 0, score2 = 0;
+  const maxScore = 3;
+  function resetBall(){ballX=W/2;ballY=H/2;ballVX=(Math.random()>0.5?1:-1)*3.5;ballVY=(Math.random()>0.5?1:-1)*2.5;}
+  function aiMove(padY, targetY, speed){
+    const center = padY + padH/2;
+    if(center < targetY - 4) padY = Math.min(H - padH, padY + speed);
+    else if(center > targetY + 4) padY = Math.max(0, padY - speed);
+    return padY;
+  }
+  let lastT = 0;
+  function loop(t){
+    const dt = Math.min((t-lastT)/16, 3); lastT = t;
+    p1Y = aiMove(p1Y, ballY, 2.8);
+    p2Y = aiMove(p2Y, ballY, 2.4 + Math.random()*0.4);
+    ballX += ballVX * dt;
+    ballY += ballVY * dt;
+    if(ballY - ballR <= 0){ballY = ballR; ballVY = Math.abs(ballVY);}
+    if(ballY + ballR >= H){ballY = H - ballR; ballVY = -Math.abs(ballVY);}
+    if(ballX - ballR <= 14 + padW && ballY >= p1Y && ballY <= p1Y + padH){
+      ballX = 14 + padW + ballR;
+      ballVX = Math.abs(ballVX) * 1.05;
+      ballVY += (ballY - (p1Y + padH/2)) * 0.1;
+    }
+    if(ballX + ballR >= W - 14 - padW && ballY >= p2Y && ballY <= p2Y + padH){
+      ballX = W - 14 - padW - ballR;
+      ballVX = -Math.abs(ballVX) * 1.05;
+      ballVY += (ballY - (p2Y + padH/2)) * 0.1;
+    }
+    const speed = Math.hypot(ballVX, ballVY);
+    if(speed > 7){ballVX = ballVX/speed*7; ballVY = ballVY/speed*7;}
+    if(ballX < 0){score2++; resetBall(); if(score2>=maxScore){score1=0;score2=0;}}
+    if(ballX > W){score1++; resetBall(); if(score1>=maxScore){score1=0;score2=0;}}
+    ctx.fillStyle = '#050a18'; ctx.fillRect(0,0,W,H);
+    for(let x=0;x<W;x+=16)for(let y=0;y<H;y+=16)if((x/16+y/16)%2===0){ctx.fillStyle='rgba(61,158,255,0.02)';ctx.fillRect(x,y,16,16);}
+    ctx.setLineDash([6,5]); ctx.strokeStyle='rgba(255,255,255,0.1)'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(W/2,0); ctx.lineTo(W/2,H); ctx.stroke(); ctx.setLineDash([]);
+    ctx.strokeStyle='rgba(61,158,255,0.2)'; ctx.lineWidth=1.5; ctx.strokeRect(1,1,W-2,H-2);
+    ctx.fillStyle=color1; ctx.fillRect(14, p1Y, padW, padH);
+    ctx.fillStyle='rgba(255,255,255,0.2)'; ctx.fillRect(14, p1Y, padW, 6);
+    ctx.fillStyle=color2; ctx.fillRect(W-14-padW, p2Y, padW, padH);
+    ctx.fillStyle='rgba(255,255,255,0.2)'; ctx.fillRect(W-14-padW, p2Y, padW, 6);
+    ctx.beginPath(); ctx.arc(ballX,ballY,ballR+6,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,255,255,0.06)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(ballX,ballY,ballR,0,Math.PI*2);
+    ctx.fillStyle='#ffffff'; ctx.fill();
+    ctx.beginPath(); ctx.arc(ballX-ballVX*2,ballY-ballVY*2,ballR*0.6,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,255,255,0.3)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(ballX-ballVX*4,ballY-ballVY*4,ballR*0.3,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,255,255,0.15)'; ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,0.6)'; ctx.font='bold 14px monospace'; ctx.textAlign='center';
+    ctx.fillText(score1, W/2-20, 18); ctx.fillText(score2, W/2+20, 18);
+    ctx.strokeStyle='rgba(61,158,255,0.4)'; ctx.lineWidth=1.5;
+    [[2,2],[W-10,2],[2,H-10],[W-10,H-10]].forEach(([x,y])=>{
+      const sx=x<W/2?1:-1, sy=y<H/2?1:-1;
+      ctx.beginPath();ctx.moveTo(x,y+sy*8);ctx.lineTo(x,y);ctx.lineTo(x+sx*8,y);ctx.stroke();
+    });
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+}
+createPongPreview('pong-solo-canvas', 300, 160, '#3d9eff', '#3d9eff');
+createPongPreview('pong-mp-canvas', 300, 160, '#3d9eff', '#bf5fff');
 </script>
 
 </body>
