@@ -1557,6 +1557,17 @@ function createPongPreview(canvasId, W, H, color1, color2) {
 }
 createPongPreview('pong-solo-canvas', 300, 160, '#3d9eff', '#3d9eff');
 createPongPreview('pong-mp-canvas', 300, 160, '#3d9eff', '#bf5fff');
+const urlParams = new URLSearchParams(window.location.search);
+const devMode = urlParams.get('dev');
+if (devMode) {
+  document.querySelectorAll('a[href]').forEach(link => {
+    try {
+      const url = new URL(link.href);
+      url.searchParams.set('dev', devMode);
+      link.href = url.toString();
+    } catch(e) {}
+  });
+}
 </script>
 
 </body>
