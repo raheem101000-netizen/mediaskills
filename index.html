@@ -1483,18 +1483,18 @@ function createPongPreview(canvasId, W, H, color1, color2) {
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext('2d');
   let ballX = W/2, ballY = H/2;
-  let ballVX = (Math.random()>0.5?1:-1)*3.5;
-  let ballVY = (Math.random()>0.5?1:-1)*2.5;
-  const ballR = 5, padW = 6, padH = 40;
+  let ballVX = (Math.random()>0.5?1:-1)*5;
+  let ballVY = (Math.random()>0.5?1:-1)*4;
+  const ballR = 5, padW = 6, padH = 30;
   let p1Y = H/2-padH/2, p2Y = H/2-padH/2;
   let score1 = 0, score2 = 0;
   const maxScore = 3;
-  function resetBall(){ballX=W/2;ballY=H/2;ballVX=(Math.random()>0.5?1:-1)*3.5;ballVY=(Math.random()>0.5?1:-1)*2.5;}
+  function resetBall(){ballX=W/2;ballY=H/2;ballVX=(Math.random()>0.5?1:-1)*5;ballVY=(Math.random()>0.5?1:-1)*4;}
   function aiMove(padY,targetY,speed){const center=padY+padH/2;if(center<targetY-4)padY=Math.min(H-padH,padY+speed);else if(center>targetY+4)padY=Math.max(0,padY-speed);return padY;}
   let lastT=0;
   function loop(t){
     const dt=Math.min((t-lastT)/16,3);lastT=t;
-    p1Y=aiMove(p1Y,ballY,2.8);p2Y=aiMove(p2Y,ballY,2.4+Math.random()*0.4);
+    p1Y=aiMove(p1Y,ballY,2.2);p2Y=aiMove(p2Y,ballY,1.8+Math.random()*0.6);
     ballX+=ballVX*dt;ballY+=ballVY*dt;
     if(ballY-ballR<=0){ballY=ballR;ballVY=Math.abs(ballVY);}
     if(ballY+ballR>=H){ballY=H-ballR;ballVY=-Math.abs(ballVY);}
@@ -1503,7 +1503,7 @@ function createPongPreview(canvasId, W, H, color1, color2) {
     const speed=Math.hypot(ballVX,ballVY);if(speed>7){ballVX=ballVX/speed*7;ballVY=ballVY/speed*7;}
     if(ballX<0){score2++;resetBall();if(score2>=maxScore){score1=0;score2=0;}}
     if(ballX>W){score1++;resetBall();if(score1>=maxScore){score1=0;score2=0;}}
-    ctx.fillStyle='#050a18';ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#050a18';ctx.fillRect(0,0,W,H);ctx.setLineDash([4,4]);ctx.strokeStyle='rgba(255,255,255,0.15)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(W/2,0);ctx.lineTo(W/2,H);ctx.stroke();ctx.setLineDash([]);
     for(let x=0;x<W;x+=16)for(let y=0;y<H;y+=16)if((x/16+y/16)%2===0){ctx.fillStyle='rgba(61,158,255,0.02)';ctx.fillRect(x,y,16,16);}
     ctx.setLineDash([6,5]);ctx.strokeStyle='rgba(255,255,255,0.1)';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(W/2,0);ctx.lineTo(W/2,H);ctx.stroke();ctx.setLineDash([]);
     ctx.strokeStyle='rgba(61,158,255,0.2)';ctx.lineWidth=1.5;ctx.strokeRect(1,1,W-2,H-2);
@@ -1533,7 +1533,7 @@ if (devMode) {
     } catch(e) {}
   });
 }
-createPongPreview('gc-pong-canvas', 200, 253, '#3d9eff', '#3d9eff');
+createPongPreview('gc-pong-canvas', 200, 253, '#3d9eff', '#bf5fff');
 </script>
 
 </body>
