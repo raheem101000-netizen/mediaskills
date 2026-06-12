@@ -1458,50 +1458,41 @@ function createPongPreview(canvasId, W, H, color1, color2) {
   if (!canvas) return;
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext('2d');
-  const ballR = 5, padW = 8, padH = 40;
   let ballX = W/2, ballY = H/2;
-  let ballVX = (Math.random()>0.5?1:-1)*4.5;
-  let ballVY = (Math.random()>0.5?0.8:-0.8)*3.5;
+  let ballVX = (Math.random()>0.5?1:-1)*3.5;
+  let ballVY = (Math.random()>0.5?1:-1)*2.5;
+  const ballR = 5, padW = 6, padH = 40;
   let p1Y = H/2-padH/2, p2Y = H/2-padH/2;
   let score1 = 0, score2 = 0;
-  let p1Target = H/2, p2Target = H/2;
-  let targetTimer = 0;
-  function resetBall(){
-    ballX=W/2;ballY=H/2;
-    const dir=(Math.random()>0.5?1:-1);
-    ballVX=dir*2.5;
-    ballVY=(Math.random()>0.5?1:-1)*(0.8+Math.random()*0.8);
-  }
-  function movePaddle(padY,target,speed){const center=padY+padH/2;const diff=target-center;if(Math.abs(diff)<2)return padY;return Math.max(0,Math.min(H-padH,padY+Math.min(Math.abs(diff),speed)*Math.sign(diff)));}
+  const maxScore = 3;
+  function resetBall(){ballX=W/2;ballY=H/2;ballVX=(Math.random()>0.5?1:-1)*3.5;ballVY=(Math.random()>0.5?1:-1)*2.5;}
+  function aiMove(padY,targetY,speed){const center=padY+padH/2;if(center<targetY-4)padY=Math.min(H-padH,padY+speed);else if(center>targetY+4)padY=Math.max(0,padY-speed);return padY;}
   let lastT=0;
   function loop(t){
-    const dt=Math.min((t-lastT)/16,2);lastT=t;
-    targetTimer+=dt;
-    if(targetTimer>10){
-      targetTimer=0;
-      p1Target = ballVX<0 ? ballY+(Math.random()-0.5)*16 : H/2;
-      p2Target = ballVX>0 ? ballY+(Math.random()-0.5)*20 : H/2;
-    }
-    p1Y=movePaddle(p1Y,p1Target,4.0);
-    p2Y=movePaddle(p2Y,p2Target,3.8);
-    ballX+=ballVX;ballY+=ballVY;
+    const dt=Math.min((t-lastT)/16,3);lastT=t;
+    p1Y=aiMove(p1Y,ballY,2.8);
+    p2Y=aiMove(p2Y,ballY,2.4+Math.random()*0.4);
+    ballX+=ballVX*dt;ballY+=ballVY*dt;
     if(ballY-ballR<=0){ballY=ballR;ballVY=Math.abs(ballVY);}
     if(ballY+ballR>=H){ballY=H-ballR;ballVY=-Math.abs(ballVY);}
-    if(ballX-ballR<=14+padW&&ballY+ballR>=p1Y&&ballY-ballR<=p1Y+padH){ballX=14+padW+ballR;ballVX=Math.abs(ballVX);ballVY+=(ballY-(p1Y+padH/2))*0.08;}
-    if(ballX+ballR>=W-14-padW&&ballY+ballR>=p2Y&&ballY-ballR<=p2Y+padH){ballX=W-14-padW-ballR;ballVX=-Math.abs(ballVX);ballVY+=(ballY-(p2Y+padH/2))*0.08;}
-    const spd=Math.hypot(ballVX,ballVY);if(spd>7){ballVX=ballVX/spd*7;ballVY=ballVY/spd*7;}if(spd<1){ballVX=ballVX/spd;ballVY=ballVY/spd;}
-    if(ballX<0){score2++;ballX=-100;ballVX=0;ballVY=0;setTimeout(()=>resetBall(),1500);}
-    if(ballX>W){score1++;ballX=W+100;ballVX=0;ballVY=0;setTimeout(()=>resetBall(),1500);}
-    if(score1>=5||score2>=5){score1=0;score2=0;}
+    if(ballX-ballR<=14+padW&&ballY>=p1Y&&ballY<=p1Y+padH){ballX=14+padW+ballR;ballVX=Math.abs(ballVX)*1.05;ballVY+=(ballY-(p1Y+padH/2))*0.1;}
+    if(ballX+ballR>=W-14-padW&&ballY>=p2Y&&ballY<=p2Y+padH){ballX=W-14-padW-ballR;ballVX=-Math.abs(ballVX)*1.05;ballVY+=(ballY-(p2Y+padH/2))*0.1;}
+    const speed=Math.hypot(ballVX,ballVY);if(speed>7){ballVX=ballVX/speed*7;ballVY=ballVY/speed*7;}
+    if(ballX<0){score2++;resetBall();if(score2>=maxScore){score1=0;score2=0;}}
+    if(ballX>W){score1++;resetBall();if(score1>=maxScore){score1=0;score2=0;}}
     ctx.fillStyle='#050a18';ctx.fillRect(0,0,W,H);
     for(let x=0;x<W;x+=16)for(let y=0;y<H;y+=16)if((x/16+y/16)%2===0){ctx.fillStyle='rgba(61,158,255,0.02)';ctx.fillRect(x,y,16,16);}
     ctx.setLineDash([6,5]);ctx.strokeStyle='rgba(255,255,255,0.1)';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(W/2,0);ctx.lineTo(W/2,H);ctx.stroke();ctx.setLineDash([]);
     ctx.strokeStyle='rgba(61,158,255,0.2)';ctx.lineWidth=1.5;ctx.strokeRect(1,1,W-2,H-2);
-    ctx.fillStyle=color1;ctx.fillRect(14,p1Y,padW,padH);
-    ctx.fillStyle=color2;ctx.fillRect(W-14-padW,p2Y,padW,padH);
+    ctx.fillStyle=color1;ctx.fillRect(14,p1Y,padW,padH);ctx.fillStyle='rgba(255,255,255,0.2)';ctx.fillRect(14,p1Y,padW,6);
+    ctx.fillStyle=color2;ctx.fillRect(W-14-padW,p2Y,padW,padH);ctx.fillStyle='rgba(255,255,255,0.2)';ctx.fillRect(W-14-padW,p2Y,padW,6);
+    ctx.beginPath();ctx.arc(ballX,ballY,ballR+6,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.06)';ctx.fill();
     ctx.beginPath();ctx.arc(ballX,ballY,ballR,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
-    ctx.beginPath();ctx.arc(ballX-ballVX*2,ballY-ballVY*2,ballR*0.5,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.3)';ctx.fill();
+    ctx.beginPath();ctx.arc(ballX-ballVX*2,ballY-ballVY*2,ballR*0.6,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.3)';ctx.fill();
+    ctx.beginPath();ctx.arc(ballX-ballVX*4,ballY-ballVY*4,ballR*0.3,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.15)';ctx.fill();
     ctx.fillStyle='rgba(255,255,255,0.6)';ctx.font='bold 14px monospace';ctx.textAlign='center';ctx.fillText(score1,W/2-20,18);ctx.fillText(score2,W/2+20,18);
+    ctx.strokeStyle='rgba(61,158,255,0.4)';ctx.lineWidth=1.5;
+    [[2,2],[W-10,2],[2,H-10],[W-10,H-10]].forEach(([x,y])=>{const sx=x<W/2?1:-1,sy=y<H/2?1:-1;ctx.beginPath();ctx.moveTo(x,y+sy*8);ctx.lineTo(x,y);ctx.lineTo(x+sx*8,y);ctx.stroke();});
     requestAnimationFrame(loop);
   }
   requestAnimationFrame(loop);
