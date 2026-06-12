@@ -1466,7 +1466,12 @@ function createPongPreview(canvasId, W, H, color1, color2) {
   let score1 = 0, score2 = 0;
   let p1Target = H/2, p2Target = H/2;
   let targetTimer = 0;
-  function resetBall(){ballX=W/2;ballY=H/2;ballVX=(Math.random()>0.5?1:-1)*4.5;ballVY=(Math.random()>0.5?1:-1)*(0.5+Math.random())*3.5;p1Target=H/2;p2Target=H/2;}
+  function resetBall(){
+    ballX=W/2;ballY=H/2;
+    const dir=(Math.random()>0.5?1:-1);
+    ballVX=dir*2.5;
+    ballVY=(Math.random()>0.5?1:-1)*(0.8+Math.random()*0.8);
+  }
   function movePaddle(padY,target,speed){const center=padY+padH/2;const diff=target-center;if(Math.abs(diff)<2)return padY;return Math.max(0,Math.min(H-padH,padY+Math.min(Math.abs(diff),speed)*Math.sign(diff)));}
   let lastT=0;
   function loop(t){
@@ -1485,8 +1490,8 @@ function createPongPreview(canvasId, W, H, color1, color2) {
     if(ballX-ballR<=14+padW&&ballY+ballR>=p1Y&&ballY-ballR<=p1Y+padH){ballX=14+padW+ballR;ballVX=Math.abs(ballVX);ballVY+=(ballY-(p1Y+padH/2))*0.08;}
     if(ballX+ballR>=W-14-padW&&ballY+ballR>=p2Y&&ballY-ballR<=p2Y+padH){ballX=W-14-padW-ballR;ballVX=-Math.abs(ballVX);ballVY+=(ballY-(p2Y+padH/2))*0.08;}
     const spd=Math.hypot(ballVX,ballVY);if(spd>7){ballVX=ballVX/spd*7;ballVY=ballVY/spd*7;}if(spd<1){ballVX=ballVX/spd;ballVY=ballVY/spd;}
-    if(ballX<0){score2++;resetBall();}
-    if(ballX>W){score1++;resetBall();}
+    if(ballX<0){score2++;ballX=-100;ballVX=0;ballVY=0;setTimeout(()=>resetBall(),1500);}
+    if(ballX>W){score1++;ballX=W+100;ballVX=0;ballVY=0;setTimeout(()=>resetBall(),1500);}
     if(score1>=5||score2>=5){score1=0;score2=0;}
     ctx.fillStyle='#050a18';ctx.fillRect(0,0,W,H);
     for(let x=0;x<W;x+=16)for(let y=0;y<H;y+=16)if((x/16+y/16)%2===0){ctx.fillStyle='rgba(61,158,255,0.02)';ctx.fillRect(x,y,16,16);}
