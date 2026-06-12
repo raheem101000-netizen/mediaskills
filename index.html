@@ -261,7 +261,7 @@ body::before{
   max-width:1140px;margin:0 auto;
   padding:60px 32px 150px;
   display:grid;
-  grid-template-columns:1fr 420px;
+  grid-template-columns:1fr 300px;
   gap:40px;align-items:center;
 }
 
@@ -341,7 +341,6 @@ body::before{
   background:#0d0d0d;
   border:3px solid var(--purple);
   box-shadow:6px 6px 0 var(--purple2);
-  width:100%;
 }
 .win-titlebar{
   background:var(--purple);
@@ -1126,9 +1125,11 @@ body::before{
         </div>
       </div>
       <div class="win-body" style="padding:0;">
-        <video autoplay loop muted playsinline style="width:100%;display:block;object-fit:cover;">
-          <source src="https://res.cloudinary.com/dmume4bgg/video/upload/v1780510480/gamajump-gameplay_iztejf.mp4" type="video/mp4">
-        </video>
+        <div style="width:100%;overflow:hidden;position:relative;height:200px;">
+          <video autoplay loop muted playsinline style="width:100%;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);object-fit:cover;object-position:center;">
+            <source src="https://res.cloudinary.com/dmume4bgg/video/upload/v1780510480/gamajump-gameplay_iztejf.mp4" type="video/mp4">
+          </video>
+        </div>
         <div style="padding:12px;">
           <a href="https://gamajump.online/" class="btn btn-purple" style="width:100%;justify-content:center;font-size:7px;padding:12px;text-decoration:none;display:block;text-align:center;">★ ENTER $500 CHALLENGE</a>
           <div style="text-align:center;margin-top:8px;font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(200,195,255,.25);">$6.99 ENTRY FEE · WIN UP TO $500</div>
