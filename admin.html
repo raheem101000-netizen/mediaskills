@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MediaSkills — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;image-rendering:pixelated;}
+:root{
+  --bg:#000000;
+  --card:#0d0d0d;
+  --text:#f0eeff;
+  --white:#ffffff;
+  --muted:rgba(200,195,255,0.5);
+  --border:rgba(255,255,255,0.07);
+  --teal:#00f5d4;   --teal2:#00b89a;
+  --green:#22ff6e;  --green2:#00a030;
+  --red:#ff4757;    --red2:#aa0011;
+  --grey:#555;      --grey2:#222;
+}
+html,body{background:var(--bg);color:var(--text);font-family:'Press Start 2P',monospace;min-height:100%;overflow-x:hidden;}
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.04) 3px,rgba(0,0,0,0.04) 4px);
+}
+
+/* ── pixel button shared style ── */
+.pxbtn{
+  font-family:'Press Start 2P',monospace;
+  font-size:7px;padding:10px 16px;letter-spacing:1px;
+  border:2px solid var(--teal2);background:var(--teal);color:#020c0a;
+  box-shadow:3px 3px 0 var(--teal2);
+  cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px;
+  transition:transform .05s;
+}
+.pxbtn:hover{background:#1ffcde;}
+.pxbtn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--teal2);}
+
+/* ═══════════ LOGIN SCREEN ═══════════ */
+#login-screen{
+  position:fixed;inset:0;z-index:10000;
+  background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
+}
+.login-title{font-size:14px;letter-spacing:2px;color:var(--white);margin-bottom:4px;}
+.login-title span{color:var(--teal);text-shadow:2px 2px 0 var(--teal2);}
+#login-form{display:flex;flex-direction:column;align-items:center;gap:14px;}
+#pw-input{
+  font-family:'Share Tech Mono',monospace;font-size:14px;letter-spacing:4px;text-align:center;
+  background:var(--card);color:var(--text);
+  border:3px solid var(--teal);box-shadow:4px 4px 0 var(--teal2);
+  padding:12px 16px;width:220px;outline:none;
+}
+#pw-input::placeholder{color:rgba(200,195,255,.25);letter-spacing:1px;}
+#pw-error{font-size:7px;color:var(--red);letter-spacing:1px;min-height:10px;}
+
+/* ═══════════ DASHBOARD ═══════════ */
+#dashboard{display:none;}
+.wrap{max-width:1100px;margin:0 auto;padding:32px 20px 60px;}
+
+.hdr{margin-bottom:24px;}
+.hdr-title{font-size:20px;letter-spacing:3px;color:var(--white);margin-bottom:14px;}
+.hdr-title span{color:var(--teal);text-shadow:3px 3px 0 var(--teal2);}
+.hdr-stats{display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+.stat-chip{
+  background:var(--card);border:2px solid var(--border);
+  padding:8px 14px;font-size:6px;color:var(--muted);letter-spacing:1px;
+  display:flex;align-items:center;gap:8px;
+}
+.stat-chip b{font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--text);}
+#countdown{color:var(--teal);}
+#last-refreshed{color:var(--text);}
+
+.total-box{
+  background:var(--card);
+  border:3px solid var(--teal);
+  box-shadow:5px 5px 0 var(--teal2);
+  padding:20px 24px;margin-bottom:28px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
+}
+.total-label{font-size:7px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;}
+.total-num{font-family:'Share Tech Mono',monospace;font-size:40px;color:var(--teal);text-shadow:3px 3px 0 var(--teal2);}
+
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:32px;}
+@media(max-width:760px){.grid{grid-template-columns:1fr;}}
+
+.gcard{
+  background:var(--card);
+  border:3px solid var(--gc,var(--border));
+  box-shadow:4px 4px 0 var(--gs,#000);
+  padding:16px 18px;
+  transition:box-shadow .15s, border-color .15s;
+}
+@keyframes cardflash{
+  0%,100%{box-shadow:4px 4px 0 var(--gs,#000);border-color:var(--gc,var(--border));}
+  50%{box-shadow:0 0 0 4px var(--green),4px 4px 0 var(--gs,#000);border-color:var(--green);}
+}
+.gcard.flash{animation:cardflash 1s ease-in-out 2;}
+
+.gcard-top{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.dot.live{background:var(--green);box-shadow:0 0 8px var(--green);}
+.dot.idle{background:var(--grey);}
+.gname{font-size:10px;letter-spacing:1px;color:var(--white);}
+.gstatus{
+  margin-left:auto;font-size:6px;letter-spacing:1px;padding:3px 7px;
+  border:2px solid;text-transform:uppercase;
+}
+.gstatus.live{color:var(--green);border-color:var(--green2);background:rgba(34,255,110,.08);}
+.gstatus.idle{color:var(--grey);border-color:#333;background:rgba(255,255,255,.02);}
+
+.gc-players-big{
+  font-family:'Share Tech Mono',monospace;font-size:30px;color:var(--white);
+  margin-bottom:2px;
+}
+.gc-players-label{font-size:6px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;}
+
+.gc-row{display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--border);font-size:7px;color:var(--muted);letter-spacing:.5px;}
+.gc-row:last-child{border-bottom:none;}
+.gc-val{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text);}
+.gc-val.dim{color:rgba(200,195,255,.3);}
+
+.gc-link{margin-top:14px;display:block;text-align:center;}
+
+/* ═══════════ ACTIVITY LOG ═══════════ */
+.activity-box{
+  background:var(--card);
+  border:3px solid var(--border);
+  box-shadow:4px 4px 0 #000;
+}
+.activity-head{
+  padding:14px 18px;border-bottom:3px solid var(--border);
+  font-size:9px;letter-spacing:1px;color:var(--white);
+}
+.activity-head span{color:var(--green);}
+#activity-list{max-height:340px;overflow-y:auto;}
+.activity-empty{padding:24px 18px;font-size:7px;color:rgba(200,195,255,.25);letter-spacing:.5px;}
+.activity-row{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 18px;border-bottom:1px solid var(--border);
+  font-size:7px;letter-spacing:.5px;
+}
+.activity-row:last-child{border-bottom:none;}
+.activity-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;box-shadow:0 0 6px var(--green);}
+.activity-game{color:var(--white);min-width:90px;}
+.activity-msg{flex:1;color:var(--muted);}
+.activity-msg b{color:var(--green);}
+.activity-time{color:rgba(200,195,255,.3);font-family:'Share Tech Mono',monospace;font-size:7px;}
+
+.foot-note{margin-top:24px;font-size:6px;color:rgba(200,195,255,.25);letter-spacing:.5px;line-height:1.8;}
+</style>
+</head>
+<body>
+
+<!-- ════════ LOGIN SCREEN ════════ -->
+<div id="login-screen">
+  <div class="login-title">TENTEN<span> ADMIN</span></div>
+  <form id="login-form">
+    <input id="pw-input" type="password" placeholder="ENTER KEY" autocomplete="off" autofocus />
+    <button type="submit" class="pxbtn">▶ UNLOCK</button>
+  </form>
+  <div id="pw-error"></div>
+</div>
+
+<!-- ════════ DASHBOARD ════════ -->
+<div id="dashboard">
+  <div class="wrap">
+    <div class="hdr">
+      <div class="hdr-title">TENTEN<span> ADMIN</span></div>
+      <div class="hdr-stats">
+        <div class="stat-chip">NEXT REFRESH <b id="countdown">10s</b></div>
+        <div class="stat-chip">LAST REFRESHED <b id="last-refreshed">—</b></div>
+      </div>
+    </div>
+
+    <div class="total-box">
+      <div>
+        <div class="total-label">Total Active Players</div>
+        <div class="total-num" id="total-players">0</div>
+      </div>
+    </div>
+
+    <div class="grid" id="grid"></div>
+
+    <div class="activity-box">
+      <div class="activity-head">RECENT <span>ACTIVITY</span></div>
+      <div id="activity-list"><div class="activity-empty">No activity yet — waiting for players to join.</div></div>
+    </div>
+
+    <div class="foot-note">Status pulled directly from each game server every 10s. GamaJump has no status endpoint — LIVE/IDLE only reflects whether the site responds, so it never appears in activity or the player total.</div>
+  </div>
+</div>
+
+<script>
+// ── Password gate ──
+const KEY = 'TENTEN2025';
+
+function unlock() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  startDashboard();
+}
+
+if (new URLSearchParams(location.search).get('key') === KEY) {
+  unlock();
+} else {
+  document.getElementById('login-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const entered = document.getElementById('pw-input').value;
+    if (entered === KEY) {
+      history.replaceState(null, '', '?key=' + KEY);
+      unlock();
+    } else {
+      document.getElementById('pw-error').textContent = 'WRONG KEY';
+      document.getElementById('pw-input').value = '';
+    }
+  });
+}
+
+// ── WhatsApp alert stub — wired in at the join-detection trigger point below.
+// Will be filled in once Twilio is set up; currently a no-op.
+function sendWhatsAppAlert(game, players, rooms, link) {
+  // TODO: Twilio integration
+}
+
+// ── Dashboard ──
+function startDashboard() {
+  const GAMES = [
+    { name: 'GamaJump',   url: 'https://gamajump.online',                          link: 'https://gamajump.online/',                       statusless: true,  accent: '#bf5fff', accent2: '#6600bb' },
+    { name: 'Kurver',     url: 'https://curvytron77.onrender.com/status',          link: 'https://curvytron77.onrender.com/multiplayer#/', statusless: false, accent: '#00f5d4', accent2: '#00b89a' },
+    { name: 'Puz Royale', url: 'https://puz-royale-clause-1.onrender.com/status',  link: 'https://puz-royale-clause-1.onrender.com/',       statusless: false, accent: '#ffb020', accent2: '#996000' },
+    { name: 'Pong',       url: 'https://pong-claus-1.onrender.com/status',         link: 'https://pong-claus-1.onrender.com/',              statusless: false, accent: '#3d9eff', accent2: '#0044bb' },
+  ];
+
+  const grid = document.getElementById('grid');
+  GAMES.forEach((g, i) => {
+    const el = document.createElement('div');
+    el.className = 'gcard';
+    el.id = 'card-' + i;
+    el.style.setProperty('--gc', g.accent);
+    el.style.setProperty('--gs', g.accent2);
+    el.innerHTML = `
+      <div class="gcard-top">
+        <span class="dot idle" id="dot-${i}"></span>
+        <span class="gname">${g.name}</span>
+        <span class="gstatus idle" id="badge-${i}">IDLE</span>
+      </div>
+      <div class="gc-players-big" id="players-big-${i}">—</div>
+      <div class="gc-players-label">Active Players</div>
+      <div class="gc-row"><span>Active Rooms</span><span class="gc-val" id="rooms-${i}">—</span></div>
+      <div class="gc-row"><span>Last Checked</span><span class="gc-val dim" id="updated-${i}">never</span></div>
+      <a class="pxbtn gc-link" href="${g.link}" target="_blank" rel="noopener">▶ OPEN GAME</a>
+    `;
+    grid.appendChild(el);
+    g.state = { live: false, players: null, rooms: null, lastUpdated: null };
+    g.prevPlayers = null; // null = no poll yet, so the first result never counts as a "join"
+  });
+
+  const activityLog = [];
+
+  function logActivity(g) {
+    const event = {
+      game: g.name,
+      players: g.state.players,
+      time: new Date(),
+      link: g.link
+    };
+    activityLog.unshift(event);
+    if (activityLog.length > 10) activityLog.length = 10;
+    renderActivity();
+  }
+
+  function renderActivity() {
+    const list = document.getElementById('activity-list');
+    if (activityLog.length === 0) {
+      list.innerHTML = '<div class="activity-empty">No activity yet — waiting for players to join.</div>';
+      return;
+    }
+    list.innerHTML = activityLog.map(ev => `
+      <div class="activity-row">
+        <span class="activity-dot"></span>
+        <span class="activity-game">${ev.game}</span>
+        <span class="activity-msg"><b>${ev.players} player${ev.players === 1 ? '' : 's'}</b> joined</span>
+        <span class="activity-time">${ev.time.toLocaleTimeString()}</span>
+        <a class="pxbtn" style="font-size:5px;padding:5px 8px;" href="${ev.link}" target="_blank" rel="noopener">JOIN NOW</a>
+      </div>
+    `).join('');
+  }
+
+  function flashCard(i) {
+    const card = document.getElementById('card-' + i);
+    card.classList.remove('flash');
+    // restart the animation even if it's already mid-flash from a prior event
+    void card.offsetWidth;
+    card.classList.add('flash');
+  }
+
+  async function pollGame(g, i) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    try {
+      if (g.statusless) {
+        await fetch(g.url, { mode: 'no-cors', cache: 'no-store', signal: controller.signal });
+        g.state = { live: true, players: null, rooms: null, lastUpdated: new Date() };
+      } else {
+        const res = await fetch(g.url, { cache: 'no-store', signal: controller.signal });
+        if (!res.ok) throw new Error('bad response');
+        const data = await res.json();
+        g.state = {
+          live: true,
+          players: typeof data.activePlayers === 'number' ? data.activePlayers : 0,
+          rooms: typeof data.activeRooms === 'number' ? data.activeRooms : 0,
+          lastUpdated: new Date()
+        };
+      }
+    } catch (e) {
+      g.state.live = false;
+    } finally {
+      clearTimeout(timer);
+    }
+
+    // 0 -> 1+ join detection (skipped for games with no player count, and on
+    // the very first poll so an already-active game doesn't fire a false alert).
+    if (!g.statusless && typeof g.state.players === 'number') {
+      if (g.prevPlayers !== null && g.prevPlayers === 0 && g.state.players >= 1) {
+        logActivity(g);
+        flashCard(i);
+        sendWhatsAppAlert(g.name, g.state.players, g.state.rooms, g.link);
+      }
+      g.prevPlayers = g.state.players;
+    }
+
+    renderGame(g, i);
+    updateTotal();
+  }
+
+  function renderGame(g, i) {
+    document.getElementById('dot-' + i).className = 'dot ' + (g.state.live ? 'live' : 'idle');
+    const badge = document.getElementById('badge-' + i);
+    badge.className = 'gstatus ' + (g.state.live ? 'live' : 'idle');
+    badge.textContent = g.state.live ? 'LIVE' : 'IDLE';
+    document.getElementById('players-big-' + i).textContent = g.state.players === null ? '—' : g.state.players;
+    document.getElementById('rooms-' + i).textContent = g.state.rooms === null ? '—' : g.state.rooms;
+    document.getElementById('updated-' + i).textContent = g.state.lastUpdated ? g.state.lastUpdated.toLocaleTimeString() : 'never';
+  }
+
+  function updateTotal() {
+    const total = GAMES.reduce((sum, g) => sum + (typeof g.state.players === 'number' ? g.state.players : 0), 0);
+    document.getElementById('total-players').textContent = total;
+  }
+
+  async function pollAll() {
+    await Promise.all(GAMES.map((g, i) => pollGame(g, i)));
+    document.getElementById('last-refreshed').textContent = new Date().toLocaleTimeString();
+  }
+
+  let countdown = 10;
+  function tickCountdown() {
+    countdown--;
+    if (countdown <= 0) {
+      countdown = 10;
+      pollAll();
+    }
+    document.getElementById('countdown').textContent = countdown + 's';
+  }
+
+  pollAll();
+  setInterval(tickCountdown, 1000);
+}
+</script>
+</body>
+</html>
