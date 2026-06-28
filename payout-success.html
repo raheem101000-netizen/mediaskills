@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TENTEN — Prize Payout</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Outfit:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root { --gold: #ffe44d; --teal: #22ff6e; --purple: #b450ff; --red: #ff4444; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #000; color: #fff; min-height: 100vh; display: flex; align-items: center; justify-content: center; font-family: 'Outfit', sans-serif; padding: 24px; }
+  .card { width: 100%; max-width: 420px; text-align: center; }
+  .logo { font-family: 'Press Start 2P', monospace; font-size: 22px; color: var(--gold); letter-spacing: 4px; margin-bottom: 32px; }
+  .icon { font-size: 48px; margin-bottom: 20px; }
+  .headline { font-family: 'Press Start 2P', monospace; font-size: 13px; color: var(--gold); line-height: 1.8; margin-bottom: 16px; }
+  .sub { font-size: 15px; color: rgba(255,255,255,0.6); line-height: 1.6; margin-bottom: 28px; }
+  .btn { display: inline-block; padding: 14px 28px; background: var(--purple); color: #fff; font-family: 'Press Start 2P', monospace; font-size: 10px; border: none; cursor: pointer; text-decoration: none; letter-spacing: 1px; }
+  .btn:hover { background: #9c3de0; }
+  .btn-gold { background: var(--gold); color: #000; }
+  .btn-gold:hover { background: #f0d000; }
+  .spinner { width: 36px; height: 36px; border: 3px solid #333; border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 24px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #state-loading, #state-success, #state-incomplete, #state-error { display: none; }
+  #state-loading { display: block; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">TENTEN</div>
+
+  <div id="state-loading">
+    <div class="spinner"></div>
+    <div class="sub">Processing your prize...</div>
+  </div>
+
+  <div id="state-success">
+    <div class="icon">🏆</div>
+    <div class="headline">YOUR PRIZE IS<br>ON ITS WAY!</div>
+    <div class="sub">The transfer has been initiated to your account.<br>Funds typically arrive within 1–2 business days.</div>
+    <a href="https://pong-claus-1.onrender.com/rooms" class="btn btn-gold">▶ PLAY AGAIN</a>
+  </div>
+
+  <div id="state-incomplete">
+    <div class="icon">⚠️</div>
+    <div class="headline">SETUP INCOMPLETE</div>
+    <div class="sub">Please finish your Stripe account setup to receive your prize.</div>
+    <a id="btn-retry" href="#" class="btn" style="margin-bottom:16px;display:block;">▶ COMPLETE SETUP</a>
+    <a href="https://pong-claus-1.onrender.com/rooms" class="btn" style="background:#222;">BACK TO LOBBY</a>
+  </div>
+
+  <div id="state-error">
+    <div class="icon">✗</div>
+    <div class="headline" style="color:var(--red);">SOMETHING<br>WENT WRONG</div>
+    <div class="sub" id="error-msg">An unexpected error occurred.</div>
+    <a href="https://pong-claus-1.onrender.com/rooms" class="btn" style="background:#222;">BACK TO LOBBY</a>
+  </div>
+</div>
+
+<script>
+(async () => {
+  const params = new URLSearchParams(window.location.search);
+  const account_id = params.get('account');
+  const prize_amount_cents = parseInt(params.get('amount') || '50', 10);
+
+  function show(id) {
+    ['state-loading','state-success','state-incomplete','state-error'].forEach(s => {
+      document.getElementById(s).style.display = s === id ? 'block' : 'none';
+    });
+  }
+
+  if (!account_id) {
+    document.getElementById('error-msg').textContent = 'Missing account information.';
+    show('state-error');
+    return;
+  }
+
+  // Set up retry link
+  document.getElementById('btn-retry').href =
+    'https://pong-claus-1.onrender.com/onboarding/refresh?account=' + account_id + '&amount=' + prize_amount_cents;
+
+  try {
+    const resp = await fetch('https://pong-claus-1.onrender.com/complete-payout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ account_id, prize_amount_cents })
+    });
+    const data = await resp.json();
+
+    if (resp.ok && data.success) {
+      show('state-success');
+    } else if (resp.status === 400 && data.error && data.error.includes('not ready')) {
+      show('state-incomplete');
+    } else {
+      document.getElementById('error-msg').textContent = data.error || 'Transfer failed.';
+      show('state-error');
+    }
+  } catch (e) {
+    document.getElementById('error-msg').textContent = 'Could not reach the server. Please try again.';
+    show('state-error');
+  }
+})();
+</script>
+</body>
+</html>
