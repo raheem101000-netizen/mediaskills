@@ -149,14 +149,30 @@ body::after{
   background:#ffe44d;color:#000;font-size:7px;padding:3px 8px;
 }
 .claim-row{
-  display:grid;grid-template-columns:1fr 1fr 1fr auto auto;gap:10px;align-items:center;
-  padding:12px 18px;border-bottom:1px solid var(--border);font-size:7px;letter-spacing:.5px;
+  border-bottom:1px solid var(--border);cursor:pointer;font-size:7px;letter-spacing:.5px;
 }
-@media(max-width:760px){.claim-row{grid-template-columns:1fr 1fr;}}
 .claim-row:last-child{border-bottom:none;}
+.claim-row:hover .claim-summary{background:rgba(255,228,77,0.04);}
+.claim-summary{
+  display:grid;grid-template-columns:1fr 1fr auto auto;gap:10px;align-items:center;
+  padding:12px 18px;
+}
+@media(max-width:760px){.claim-summary{grid-template-columns:1fr 1fr;}}
+.claim-expand-icon{font-size:9px;color:var(--muted);transition:transform .15s;user-select:none;}
+.claim-expand-icon.open{transform:rotate(180deg);}
+.claim-details{
+  padding:0 18px 14px 18px;background:rgba(255,255,255,0.02);
+  border-top:1px solid var(--border);
+}
+.claim-detail-row{
+  display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+  padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04);
+  font-size:7px;color:var(--muted);letter-spacing:.5px;
+}
+.claim-detail-row:last-of-type{border-bottom:none;}
+.claim-detail-val{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text);word-break:break-all;text-align:right;max-width:65%;}
 .claim-name{color:var(--white);font-family:'Share Tech Mono',monospace;font-size:9px;}
 .claim-email{color:#ffe44d;font-family:'Share Tech Mono',monospace;font-size:8px;word-break:break-all;}
-.claim-notes{color:var(--muted);font-size:7px;}
 .claim-amount{color:var(--green);font-family:'Share Tech Mono',monospace;font-size:10px;}
 .claim-time{color:rgba(200,195,255,.3);font-family:'Share Tech Mono',monospace;font-size:7px;}
 .pxbtn-gold{
@@ -369,6 +385,14 @@ function startDashboard() {
 const CLAIMS_URL = 'https://pong-claus-1.onrender.com/admin/prize-claims?key=TENTEN2025';
 const PAID_URL   = 'https://pong-claus-1.onrender.com/admin/mark-paid?key=TENTEN2025';
 
+function toggleClaim(id) {
+  const details = document.getElementById('claim-details-' + id);
+  const icon = document.getElementById('claim-icon-' + id);
+  const open = details.style.display !== 'none';
+  details.style.display = open ? 'none' : 'block';
+  icon.classList.toggle('open', !open);
+}
+
 async function loadPrizeClaims() {
   const list = document.getElementById('claims-list');
   try {
@@ -381,13 +405,24 @@ async function loadPrizeClaims() {
     }
     list.innerHTML = claims.map(claim => {
       const t = new Date(claim.claimed_at).toLocaleString();
-      const notes = claim.notes ? claim.notes : '<span style="color:rgba(200,195,255,.2);">—</span>';
-      return `<div class="claim-row" id="claim-row-${claim.id}">
-        <div><div class="claim-name">${esc(claim.winner_name)}</div><div class="claim-time">${t}</div></div>
-        <div class="claim-email">${esc(claim.paypal_email)}</div>
-        <div class="claim-notes">${esc(notes)}</div>
-        <div class="claim-amount">${esc(claim.prize_amount)}</div>
-        <button class="pxbtn-gold" onclick="markPaid(${claim.id})">MARK PAID</button>
+      return `<div class="claim-row" id="claim-row-${claim.id}" onclick="toggleClaim(${claim.id})">
+        <div class="claim-summary">
+          <div><div class="claim-name">${esc(claim.winner_name)}</div><div class="claim-time">${t}</div></div>
+          <div class="claim-email">${esc(claim.paypal_email || '—')}</div>
+          <div class="claim-amount">${esc(claim.prize_amount)}</div>
+          <span class="claim-expand-icon" id="claim-icon-${claim.id}">▼</span>
+        </div>
+        <div class="claim-details" id="claim-details-${claim.id}" style="display:none;">
+          <div class="claim-detail-row"><span>PayPal</span><span class="claim-detail-val">${esc(claim.paypal_email || '—')}</span></div>
+          <div class="claim-detail-row"><span>Contact Email</span><span class="claim-detail-val">${esc(claim.contact_email || '—')}</span></div>
+          <div class="claim-detail-row"><span>Notes</span><span class="claim-detail-val">${esc(claim.notes || '—')}</span></div>
+          <div class="claim-detail-row"><span>Game</span><span class="claim-detail-val">${esc(claim.game)}</span></div>
+          <div class="claim-detail-row"><span>Prize</span><span class="claim-detail-val">${esc(claim.prize_amount)}</span></div>
+          <div class="claim-detail-row"><span>Claimed</span><span class="claim-detail-val">${t}</span></div>
+          <div style="margin-top:12px;">
+            <button class="pxbtn-gold" onclick="event.stopPropagation(); markPaid(${claim.id})">MARK PAID</button>
+          </div>
+        </div>
       </div>`;
     }).join('');
   } catch(e) {
