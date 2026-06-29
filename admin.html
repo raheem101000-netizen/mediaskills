@@ -382,68 +382,84 @@ function startDashboard() {
 
 
 // ── Prize Claims ──
-const CLAIMS_URL = 'https://pong-claus-1.onrender.com/admin/prize-claims?key=TENTEN2025';
-const PAID_URL   = 'https://pong-claus-1.onrender.com/admin/mark-paid?key=TENTEN2025';
+const GAME_SERVERS = [
+  { key: 'pong',      label: 'Pong',       base: 'https://pong-claus-1.onrender.com',       color: '#3d9eff' },
+  { key: 'kurver',    label: 'Kurver',      base: 'https://curvytron77.onrender.com',         color: '#00f5d4' },
+  { key: 'puzroyale', label: 'Puz Royale',  base: 'https://puz-royale-clause-1.onrender.com', color: '#ffb020' },
+];
+const KEY = 'TENTEN2025';
 
-function toggleClaim(id) {
-  const details = document.getElementById('claim-details-' + id);
-  const icon = document.getElementById('claim-icon-' + id);
-  const open = details.style.display !== 'none';
+function toggleClaim(rowId) {
+  const details = document.getElementById('claim-details-' + rowId);
+  const icon    = document.getElementById('claim-icon-' + rowId);
+  const open    = details.style.display !== 'none';
   details.style.display = open ? 'none' : 'block';
   icon.classList.toggle('open', !open);
 }
 
 async function loadPrizeClaims() {
   const list = document.getElementById('claims-list');
-  try {
-    const res = await fetch(CLAIMS_URL, { cache: 'no-store' });
-    const claims = await res.json();
-    document.getElementById('claims-count').textContent = claims.length + ' UNPAID';
-    if (claims.length === 0) {
-      list.innerHTML = '<div class="claims-empty">No unpaid claims — all clear!</div>';
-      return;
-    }
-    list.innerHTML = claims.map(claim => {
-      const t = new Date(claim.claimed_at).toLocaleString();
-      return `<div class="claim-row" id="claim-row-${claim.id}" onclick="toggleClaim(${claim.id})">
-        <div class="claim-summary">
-          <div><div class="claim-name">${esc(claim.winner_name)}</div><div class="claim-time">${t}</div></div>
-          <div class="claim-email">${esc(claim.paypal_email || '—')}</div>
-          <div class="claim-amount">${esc(claim.prize_amount)}</div>
-          <span class="claim-expand-icon" id="claim-icon-${claim.id}">▼</span>
-        </div>
-        <div class="claim-details" id="claim-details-${claim.id}" style="display:none;">
-          <div class="claim-detail-row"><span>PayPal</span><span class="claim-detail-val">${esc(claim.paypal_email || '—')}</span></div>
-          <div class="claim-detail-row"><span>Contact Email</span><span class="claim-detail-val">${esc(claim.contact_email || '—')}</span></div>
-          <div class="claim-detail-row"><span>Notes</span><span class="claim-detail-val">${esc(claim.notes || '—')}</span></div>
-          <div class="claim-detail-row"><span>Game</span><span class="claim-detail-val">${esc(claim.game)}</span></div>
-          <div class="claim-detail-row"><span>Prize</span><span class="claim-detail-val">${esc(claim.prize_amount)}</span></div>
-          <div class="claim-detail-row"><span>Claimed</span><span class="claim-detail-val">${t}</span></div>
-          <div style="margin-top:12px;">
-            <button class="pxbtn-gold" onclick="event.stopPropagation(); markPaid(${claim.id})">MARK PAID</button>
-          </div>
-        </div>
-      </div>`;
-    }).join('');
-  } catch(e) {
-    list.innerHTML = '<div class="claims-empty">Error loading claims.</div>';
+  const results = await Promise.allSettled(
+    GAME_SERVERS.map(async (srv) => {
+      const res = await fetch(`${srv.base}/admin/prize-claims?key=${KEY}`, { cache: 'no-store' });
+      const rows = await res.json();
+      return rows.map(r => ({ ...r, _srv: srv }));
+    })
+  );
+  let all = [];
+  results.forEach(r => { if (r.status === 'fulfilled') all = all.concat(r.value); });
+  all.sort((a, b) => new Date(b.claimed_at) - new Date(a.claimed_at));
+  document.getElementById('claims-count').textContent = all.length + ' UNPAID';
+  if (all.length === 0) {
+    list.innerHTML = '<div class="claims-empty">No unpaid claims — all clear!</div>';
+    return;
   }
+  list.innerHTML = all.map(claim => {
+    const t     = new Date(claim.claimed_at).toLocaleString();
+    const srv   = claim._srv;
+    const rowId = srv.key + '-' + claim.id;
+    return `<div class="claim-row" id="claim-row-${rowId}" onclick="toggleClaim('${rowId}')">
+      <div class="claim-summary">
+        <div>
+          <div class="claim-name">${esc(claim.winner_name)}</div>
+          <div class="claim-time">${t}</div>
+        </div>
+        <div class="claim-email">${esc(claim.paypal_email || '—')}</div>
+        <div class="claim-amount">${esc(claim.prize_amount)}</div>
+        <span style="font-family:'Share Tech Mono',monospace;font-size:7px;padding:2px 7px;border:1px solid ${srv.color};color:${srv.color};white-space:nowrap;">${esc(srv.label)}</span>
+        <span class="claim-expand-icon" id="claim-icon-${rowId}">▼</span>
+      </div>
+      <div class="claim-details" id="claim-details-${rowId}" style="display:none;">
+        <div class="claim-detail-row"><span>PayPal</span><span class="claim-detail-val">${esc(claim.paypal_email || '—')}</span></div>
+        <div class="claim-detail-row"><span>Contact Email</span><span class="claim-detail-val">${esc(claim.contact_email || '—')}</span></div>
+        <div class="claim-detail-row"><span>Notes</span><span class="claim-detail-val">${esc(claim.notes || '—')}</span></div>
+        <div class="claim-detail-row"><span>Game</span><span class="claim-detail-val">${esc(claim.game || srv.label)}</span></div>
+        <div class="claim-detail-row"><span>Prize</span><span class="claim-detail-val">${esc(claim.prize_amount)}</span></div>
+        <div class="claim-detail-row"><span>Claimed</span><span class="claim-detail-val">${t}</span></div>
+        <div style="margin-top:12px;">
+          <button class="pxbtn-gold" onclick="event.stopPropagation(); markPaid('${srv.key}', ${claim.id}, '${rowId}')">MARK PAID</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-async function markPaid(id) {
+async function markPaid(srvKey, id, rowId) {
+  const srv = GAME_SERVERS.find(s => s.key === srvKey);
+  if (!srv) return;
   try {
-    const res = await fetch(PAID_URL, {
+    const res = await fetch(`${srv.base}/admin/mark-paid?key=${KEY}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id })
     });
     const data = await res.json();
     if (data.success) {
-      const row = document.getElementById('claim-row-' + id);
+      const row = document.getElementById('claim-row-' + rowId);
       if (row) row.remove();
       const remaining = document.querySelectorAll('[id^="claim-row-"]').length;
       document.getElementById('claims-count').textContent = remaining + ' UNPAID';
