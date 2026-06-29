@@ -149,6 +149,42 @@ body::after{
 .activity-time{color:rgba(200,195,255,.3);font-family:'Share Tech Mono',monospace;font-size:7px;}
 
 .foot-note{margin-top:24px;font-size:6px;color:rgba(200,195,255,.25);letter-spacing:.5px;line-height:1.8;}
+
+/* ═══════════ PRIZE CLAIMS ═══════════ */
+.claims-box{
+  background:var(--card);
+  border:3px solid #ffe44d;
+  box-shadow:4px 4px 0 #aa9000;
+  margin-bottom:32px;
+}
+.claims-head{
+  padding:14px 18px;border-bottom:3px solid #ffe44d;
+  font-size:9px;letter-spacing:1px;color:var(--white);
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;
+}
+.claims-head span{color:#ffe44d;}
+.claims-head .badge{
+  background:#ffe44d;color:#000;font-size:7px;padding:3px 8px;
+}
+.claim-row{
+  display:grid;grid-template-columns:1fr 1fr 1fr auto auto;gap:10px;align-items:center;
+  padding:12px 18px;border-bottom:1px solid var(--border);font-size:7px;letter-spacing:.5px;
+}
+@media(max-width:760px){.claim-row{grid-template-columns:1fr 1fr;}}
+.claim-row:last-child{border-bottom:none;}
+.claim-name{color:var(--white);font-family:'Share Tech Mono',monospace;font-size:9px;}
+.claim-email{color:#ffe44d;font-family:'Share Tech Mono',monospace;font-size:8px;word-break:break-all;}
+.claim-notes{color:var(--muted);font-size:7px;}
+.claim-amount{color:var(--green);font-family:'Share Tech Mono',monospace;font-size:10px;}
+.claim-time{color:rgba(200,195,255,.3);font-family:'Share Tech Mono',monospace;font-size:7px;}
+.pxbtn-gold{
+  font-family:'Press Start 2P',monospace;font-size:6px;padding:8px 12px;letter-spacing:1px;
+  border:2px solid #aa9000;background:#ffe44d;color:#000;
+  box-shadow:2px 2px 0 #aa9000;cursor:pointer;white-space:nowrap;
+}
+.pxbtn-gold:hover{background:#ffe066;}
+.pxbtn-gold:active{transform:translate(1px,1px);box-shadow:1px 1px 0 #aa9000;}
+.claims-empty{padding:24px 18px;font-size:7px;color:rgba(200,195,255,.25);letter-spacing:.5px;}
 </style>
 </head>
 <body>
@@ -186,6 +222,15 @@ body::after{
     <div class="activity-box">
       <div class="activity-head">RECENT <span>ACTIVITY</span></div>
       <div id="activity-list"><div class="activity-empty">No activity yet — waiting for players to join.</div></div>
+    </div>
+
+
+    <div class="claims-box">
+      <div class="claims-head">
+        PRIZE <span>CLAIMS</span>
+        <span class="badge" id="claims-count">0 UNPAID</span>
+      </div>
+      <div id="claims-list"><div class="claims-empty">Loading...</div></div>
     </div>
 
     <div class="foot-note">Status pulled directly from each game server every 10s. GamaJump has no status endpoint — LIVE/IDLE only reflects whether the site responds, so it never appears in activity or the player total.</div>
@@ -367,6 +412,71 @@ function startDashboard() {
 
   pollAll();
   setInterval(tickCountdown, 1000);
+}
+
+
+// ── Prize Claims ──
+const CLAIMS_URL = 'https://pong-claus-1.onrender.com/admin/prize-claims?key=TENTEN2025';
+const PAID_URL   = 'https://pong-claus-1.onrender.com/admin/mark-paid?key=TENTEN2025';
+
+async function loadPrizeClaims() {
+  const list = document.getElementById('claims-list');
+  try {
+    const res = await fetch(CLAIMS_URL, { cache: 'no-store' });
+    const claims = await res.json();
+    document.getElementById('claims-count').textContent = claims.length + ' UNPAID';
+    if (claims.length === 0) {
+      list.innerHTML = '<div class="claims-empty">No unpaid claims — all clear!</div>';
+      return;
+    }
+    list.innerHTML = claims.map(claim => {
+      const t = new Date(claim.claimed_at).toLocaleString();
+      const notes = claim.notes ? claim.notes : '<span style="color:rgba(200,195,255,.2);">—</span>';
+      return `<div class="claim-row" id="claim-row-${claim.id}">
+        <div><div class="claim-name">${esc(claim.winner_name)}</div><div class="claim-time">${t}</div></div>
+        <div class="claim-email">${esc(claim.paypal_email)}</div>
+        <div class="claim-notes">${esc(notes)}</div>
+        <div class="claim-amount">${esc(claim.prize_amount)}</div>
+        <button class="pxbtn-gold" onclick="markPaid(${claim.id})">MARK PAID</button>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    list.innerHTML = '<div class="claims-empty">Error loading claims.</div>';
+  }
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function markPaid(id) {
+  try {
+    const res = await fetch(PAID_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id })
+    });
+    const data = await res.json();
+    if (data.success) {
+      const row = document.getElementById('claim-row-' + id);
+      if (row) row.remove();
+      const remaining = document.querySelectorAll('[id^="claim-row-"]').length;
+      document.getElementById('claims-count').textContent = remaining + ' UNPAID';
+      if (remaining === 0) {
+        document.getElementById('claims-list').innerHTML = '<div class="claims-empty">No unpaid claims — all clear!</div>';
+      }
+    }
+  } catch(e) {
+    alert('Error marking as paid');
+  }
+}
+
+// Start prize claims on unlock, refresh every 30s
+const _origUnlock = unlock;
+function unlock() {
+  _origUnlock();
+  loadPrizeClaims();
+  setInterval(loadPrizeClaims, 30000);
 }
 </script>
 </body>
