@@ -25,9 +25,9 @@ module.exports = async function handler(req, res) {
       httpOnly: true, path: '/', maxAge: 30 * 24 * 60 * 60, sameSite: 'lax', secure: true
     }));
     res.status(200).json({ ok: true });
-  } catch (e) {
-    if (e.code === '23505') return res.status(400).json({ error: 'Email already registered' });
-    console.error(e);
-    res.status(500).json({ error: 'Server error' });
+  } catch (err) {
+    if (err.code === '23505') return res.status(400).json({ error: 'Email already registered' });
+    console.error('Signup error:', err.message, err.stack);
+    res.status(500).json({ error: err.message });
   }
 };
