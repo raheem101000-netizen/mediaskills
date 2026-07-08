@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TENTEN — Profile</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;image-rendering:pixelated;}
+:root{
+  --bg:#000;--card:#111;--text:#f0eeff;--muted:rgba(200,195,255,0.5);
+  --border:rgba(255,255,255,0.07);--teal:#00f5d4;--teal2:#00b89a;
+  --purple:#bf5fff;--purple2:#6600bb;--gold:#ffe44d;--gold2:#997700;
+  --red:#ff4757;--red2:#aa0011;--green:#22ff6e;--green2:#00a030;
+}
+html,body{min-height:100vh;background:var(--bg);font-family:'Press Start 2P',monospace;color:var(--text);}
+body{display:flex;flex-direction:column;align-items:center;padding:80px 16px 48px;}
+
+.nav{position:fixed;top:0;left:0;right:0;height:56px;background:rgba(0,0,0,0.98);
+  border-bottom:3px solid rgba(255,255,255,0.08);display:flex;align-items:center;
+  justify-content:space-between;padding:0 24px;z-index:100;}
+.nav-logo{font-size:12px;letter-spacing:2px;color:#fff;text-decoration:none;}
+.nav-r{display:flex;gap:8px;align-items:center;}
+
+.profile-card{
+  width:100%;max-width:480px;
+  background:#0d0d0d;border:3px solid var(--purple);
+  box-shadow:6px 6px 0 var(--purple2);
+  padding:32px 28px;
+  display:flex;flex-direction:column;align-items:center;
+  gap:0;
+}
+
+.avatar-wrap{position:relative;margin-bottom:20px;}
+.avatar{
+  width:96px;height:96px;border-radius:50%;
+  border:4px solid var(--purple);
+  background:#1a1a2e;
+  object-fit:cover;display:block;
+  font-size:40px;line-height:96px;text-align:center;
+}
+.avatar-change{
+  position:absolute;bottom:-2px;right:-2px;
+  width:28px;height:28px;border-radius:50%;
+  background:var(--teal);border:2px solid var(--teal2);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:12px;
+}
+#avatar-file{display:none;}
+
+.display-name{
+  font-size:14px;letter-spacing:1px;color:var(--text);
+  margin-bottom:6px;text-align:center;
+}
+
+.email-line{
+  font-family:'Outfit',sans-serif;font-size:12px;font-weight:500;
+  color:var(--muted);margin-bottom:24px;
+}
+
+.balance-block{
+  width:100%;
+  background:#000;border:3px solid var(--gold);
+  box-shadow:3px 3px 0 var(--gold2);
+  padding:16px 20px;text-align:center;margin-bottom:24px;
+}
+.balance-label{font-size:6px;letter-spacing:2px;color:var(--gold);margin-bottom:8px;text-transform:uppercase;}
+.balance-amount{
+  font-size:36px;
+  background:linear-gradient(135deg,var(--gold),#ffb020);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  filter:drop-shadow(2px 2px 0 var(--gold2));
+}
+
+.actions{width:100%;display:flex;flex-direction:column;gap:10px;}
+
+.btn-action{
+  width:100%;font-family:'Press Start 2P',monospace;font-size:7px;
+  padding:12px 18px;cursor:pointer;letter-spacing:1px;
+  border:2px solid;transition:transform .05s;text-align:center;
+}
+.btn-action:active{transform:translate(2px,2px);box-shadow:none!important;}
+.btn-payout{background:var(--gold);color:#1a0800;border-color:var(--gold2);box-shadow:3px 3px 0 var(--gold2);}
+.btn-payout:hover{background:#fff066;}
+.btn-signout{background:transparent;color:var(--red);border-color:var(--red2);box-shadow:2px 2px 0 var(--red2);}
+.btn-signout:hover{background:rgba(255,71,87,0.1);}
+
+/* Payout modal */
+.modal-bg{
+  position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:200;
+  display:none;align-items:center;justify-content:center;padding:16px;
+}
+.modal-bg.open{display:flex;}
+.modal{
+  width:100%;max-width:380px;
+  background:#0d0d0d;border:3px solid var(--gold);box-shadow:6px 6px 0 var(--gold2);
+}
+.modal-title{background:var(--gold);color:#1a0800;padding:10px 16px;font-size:7px;letter-spacing:1px;}
+.modal-body{padding:24px 20px;}
+.modal-body label{display:block;font-size:6px;letter-spacing:1px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;}
+.modal-body input{
+  width:100%;background:#000;border:2px solid rgba(255,255,255,0.12);
+  color:var(--text);font-family:'Outfit',sans-serif;font-size:14px;font-weight:500;
+  padding:10px 14px;outline:none;margin-bottom:16px;
+}
+.modal-body input:focus{border-color:var(--gold);}
+.modal-body input::placeholder{color:rgba(200,195,255,0.25);}
+.modal-btns{display:flex;gap:8px;}
+.btn-modal-ok{
+  flex:1;background:var(--gold);color:#1a0800;
+  border:2px solid var(--gold2);box-shadow:3px 3px 0 var(--gold2);
+  font-family:'Press Start 2P',monospace;font-size:7px;padding:11px;cursor:pointer;
+}
+.btn-modal-ok:hover{background:#fff066;}
+.btn-modal-cancel{
+  flex:1;background:transparent;color:var(--muted);
+  border:2px solid rgba(255,255,255,0.1);
+  font-family:'Press Start 2P',monospace;font-size:7px;padding:11px;cursor:pointer;
+}
+.btn-modal-cancel:hover{border-color:rgba(255,255,255,0.25);color:var(--text);}
+.modal-note{font-family:'Outfit',sans-serif;font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:16px;}
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:var(--green);color:#020a04;border:2px solid var(--green2);
+  box-shadow:3px 3px 0 var(--green2);
+  font-size:7px;padding:10px 20px;letter-spacing:1px;z-index:300;
+  opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;
+}
+.toast.show{opacity:1;}
+.error-msg{
+  background:rgba(255,71,87,0.12);border:2px solid var(--red);
+  color:var(--red);font-size:6px;padding:10px 14px;letter-spacing:.5px;
+  margin-bottom:12px;display:none;
+}
+.error-msg.show{display:block;}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="nav-logo" href="/">TENTEN</a>
+  <div class="nav-r">
+    <a href="/" style="font-family:'Press Start 2P',monospace;font-size:7px;color:var(--muted);text-decoration:none;padding:8px 12px;border:2px solid rgba(255,255,255,0.1);">← GAMES</a>
+  </div>
+</nav>
+
+<div class="profile-card" id="profile-card" style="display:none;">
+  <div class="avatar-wrap">
+    <img class="avatar" id="avatar-display" src="" alt="avatar">
+    <div class="avatar-change" title="Change avatar" onclick="document.getElementById('avatar-file').click()">✏</div>
+    <input type="file" id="avatar-file" accept="image/*">
+  </div>
+
+  <div class="display-name" id="display-name-text"></div>
+  <div class="email-line" id="email-text"></div>
+
+  <div class="balance-block">
+    <div class="balance-label">⬡ YOUR BALANCE</div>
+    <div class="balance-amount" id="balance-text">$0.00</div>
+  </div>
+
+  <div class="actions">
+    <button class="btn-action btn-payout" onclick="openPayoutModal()">💸 REQUEST PAYOUT</button>
+    <button class="btn-action btn-signout" onclick="doSignout()">✕ SIGN OUT</button>
+  </div>
+</div>
+
+<!-- Payout modal -->
+<div class="modal-bg" id="payout-modal">
+  <div class="modal">
+    <div class="modal-title">💸 REQUEST PAYOUT</div>
+    <div class="modal-body">
+      <div class="error-msg" id="modal-err"></div>
+      <div class="modal-note">Enter your PayPal email to receive your payout. We'll send payment within 24 hours.</div>
+      <label>PayPal Email</label>
+      <input type="email" id="paypal-input" placeholder="your@paypal.com">
+      <div class="modal-btns">
+        <button class="btn-modal-ok" onclick="submitPayout()">✓ SUBMIT</button>
+        <button class="btn-modal-cancel" onclick="closePayoutModal()">✕ CANCEL</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Ccircle cx='48' cy='48' r='48' fill='%231a1a2e'/%3E%3Ccircle cx='48' cy='38' r='18' fill='%23bf5fff' opacity='.7'/%3E%3Cellipse cx='48' cy='78' rx='28' ry='18' fill='%23bf5fff' opacity='.5'/%3E%3C/svg%3E";
+
+async function loadProfile() {
+  try {
+    const r = await fetch('/api/me');
+    if (!r.ok) { window.location.href = '/login.html'; return; }
+    const u = await r.json();
+
+    document.getElementById('display-name-text').textContent = u.display_name;
+    document.getElementById('email-text').textContent = u.email;
+    document.getElementById('balance-text').textContent = '$' + parseFloat(u.balance).toFixed(2);
+
+    const avatarEl = document.getElementById('avatar-display');
+    avatarEl.src = u.avatar_url || DEFAULT_AVATAR;
+    avatarEl.onerror = () => { avatarEl.src = DEFAULT_AVATAR; };
+
+    if (u.paypal_email) document.getElementById('paypal-input').value = u.paypal_email;
+    document.getElementById('profile-card').style.display = 'flex';
+  } catch (e) {
+    window.location.href = '/login.html';
+  }
+}
+
+document.getElementById('avatar-file').addEventListener('change', async function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { showToast('Image must be under 2MB', true); return; }
+  const reader = new FileReader();
+  reader.onload = async function(ev) {
+    const dataUrl = ev.target.result;
+    try {
+      const r = await fetch('/api/upload-avatar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatar_url: dataUrl })
+      });
+      if (r.ok) {
+        document.getElementById('avatar-display').src = dataUrl;
+        showToast('Avatar updated!');
+      } else {
+        showToast('Failed to upload avatar', true);
+      }
+    } catch (_) { showToast('Network error', true); }
+  };
+  reader.readAsDataURL(file);
+});
+
+function openPayoutModal() {
+  document.getElementById('modal-err').classList.remove('show');
+  document.getElementById('payout-modal').classList.add('open');
+}
+function closePayoutModal() {
+  document.getElementById('payout-modal').classList.remove('open');
+}
+
+async function submitPayout() {
+  const paypal_email = document.getElementById('paypal-input').value.trim();
+  document.getElementById('modal-err').classList.remove('show');
+  if (!paypal_email) {
+    document.getElementById('modal-err').textContent = 'Enter your PayPal email';
+    document.getElementById('modal-err').classList.add('show');
+    return;
+  }
+  try {
+    const r = await fetch('/api/update-payout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ paypal_email })
+    });
+    const d = await r.json();
+    if (!r.ok) {
+      document.getElementById('modal-err').textContent = d.error || 'Failed';
+      document.getElementById('modal-err').classList.add('show');
+      return;
+    }
+    closePayoutModal();
+    showToast('Payout request submitted!');
+  } catch (_) {
+    document.getElementById('modal-err').textContent = 'Network error';
+    document.getElementById('modal-err').classList.add('show');
+  }
+}
+
+async function doSignout() {
+  await fetch('/api/logout', { method: 'POST' });
+  window.location.href = '/';
+}
+
+function showToast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = isError ? 'var(--red)' : 'var(--green)';
+  t.style.color = isError ? '#fff' : '#020a04';
+  t.style.borderColor = isError ? 'var(--red2)' : 'var(--green2)';
+  t.style.boxShadow = isError ? '3px 3px 0 var(--red2)' : '3px 3px 0 var(--green2)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+loadProfile();
+</script>
+</body>
+</html>

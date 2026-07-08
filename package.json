@@ -1,0 +1,23 @@
+{
+  "name": "mediaskills",
+  "version": "1.0.0",
+  "description": "TENTEN games platform",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/raheem101000-netizen/mediaskills.git"
+  },
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/raheem101000-netizen/mediaskills/issues"
+  },
+  "homepage": "https://github.com/raheem101000-netizen/mediaskills#readme",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie": "^0.5.0",
+    "pg": "^8.11.0",
+    "uuid": "^9.0.0"
+  }
+}
