@@ -916,8 +916,30 @@ body{
     <a href="#games" class="on">Games</a>
     <a href="#how">How It Works</a>
   </div>
-
+  <!-- Auth nav — swapped by JS based on session -->
+  <div class="nav-r" id="nav-auth-guest" style="display:flex;">
+    <a href="/login.html" class="btn btn-ghost" style="font-size:6px;padding:8px 14px;text-decoration:none;">LOG IN</a>
+    <a href="/signup.html" class="btn btn-teal" style="font-size:6px;padding:8px 14px;text-decoration:none;">SIGN UP</a>
+  </div>
+  <div class="nav-r" id="nav-auth-user" style="display:none;">
+    <a href="/profile.html" class="pts-chip" id="nav-balance" style="text-decoration:none;cursor:pointer;">$0.00</a>
+    <a href="/profile.html" class="btn btn-ghost" id="nav-username" style="font-size:6px;padding:8px 14px;text-decoration:none;">PROFILE</a>
+  </div>
 </nav>
+<script>
+(async function() {
+  try {
+    const r = await fetch('/api/me');
+    if (!r.ok) return;
+    const u = await r.json();
+    document.getElementById('nav-auth-guest').style.display = 'none';
+    const userNav = document.getElementById('nav-auth-user');
+    userNav.style.display = 'flex';
+    document.getElementById('nav-username').textContent = u.display_name;
+    document.getElementById('nav-balance').textContent = '$' + parseFloat(u.balance).toFixed(2);
+  } catch (_) {}
+})();
+</script>
 
 
 <!-- ════════ HERO PIXEL SCENE ════════ -->
