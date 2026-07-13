@@ -1,13 +1,10 @@
 {
-  "functions": {
-    "api/*.js": {
-      "runtime": "nodejs18.x"
-    }
-  },
-  "rewrites": [
-    { "source": "/admin", "destination": "/admin.html" },
-    { "source": "/login", "destination": "/login.html" },
-    { "source": "/signup", "destination": "/signup.html" },
-    { "source": "/profile", "destination": "/profile.html" }
+  "version": 2,
+  "routes": [
+    { "src": "/admin", "dest": "/admin.html" },
+    { "src": "/signup", "dest": "/signup.html" },
+    { "src": "/login", "dest": "/login.html" },
+    { "src": "/profile", "dest": "/profile.html" },
+    { "src": "/api/(.*)", "dest": "/api/$1" }
   ]
 }
