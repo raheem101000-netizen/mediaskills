@@ -9,7 +9,7 @@ module.exports = async function handler(req, res) {
   try {
     const r = await db().query(
       `SELECT u.id, u.email, u.display_name, u.avatar_url, u.balance, u.paypal_email
-       FROM sessions s JOIN users u ON u.id = s.user_id
+       FROM auth_sessions s JOIN users u ON u.id = s.user_id
        WHERE s.id=$1 AND s.expires_at > NOW()`,
       [sid]
     );

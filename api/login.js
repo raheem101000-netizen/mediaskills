@@ -15,7 +15,7 @@ module.exports = async function handler(req, res) {
     const ok = await bcrypt.compare(password, user.password_hash);
     if (!ok) return res.status(401).json({ error: 'Invalid email or password' });
     const sid = uuidv4();
-    await pool.query('INSERT INTO sessions (id, user_id) VALUES ($1,$2)', [sid, user.id]);
+    await pool.query('INSERT INTO auth_sessions (id, user_id) VALUES ($1,$2)', [sid, user.id]);
     res.setHeader('Set-Cookie', cookie.serialize('session', sid, {
       httpOnly: true, path: '/', maxAge: 30 * 24 * 60 * 60, sameSite: 'lax', secure: true
     }));

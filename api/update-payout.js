@@ -10,7 +10,7 @@ module.exports = async function handler(req, res) {
   if (!paypal_email) return res.status(400).json({ error: 'Missing paypal_email' });
   try {
     const s = await db().query(
-      'SELECT user_id FROM sessions WHERE id=$1 AND expires_at > NOW()', [sid]
+      'SELECT user_id FROM auth_sessions WHERE id=$1 AND expires_at > NOW()', [sid]
     );
     if (!s.rows.length) return res.status(401).json({ error: 'Session expired' });
     await db().query('UPDATE users SET paypal_email=$1 WHERE id=$2', [paypal_email, s.rows[0].user_id]);

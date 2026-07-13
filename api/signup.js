@@ -24,7 +24,7 @@ module.exports = async (req, res) => {
       [email.toLowerCase().trim(), hash, display_name.trim(), avatar_url || null]
     );
     const sid = randomUUID();
-    await pool.query('INSERT INTO sessions (id, user_id) VALUES ($1,$2)', [sid, u.rows[0].id]);
+    await pool.query('INSERT INTO auth_sessions (id, user_id) VALUES ($1,$2)', [sid, u.rows[0].id]);
     res.setHeader('Set-Cookie', cookie.serialize('session', sid, {
       httpOnly: true, path: '/', maxAge: 30 * 24 * 60 * 60, sameSite: 'lax', secure: true
     }));
