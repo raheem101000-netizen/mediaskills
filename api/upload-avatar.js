@@ -15,7 +15,7 @@ module.exports = async function handler(req, res) {
   }
   try {
     const s = await db().query(
-      'SELECT user_id FROM sessions WHERE id=$1 AND expires_at > NOW()', [sid]
+      'SELECT user_id FROM auth_sessions WHERE id=$1 AND expires_at > NOW()', [sid]
     );
     if (!s.rows.length) return res.status(401).json({ error: 'Session expired' });
     await db().query('UPDATE users SET avatar_url=$1 WHERE id=$2', [avatar_url, s.rows[0].user_id]);
