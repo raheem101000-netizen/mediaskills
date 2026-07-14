@@ -939,6 +939,18 @@ body{
     document.getElementById('nav-balance').textContent = '$' + parseFloat(u.balance).toFixed(2);
   } catch (_) {}
 })();
+
+async function goToPong(e) {
+  if (e) e.preventDefault();
+  try {
+    const r = await fetch('/api/generate-token', { method: 'POST' });
+    if (!r.ok) { window.location.href = '/login'; return; }
+    const data = await r.json();
+    window.location.href = 'https://all-solo-ggames.vercel.app/pong/?player_id=' + encodeURIComponent(data.player_id) + '&token=' + encodeURIComponent(data.token);
+  } catch (_) {
+    window.location.href = '/login';
+  }
+}
 </script>
 
 
@@ -965,7 +977,7 @@ body{
         We're building the next challenge. Play Pong now while you wait.
       </p>
       <div class="hero-btns">
-        <a href="https://all-solo-ggames.vercel.app/pong/" class="btn btn-gold" style="border-radius:8px;font-size:8px;padding:12px 24px;text-decoration:none;">▶ PLAY PONG NOW</a>
+        <a href="https://all-solo-ggames.vercel.app/pong/" onclick="goToPong(event)" class="btn btn-gold" style="border-radius:8px;font-size:8px;padding:12px 24px;text-decoration:none;">▶ PLAY PONG NOW</a>
       </div>
       <div class="hero-stats">
         <div class="hstat t"><strong>$2.99</strong><small>PONG ENTRY FEE</small></div>
@@ -988,7 +1000,7 @@ body{
           <canvas id="hero-pong-canvas" style="width:100%;height:100%;display:block;"></canvas>
         </div>
         <div style="padding:12px;">
-          <a href="https://all-solo-ggames.vercel.app/pong/" class="btn btn-purple" style="width:100%;justify-content:center;font-size:7px;padding:12px;text-decoration:none;display:block;text-align:center;">★ PLAY PONG NOW</a>
+          <a href="https://all-solo-ggames.vercel.app/pong/" onclick="goToPong(event)" class="btn btn-purple" style="width:100%;justify-content:center;font-size:7px;padding:12px;text-decoration:none;display:block;text-align:center;">★ PLAY PONG NOW</a>
           <div style="text-align:center;margin-top:8px;font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(200,195,255,.25);">$2.99 ENTRY · $5 PER WIN · UNLIMITED PLAYS</div>
         </div>
       </div>
@@ -1027,7 +1039,7 @@ END OLD GAMES HIDDEN -->
 
 
   <!-- PONG $5/WIN -->
-  <div class="offer-card" style="--oc:var(--blue);--os:var(--blue2);"><div style="width:100%;height:200px;overflow:hidden;margin-bottom:12px;background:#000;border:2px solid rgba(61,158,255,0.3);position:relative;"><canvas id="pong-solo-canvas" style="width:100%;height:100%;display:block;"></canvas></div><div class="offer-game-tag" style="color:var(--blue);border-color:var(--blue2);background:rgba(61,158,255,.08);">PONG</div><div class="offer-type">SOLO CHALLENGE</div><div class="offer-amount" style="color:var(--blue);text-shadow:2px 2px 0 var(--blue2);">$5</div><div class="offer-desc">Beat the AI to win $5. Play as many times as you want.</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;"><div style="background:rgba(255,176,32,.15);border:2px solid var(--amber);padding:8px 10px;text-align:center;"><div style="font-size:5px;color:var(--amber);letter-spacing:1px;margin-bottom:4px;text-align:center;">ENTRY FEE</div><div style="font-size:12px;color:var(--amber);">$2.99</div></div><div style="background:rgba(61,158,255,.15);border:2px solid var(--blue);padding:8px 10px;text-align:center;"><div style="font-size:5px;color:var(--blue);letter-spacing:1px;margin-bottom:4px;">PER WIN</div><div style="font-size:12px;color:var(--blue);">$5.00</div></div></div><div style='font-size:5px;color:rgba(200,195,255,.3);text-align:center;margin-bottom:10px;font-family:Press Start 2P,monospace;'>UNLIMITED PLAYS</div><a href="https://all-solo-ggames.vercel.app/pong/" class="btn" style="width:100%;justify-content:center;font-size:7px;margin-top:14px;display:block;text-align:center;text-decoration:none;background:var(--blue);color:#fff;border:2px solid var(--blue2);box-shadow:3px 3px 0 var(--blue2);">▶ PLAY PONG</a></div>
+  <div class="offer-card" style="--oc:var(--blue);--os:var(--blue2);"><div style="width:100%;height:200px;overflow:hidden;margin-bottom:12px;background:#000;border:2px solid rgba(61,158,255,0.3);position:relative;"><canvas id="pong-solo-canvas" style="width:100%;height:100%;display:block;"></canvas></div><div class="offer-game-tag" style="color:var(--blue);border-color:var(--blue2);background:rgba(61,158,255,.08);">PONG</div><div class="offer-type">SOLO CHALLENGE</div><div class="offer-amount" style="color:var(--blue);text-shadow:2px 2px 0 var(--blue2);">$5</div><div class="offer-desc">Beat the AI to win $5. Play as many times as you want.</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;"><div style="background:rgba(255,176,32,.15);border:2px solid var(--amber);padding:8px 10px;text-align:center;"><div style="font-size:5px;color:var(--amber);letter-spacing:1px;margin-bottom:4px;text-align:center;">ENTRY FEE</div><div style="font-size:12px;color:var(--amber);">$2.99</div></div><div style="background:rgba(61,158,255,.15);border:2px solid var(--blue);padding:8px 10px;text-align:center;"><div style="font-size:5px;color:var(--blue);letter-spacing:1px;margin-bottom:4px;">PER WIN</div><div style="font-size:12px;color:var(--blue);">$5.00</div></div></div><div style='font-size:5px;color:rgba(200,195,255,.3);text-align:center;margin-bottom:10px;font-family:Press Start 2P,monospace;'>UNLIMITED PLAYS</div><a href="https://all-solo-ggames.vercel.app/pong/" onclick="goToPong(event)" class="btn" style="width:100%;justify-content:center;font-size:7px;margin-top:14px;display:block;text-align:center;text-decoration:none;background:var(--blue);color:#fff;border:2px solid var(--blue2);box-shadow:3px 3px 0 var(--blue2);">▶ PLAY PONG</a></div>
 
 <!-- OLD GAMES HIDDEN - RESTORE LATER
   PONG $200 SOLO
@@ -1169,7 +1181,7 @@ END OLD GAMES HIDDEN -->
 
         <!-- PONG -->
         <div class="gc" style="--border-c:var(--blue);--shadow:var(--blue2);">
-          <a href="https://all-solo-ggames.vercel.app/pong/" style="text-decoration:none;">
+          <a href="https://all-solo-ggames.vercel.app/pong/" onclick="goToPong(event)" style="text-decoration:none;">
           <div class="gc-wrap">
             <div class="gc-art">
               <div class="gc-art-inner a-pong">
