@@ -286,7 +286,7 @@ function toggleSort() {
 
 async function loadUsers(isFirstLoad) {
   try {
-    const res = await fetch(`/api/admin-list-users?key=${encodeURIComponent(adminKey)}`, { cache: 'no-store' });
+    const res = await fetch(`/api/admin?action=list-users&key=${encodeURIComponent(adminKey)}`, { cache: 'no-store' });
     if (res.status === 401) {
       if (isFirstLoad) {
         document.getElementById('gate-error').textContent = 'Invalid key';
@@ -328,7 +328,7 @@ function renderSalesStats(stats) {
 
 async function loadSalesStats() {
   try {
-    const res = await fetch(`/api/admin-sales-stats?key=${encodeURIComponent(adminKey)}`, { cache: 'no-store' });
+    const res = await fetch(`/api/admin?action=sales-stats&key=${encodeURIComponent(adminKey)}`, { cache: 'no-store' });
     if (!res.ok) throw new Error('bad response');
     renderSalesStats(await res.json());
   } catch (e) {}
@@ -360,7 +360,7 @@ function renderPayoutRequests(requests) {
 
 async function loadPayoutRequests() {
   try {
-    const res = await fetch(`/api/admin-payout-requests?key=${encodeURIComponent(adminKey)}`, { cache: 'no-store' });
+    const res = await fetch(`/api/admin?action=payout-requests&key=${encodeURIComponent(adminKey)}`, { cache: 'no-store' });
     if (!res.ok) throw new Error('bad response');
     renderPayoutRequests(await res.json());
   } catch (e) {}
@@ -368,7 +368,7 @@ async function loadPayoutRequests() {
 
 async function markPayoutPaid(userId) {
   try {
-    const res = await fetch(`/api/admin-mark-payout-paid?key=${encodeURIComponent(adminKey)}`, {
+    const res = await fetch(`/api/admin?action=mark-paid&key=${encodeURIComponent(adminKey)}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: userId })

@@ -943,7 +943,7 @@ body{
 async function goToPong(e) {
   if (e) e.preventDefault();
   try {
-    const r = await fetch('/api/generate-token', { method: 'POST' });
+    const r = await fetch('/api/token?action=generate', { method: 'POST' });
     if (!r.ok) { window.location.href = '/login'; return; }
     const data = await r.json();
     window.location.href = 'https://all-solo-ggames.vercel.app/pong/?player_id=' + encodeURIComponent(data.player_id) + '&token=' + encodeURIComponent(data.token);

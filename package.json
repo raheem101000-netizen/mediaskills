@@ -15,10 +15,10 @@
   },
   "homepage": "https://github.com/raheem101000-netizen/mediaskills#readme",
   "dependencies": {
-    "bcryptjs": "^3.0.3",
-    "cookie": "^2.0.1",
+    "bcryptjs": "^2.4.3",
+    "cookie": "^0.5.0",
     "pg": "^8.11.0",
     "stripe": "^22.3.1",
-    "uuid": "^14.0.1"
+    "uuid": "^9.0.0"
   }
 }
