@@ -2,6 +2,7 @@
   "version": 2,
   "routes": [
     { "src": "/admin", "dest": "/admin.html" },
+    { "src": "/admin-users", "dest": "/admin-users.html" },
     { "src": "/signup", "dest": "/signup.html" },
     { "src": "/login", "dest": "/login.html" },
     { "src": "/profile", "dest": "/profile.html" },
