@@ -106,6 +106,14 @@ td.paypal{color:#ffe44d;font-family:'Share Tech Mono',monospace;font-size:8px;}
 td.signup{color:rgba(200,195,255,.35);font-family:'Share Tech Mono',monospace;font-size:7px;}
 .empty-note{padding:24px 18px;font-size:7px;color:rgba(200,195,255,.25);letter-spacing:.5px;}
 
+.pxbtn-gold{
+  font-family:'Press Start 2P',monospace;font-size:6px;padding:6px 10px;letter-spacing:1px;
+  border:2px solid #aa9000;background:#ffe44d;color:#000;
+  box-shadow:2px 2px 0 #aa9000;cursor:pointer;white-space:nowrap;
+}
+.pxbtn-gold:hover{background:#ffe066;}
+.pxbtn-gold:active{transform:translate(1px,1px);box-shadow:1px 1px 0 #aa9000;}
+
 /* ── PASSWORD GATE ── */
 #gate{
   position:fixed;inset:0;background:var(--bg);z-index:1000;
@@ -162,6 +170,31 @@ td.signup{color:rgba(200,195,255,.35);font-family:'Share Tech Mono',monospace;fo
 
     <div class="breakdown-box" id="breakdown-box">
       <div class="breakdown-empty">Loading...</div>
+    </div>
+
+    <div class="section-label">Payout <span>Requests</span></div>
+    <div class="totals-row">
+      <div class="total-box">
+        <div class="total-label">Total Pending Payout</div>
+        <div class="total-num" id="total-pending-payout">$0.00</div>
+      </div>
+    </div>
+
+    <div class="table-box" style="margin-bottom:32px;">
+      <table>
+        <thead>
+          <tr>
+            <th>Display Name</th>
+            <th>Email</th>
+            <th>PayPal Email</th>
+            <th>Balance</th>
+            <th>Signed Up</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="payout-rows"></tbody>
+      </table>
+      <div class="empty-note" id="payout-empty-note" style="display:none;">No pending payout requests.</div>
     </div>
 
     <div class="section-label">User <span>Accounts</span></div>
@@ -301,10 +334,58 @@ async function loadSalesStats() {
   } catch (e) {}
 }
 
+function renderPayoutRequests(requests) {
+  const totalPending = requests.reduce((sum, u) => sum + parseFloat(u.balance || 0), 0);
+  document.getElementById('total-pending-payout').textContent = '$' + totalPending.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  const rows = document.getElementById('payout-rows');
+  const emptyNote = document.getElementById('payout-empty-note');
+  if (!requests.length) {
+    rows.innerHTML = '';
+    emptyNote.style.display = 'block';
+    return;
+  }
+  emptyNote.style.display = 'none';
+  rows.innerHTML = requests.map(u => `
+    <tr id="payout-row-${u.id}">
+      <td class="name">${esc(u.display_name)}</td>
+      <td class="email">${esc(u.email)}</td>
+      <td class="paypal">${esc(u.paypal_email)}</td>
+      <td class="balance">$${parseFloat(u.balance || 0).toFixed(2)}</td>
+      <td class="signup">${new Date(u.created_at).toLocaleDateString()}</td>
+      <td><button class="pxbtn-gold" onclick="markPayoutPaid(${u.id})">MARK PAID</button></td>
+    </tr>
+  `).join('');
+}
+
+async function loadPayoutRequests() {
+  try {
+    const res = await fetch(`/api/admin-payout-requests?key=${encodeURIComponent(adminKey)}`, { cache: 'no-store' });
+    if (!res.ok) throw new Error('bad response');
+    renderPayoutRequests(await res.json());
+  } catch (e) {}
+}
+
+async function markPayoutPaid(userId) {
+  try {
+    const res = await fetch(`/api/admin-mark-payout-paid?key=${encodeURIComponent(adminKey)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId })
+    });
+    if (!res.ok) throw new Error('bad response');
+    loadPayoutRequests();
+    loadUsers(false);
+  } catch (e) {
+    alert('Error marking payout as paid');
+  }
+}
+
 async function loadAll(isFirstLoad) {
   const ok = await loadUsers(isFirstLoad);
   if (ok) {
     loadSalesStats();
+    loadPayoutRequests();
     document.getElementById('last-refreshed').textContent = new Date().toLocaleTimeString();
   }
 }
