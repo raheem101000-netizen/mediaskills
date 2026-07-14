@@ -61,6 +61,26 @@ body::after{
 .total-label{font-size:7px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;}
 .total-num{font-family:'Share Tech Mono',monospace;font-size:32px;color:var(--teal);text-shadow:3px 3px 0 var(--teal2);}
 
+.section-label{font-size:8px;color:var(--white);letter-spacing:1.5px;margin-bottom:12px;text-transform:uppercase;}
+.section-label span{color:var(--teal);}
+
+.breakdown-box{
+  background:var(--card);
+  border:3px solid var(--border);
+  box-shadow:4px 4px 0 #000;
+  margin-bottom:32px;
+}
+.breakdown-row{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+  padding:12px 18px;border-bottom:1px solid var(--border);font-size:7px;letter-spacing:.5px;
+}
+.breakdown-row:last-child{border-bottom:none;}
+.breakdown-game{color:var(--white);min-width:120px;}
+.breakdown-mode{color:rgba(200,195,255,.3);}
+.breakdown-sales{color:var(--muted);}
+.breakdown-revenue{color:var(--green);font-family:'Share Tech Mono',monospace;font-size:10px;}
+.breakdown-empty{padding:24px 18px;font-size:7px;color:rgba(200,195,255,.25);letter-spacing:.5px;}
+
 .table-box{
   background:var(--card);
   border:3px solid var(--border);
@@ -128,6 +148,23 @@ td.signup{color:rgba(200,195,255,.35);font-family:'Share Tech Mono',monospace;fo
       </div>
     </div>
 
+    <div class="section-label">Sales <span>&amp; Revenue</span></div>
+    <div class="totals-row">
+      <div class="total-box">
+        <div class="total-label">Total Sales</div>
+        <div class="total-num" id="total-sales">0</div>
+      </div>
+      <div class="total-box">
+        <div class="total-label">Total Revenue</div>
+        <div class="total-num" id="total-revenue">$0.00</div>
+      </div>
+    </div>
+
+    <div class="breakdown-box" id="breakdown-box">
+      <div class="breakdown-empty">Loading...</div>
+    </div>
+
+    <div class="section-label">User <span>Accounts</span></div>
     <div class="totals-row">
       <div class="total-box">
         <div class="total-label">Total Users</div>
@@ -168,7 +205,7 @@ function submitGate() {
   const val = document.getElementById('gate-input').value.trim();
   if (!val) return;
   adminKey = val;
-  loadUsers(true);
+  loadAll(true);
 }
 document.getElementById('gate-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') submitGate();
@@ -222,7 +259,7 @@ async function loadUsers(isFirstLoad) {
         document.getElementById('gate-error').textContent = 'Invalid key';
         sessionStorage.removeItem(ADMIN_KEY_STORAGE);
       }
-      return;
+      return false;
     }
     if (!res.ok) throw new Error('bad response');
     users = await res.json();
@@ -230,9 +267,45 @@ async function loadUsers(isFirstLoad) {
     document.getElementById('gate').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
     renderUsers();
-    document.getElementById('last-refreshed').textContent = new Date().toLocaleTimeString();
+    return true;
   } catch (e) {
     if (isFirstLoad) document.getElementById('gate-error').textContent = 'Error loading users';
+    return false;
+  }
+}
+
+function renderSalesStats(stats) {
+  document.getElementById('total-sales').textContent = stats.total_sales.toLocaleString('en-US');
+  document.getElementById('total-revenue').textContent = '$' + stats.total_revenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  const box = document.getElementById('breakdown-box');
+  if (!stats.breakdown.length) {
+    box.innerHTML = '<div class="breakdown-empty">No sales recorded yet.</div>';
+    return;
+  }
+  box.innerHTML = stats.breakdown.map(b => `
+    <div class="breakdown-row">
+      <span class="breakdown-game">${esc(b.game)}</span>
+      <span class="breakdown-mode">${esc(b.mode)}</span>
+      <span class="breakdown-sales">${b.sales.toLocaleString('en-US')} sale${b.sales === 1 ? '' : 's'}</span>
+      <span class="breakdown-revenue">$${b.revenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+    </div>
+  `).join('');
+}
+
+async function loadSalesStats() {
+  try {
+    const res = await fetch(`/api/admin-sales-stats?key=${encodeURIComponent(adminKey)}`, { cache: 'no-store' });
+    if (!res.ok) throw new Error('bad response');
+    renderSalesStats(await res.json());
+  } catch (e) {}
+}
+
+async function loadAll(isFirstLoad) {
+  const ok = await loadUsers(isFirstLoad);
+  if (ok) {
+    loadSalesStats();
+    document.getElementById('last-refreshed').textContent = new Date().toLocaleTimeString();
   }
 }
 
@@ -241,12 +314,12 @@ function tickCountdown() {
   countdown--;
   if (countdown <= 0) {
     countdown = 30;
-    loadUsers(false);
+    loadAll(false);
   }
   document.getElementById('countdown').textContent = countdown + 's';
 }
 
-if (adminKey) loadUsers(true);
+if (adminKey) loadAll(true);
 setInterval(tickCountdown, 1000);
 </script>
 </body>
