@@ -916,8 +916,8 @@ body{
     <a href="#games" class="on">Games</a>
     <a href="#how">How It Works</a>
   </div>
-  <!-- Auth nav — swapped by JS based on session -->
-  <div class="nav-r" id="nav-auth-guest" style="display:flex;">
+  <!-- Auth nav — both hidden until /api/me resolves, so we never show a state that flips -->
+  <div class="nav-r" id="nav-auth-guest" style="display:none;">
     <a href="/login.html" class="btn btn-ghost" style="font-size:6px;padding:8px 14px;text-decoration:none;">LOG IN</a>
     <a href="/signup.html" class="btn btn-teal" style="font-size:6px;padding:8px 14px;text-decoration:none;">SIGN UP</a>
   </div>
@@ -930,14 +930,14 @@ body{
 (async function() {
   try {
     const r = await fetch('/api/me');
-    if (!r.ok) return;
+    if (!r.ok) { document.getElementById('nav-auth-guest').style.display = 'flex'; return; }
     const u = await r.json();
-    document.getElementById('nav-auth-guest').style.display = 'none';
-    const userNav = document.getElementById('nav-auth-user');
-    userNav.style.display = 'flex';
+    document.getElementById('nav-auth-user').style.display = 'flex';
     document.getElementById('nav-username').textContent = u.display_name;
     document.getElementById('nav-balance').textContent = '$' + parseFloat(u.balance).toFixed(2);
-  } catch (_) {}
+  } catch (_) {
+    document.getElementById('nav-auth-guest').style.display = 'flex';
+  }
 })();
 
 async function goToPong(e) {
