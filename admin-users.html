@@ -113,39 +113,11 @@ td.signup{color:rgba(200,195,255,.35);font-family:'Share Tech Mono',monospace;fo
 }
 .pxbtn-gold:hover{background:#ffe066;}
 .pxbtn-gold:active{transform:translate(1px,1px);box-shadow:1px 1px 0 #aa9000;}
-
-/* ── PASSWORD GATE ── */
-#gate{
-  position:fixed;inset:0;background:var(--bg);z-index:1000;
-  display:flex;align-items:center;justify-content:center;
-}
-.gate-box{
-  background:var(--card);border:3px solid var(--teal);box-shadow:5px 5px 0 var(--teal2);
-  padding:28px 32px;max-width:320px;width:90%;text-align:center;
-}
-.gate-title{font-size:11px;color:var(--white);letter-spacing:1px;margin-bottom:18px;}
-.gate-title span{color:var(--teal);}
-#gate-input{
-  width:100%;font-family:'Share Tech Mono',monospace;font-size:13px;
-  background:#000;color:var(--text);border:2px solid var(--border);
-  padding:10px 12px;letter-spacing:1px;margin-bottom:14px;outline:none;
-}
-#gate-input:focus{border-color:var(--teal);}
-#gate-error{font-size:6px;color:var(--red);letter-spacing:.5px;margin-bottom:10px;min-height:8px;}
 </style>
 </head>
 <body>
 
-<div id="gate">
-  <div class="gate-box">
-    <div class="gate-title">TENTEN<span> ADMIN</span></div>
-    <input type="password" id="gate-input" placeholder="ADMIN KEY" autofocus>
-    <div id="gate-error"></div>
-    <button class="pxbtn" style="width:100%;justify-content:center;" onclick="submitGate()">▶ ENTER</button>
-  </div>
-</div>
-
-<div id="dashboard" style="display:none;">
+<div id="dashboard">
   <div class="wrap">
     <div class="hdr">
       <div class="hdr-title">TENTEN<span> USERS</span></div>
@@ -229,20 +201,9 @@ td.signup{color:rgba(200,195,255,.35);font-family:'Share Tech Mono',monospace;fo
 </div>
 
 <script>
-const ADMIN_KEY_STORAGE = 'tenten_admin_key';
-let adminKey = sessionStorage.getItem(ADMIN_KEY_STORAGE) || '';
+const adminKey = 'TENTEN2025';
 let users = [];
 let sortDir = 'desc'; // API already returns balance DESC by default
-
-function submitGate() {
-  const val = document.getElementById('gate-input').value.trim();
-  if (!val) return;
-  adminKey = val;
-  loadAll(true);
-}
-document.getElementById('gate-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') submitGate();
-});
 
 function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -287,22 +248,11 @@ function toggleSort() {
 async function loadUsers(isFirstLoad) {
   try {
     const res = await fetch(`/api/admin?action=list-users&key=${encodeURIComponent(adminKey)}`, { cache: 'no-store' });
-    if (res.status === 401) {
-      if (isFirstLoad) {
-        document.getElementById('gate-error').textContent = 'Invalid key';
-        sessionStorage.removeItem(ADMIN_KEY_STORAGE);
-      }
-      return false;
-    }
     if (!res.ok) throw new Error('bad response');
     users = await res.json();
-    sessionStorage.setItem(ADMIN_KEY_STORAGE, adminKey);
-    document.getElementById('gate').style.display = 'none';
-    document.getElementById('dashboard').style.display = 'block';
     renderUsers();
     return true;
   } catch (e) {
-    if (isFirstLoad) document.getElementById('gate-error').textContent = 'Error loading users';
     return false;
   }
 }
@@ -400,7 +350,7 @@ function tickCountdown() {
   document.getElementById('countdown').textContent = countdown + 's';
 }
 
-if (adminKey) loadAll(true);
+loadAll(true);
 setInterval(tickCountdown, 1000);
 </script>
 </body>
