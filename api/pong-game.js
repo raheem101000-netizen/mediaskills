@@ -1,4 +1,4 @@
-const db = require('./_db');
+const sql = require('./_db');
 
 const CYCLE_LENGTH = 10;
 const PAYOUTS = { pong: 5.00 };
@@ -47,28 +47,27 @@ async function matchConfig(req, res) {
   // The Step-1 handoff token is one-time/60s, but a play session runs far longer than
   // that, so here it's only checked as proof this player_id was legitimately issued a
   // token — not re-validated for expiry/one-time use like token.js's verify action does.
-  const tokRes = await db().query('SELECT 1 FROM game_tokens WHERE token=$1 AND user_id=$2', [token, playerId]);
-  if (!tokRes.rows.length) return res.status(401).json({ error: 'Invalid token' });
+  const tokRows = await sql`SELECT 1 FROM game_tokens WHERE token=${token} AND user_id=${playerId}`;
+  if (!tokRows.length) return res.status(401).json({ error: 'Invalid token' });
 
-  await db().query(
-    `INSERT INTO player_game_state (player_id, game, match_position)
-     VALUES ($1,$2,0) ON CONFLICT (player_id, game) DO NOTHING`,
-    [playerId, game]
-  );
-  const stateRes = await db().query(
-    'SELECT match_position FROM player_game_state WHERE player_id=$1 AND game=$2',
-    [playerId, game]
-  );
-  const position = stateRes.rows[0].match_position;
+  await sql`
+    INSERT INTO player_game_state (player_id, game, match_position)
+    VALUES (${playerId}, ${game}, 0)
+    ON CONFLICT (player_id, game) DO NOTHING
+  `;
+  const stateRows = await sql`
+    SELECT match_position FROM player_game_state WHERE player_id=${playerId} AND game=${game}
+  `;
+  const position = stateRows[0].match_position;
   const cycleNumber = Math.floor(position / CYCLE_LENGTH);
   const slot = position % CYCLE_LENGTH;
   const seed = hashSeed(`${playerId}:${game}:${cycleNumber}`);
   const tier = buildCycleOrder(seed)[slot];
 
-  await db().query(
-    'UPDATE player_game_state SET match_position=$1, updated_at=NOW() WHERE player_id=$2 AND game=$3',
-    [position + 1, playerId, game]
-  );
+  await sql`
+    UPDATE player_game_state SET match_position=${position + 1}, updated_at=NOW()
+    WHERE player_id=${playerId} AND game=${game}
+  `;
   res.status(200).json({ match_number: position + 1, tier });
 }
 
@@ -80,19 +79,19 @@ async function recordWin(req, res) {
   const payout = PAYOUTS[game];
   if (!playerId || !token || !payout || !matchNumber) return res.status(400).json({ error: 'Missing or invalid params' });
 
-  const tokRes = await db().query('SELECT 1 FROM game_tokens WHERE token=$1 AND user_id=$2', [token, playerId]);
-  if (!tokRes.rows.length) return res.status(401).json({ error: 'Invalid token' });
+  const tokRows = await sql`SELECT 1 FROM game_tokens WHERE token=${token} AND user_id=${playerId}`;
+  if (!tokRows.length) return res.status(401).json({ error: 'Invalid token' });
 
   // Dedup on (player, game, match_number): only the first credit claim for a given match
   // pays out, so replaying this request (e.g. from devtools) can't farm balance indefinitely.
-  const claim = await db().query(
-    'INSERT INTO game_wins (player_id, game, match_number) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING RETURNING *',
-    [playerId, game, matchNumber]
-  );
-  if (!claim.rows.length) return res.status(200).json({ ok: true, credited: 0, note: 'already credited' });
+  const claim = await sql`
+    INSERT INTO game_wins (player_id, game, match_number) VALUES (${playerId}, ${game}, ${matchNumber})
+    ON CONFLICT DO NOTHING RETURNING *
+  `;
+  if (!claim.length) return res.status(200).json({ ok: true, credited: 0, note: 'already credited' });
 
-  const r = await db().query('UPDATE users SET balance = balance + $1 WHERE id=$2 RETURNING balance', [payout, playerId]);
-  res.status(200).json({ ok: true, credited: payout, balance: parseFloat(r.rows[0].balance).toFixed(2) });
+  const rows = await sql`UPDATE users SET balance = balance + ${payout} WHERE id=${playerId} RETURNING balance`;
+  res.status(200).json({ ok: true, credited: payout, balance: parseFloat(rows[0].balance).toFixed(2) });
 }
 
 const ACTIONS = { 'match-config': matchConfig, 'record-win': recordWin };

@@ -1,5 +1,5 @@
 const cookie = require('cookie');
-const db = require('./_db');
+const sql = require('./_db');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
@@ -9,11 +9,9 @@ module.exports = async function handler(req, res) {
   const { paypal_email } = req.body || {};
   if (!paypal_email) return res.status(400).json({ error: 'Missing paypal_email' });
   try {
-    const s = await db().query(
-      'SELECT user_id FROM auth_sessions WHERE id=$1 AND expires_at > NOW()', [sid]
-    );
-    if (!s.rows.length) return res.status(401).json({ error: 'Session expired' });
-    await db().query('UPDATE users SET paypal_email=$1 WHERE id=$2', [paypal_email, s.rows[0].user_id]);
+    const s = await sql`SELECT user_id FROM auth_sessions WHERE id=${sid} AND expires_at > NOW()`;
+    if (!s.length) return res.status(401).json({ error: 'Session expired' });
+    await sql`UPDATE users SET paypal_email=${paypal_email} WHERE id=${s[0].user_id}`;
     res.status(200).json({ ok: true });
   } catch (e) {
     console.error(e);

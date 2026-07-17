@@ -15,9 +15,9 @@
   },
   "homepage": "https://github.com/raheem101000-netizen/mediaskills#readme",
   "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
     "bcryptjs": "^2.4.3",
     "cookie": "^0.5.0",
-    "pg": "^8.11.0",
     "stripe": "^22.3.1",
     "uuid": "^9.0.0"
   }
