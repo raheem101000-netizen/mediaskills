@@ -1,5 +1,5 @@
 const cookie = require('cookie');
-const db = require('./_db');
+const sql = require('./_db');
 
 // Accepts JSON body: { avatar_url: "data:image/...;base64,..." }
 // Stores base64 data URL directly in users.avatar_url
@@ -14,11 +14,9 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Image too large (max 2MB)' });
   }
   try {
-    const s = await db().query(
-      'SELECT user_id FROM auth_sessions WHERE id=$1 AND expires_at > NOW()', [sid]
-    );
-    if (!s.rows.length) return res.status(401).json({ error: 'Session expired' });
-    await db().query('UPDATE users SET avatar_url=$1 WHERE id=$2', [avatar_url, s.rows[0].user_id]);
+    const s = await sql`SELECT user_id FROM auth_sessions WHERE id=${sid} AND expires_at > NOW()`;
+    if (!s.length) return res.status(401).json({ error: 'Session expired' });
+    await sql`UPDATE users SET avatar_url=${avatar_url} WHERE id=${s[0].user_id}`;
     res.status(200).json({ ok: true, avatar_url });
   } catch (e) {
     console.error(e);
