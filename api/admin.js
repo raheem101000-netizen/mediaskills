@@ -27,6 +27,27 @@ async function salesStats(req, res) {
   });
 }
 
+async function listSessions(req, res) {
+  if (req.method !== 'GET') return res.status(405).end();
+  const { game, mode } = req.query;
+  let rows;
+  if (game && mode) {
+    rows = await sql`
+      SELECT id, game, mode, amount, stripe_payment_id, created_at
+      FROM sessions WHERE game = ${game} AND mode = ${mode} ORDER BY created_at ASC
+    `;
+  } else {
+    rows = await sql`
+      SELECT id, game, mode, amount, stripe_payment_id, created_at
+      FROM sessions ORDER BY created_at ASC
+    `;
+  }
+  res.status(200).json(rows.map(r => ({
+    id: r.id, game: r.game, mode: r.mode,
+    amount: parseFloat(r.amount), stripe_payment_id: r.stripe_payment_id, created_at: r.created_at
+  })));
+}
+
 async function payoutRequests(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
   const rows = await sql`
@@ -48,6 +69,7 @@ async function markPayoutPaid(req, res) {
 const ACTIONS = {
   'list-users': listUsers,
   'sales-stats': salesStats,
+  'list-sessions': listSessions,
   'payout-requests': payoutRequests,
   'mark-paid': markPayoutPaid,
 };
