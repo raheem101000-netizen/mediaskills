@@ -68,6 +68,18 @@ async function inspectPayment(req, res) {
   });
 }
 
+async function deleteSessions(req, res) {
+  if (req.method !== 'POST') return res.status(405).end();
+  const idsParam = req.body && req.body.ids;
+  if (!Array.isArray(idsParam) || !idsParam.length) return res.status(400).json({ error: 'Missing ids array' });
+  const ids = idsParam.map(n => parseInt(n, 10));
+  if (ids.some(n => !Number.isInteger(n))) return res.status(400).json({ error: 'ids must be integers' });
+  // Deletes ONLY the exact row ids passed in — no criteria-based matching,
+  // so this can't accidentally sweep up unrelated or future legitimate rows.
+  const rows = await sql`DELETE FROM sessions WHERE id = ANY(${ids}) RETURNING id, game, mode, amount, stripe_payment_id`;
+  res.status(200).json({ deleted_count: rows.length, deleted: rows });
+}
+
 async function payoutRequests(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
   const rows = await sql`
@@ -91,6 +103,7 @@ const ACTIONS = {
   'sales-stats': salesStats,
   'list-sessions': listSessions,
   'inspect-payment': inspectPayment,
+  'delete-sessions': deleteSessions,
   'payout-requests': payoutRequests,
   'mark-paid': markPayoutPaid,
 };
