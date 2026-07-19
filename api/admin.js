@@ -1,4 +1,6 @@
 const sql = require('./_db');
+const Stripe = require('stripe');
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 const ADMIN_KEY = 'TENTEN2025';
 
@@ -48,6 +50,24 @@ async function listSessions(req, res) {
   })));
 }
 
+async function inspectPayment(req, res) {
+  if (req.method !== 'GET') return res.status(405).end();
+  const { pi } = req.query;
+  if (!pi) return res.status(400).json({ error: 'Missing pi (payment_intent id)' });
+  const intent = await stripe.paymentIntents.retrieve(pi, { expand: ['latest_charge'] });
+  res.status(200).json({
+    id: intent.id,
+    amount: intent.amount,
+    amount_received: intent.amount_received,
+    currency: intent.currency,
+    description: intent.description,
+    metadata: intent.metadata,
+    created: new Date(intent.created * 1000).toISOString(),
+    latest_charge_description: intent.latest_charge && intent.latest_charge.description,
+    latest_charge_amount: intent.latest_charge && intent.latest_charge.amount,
+  });
+}
+
 async function payoutRequests(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
   const rows = await sql`
@@ -70,6 +90,7 @@ const ACTIONS = {
   'list-users': listUsers,
   'sales-stats': salesStats,
   'list-sessions': listSessions,
+  'inspect-payment': inspectPayment,
   'payout-requests': payoutRequests,
   'mark-paid': markPayoutPaid,
 };
