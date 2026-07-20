@@ -104,6 +104,17 @@ async function deleteSessions(req, res) {
   res.status(200).json({ deleted_count: rows.length, deleted: rows });
 }
 
+async function listGameTokens(req, res) {
+  if (req.method !== 'GET') return res.status(405).end();
+  const userId = parseInt(req.query.user_id, 10);
+  if (!userId) return res.status(400).json({ error: 'Missing user_id' });
+  const rows = await sql`
+    SELECT token, user_id, created_at, expires_at, used
+    FROM game_tokens WHERE user_id = ${userId} ORDER BY created_at DESC
+  `;
+  res.status(200).json(rows);
+}
+
 async function deleteUsers(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
   const idsParam = req.body && req.body.ids;
@@ -166,6 +177,7 @@ const ACTIONS = {
   'inspect-checkout-session': inspectCheckoutSession,
   'delete-sessions': deleteSessions,
   'delete-users': deleteUsers,
+  'list-game-tokens': listGameTokens,
   'add-user-id-column': addUserIdColumn,
   'table-schema': tableSchema,
   'payout-requests': payoutRequests,
