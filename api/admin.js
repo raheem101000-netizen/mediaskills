@@ -80,6 +80,20 @@ async function deleteSessions(req, res) {
   res.status(200).json({ deleted_count: rows.length, deleted: rows });
 }
 
+const KNOWN_TABLES = ['users', 'sessions', 'game_tokens', 'player_game_state', 'game_wins', 'auth_sessions'];
+async function tableSchema(req, res) {
+  if (req.method !== 'GET') return res.status(405).end();
+  const { table } = req.query;
+  if (!KNOWN_TABLES.includes(table)) return res.status(400).json({ error: 'Unknown table' });
+  const cols = await sql`
+    SELECT column_name, data_type, is_nullable
+    FROM information_schema.columns
+    WHERE table_name = ${table}
+    ORDER BY ordinal_position
+  `;
+  res.status(200).json(cols);
+}
+
 async function payoutRequests(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
   const rows = await sql`
@@ -104,6 +118,7 @@ const ACTIONS = {
   'list-sessions': listSessions,
   'inspect-payment': inspectPayment,
   'delete-sessions': deleteSessions,
+  'table-schema': tableSchema,
   'payout-requests': payoutRequests,
   'mark-paid': markPayoutPaid,
 };
