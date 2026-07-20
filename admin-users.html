@@ -102,6 +102,8 @@ td.id{color:rgba(200,195,255,.35);font-family:'Share Tech Mono',monospace;}
 td.name{color:var(--white);}
 td.email{color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:8px;}
 td.balance{color:var(--green);font-family:'Share Tech Mono',monospace;font-size:11px;}
+td.purchases{color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:10px;}
+td.spent{color:var(--teal);font-family:'Share Tech Mono',monospace;font-size:11px;}
 td.paypal{color:#ffe44d;font-family:'Share Tech Mono',monospace;font-size:8px;}
 td.signup{color:rgba(200,195,255,.35);font-family:'Share Tech Mono',monospace;font-size:7px;}
 .empty-note{padding:24px 18px;font-size:7px;color:rgba(200,195,255,.25);letter-spacing:.5px;}
@@ -189,6 +191,8 @@ td.signup{color:rgba(200,195,255,.35);font-family:'Share Tech Mono',monospace;fo
             <th>Display Name</th>
             <th>Email</th>
             <th class="sortable" id="th-balance" onclick="toggleSort()">Balance<span class="arrow" id="sort-arrow">▼</span></th>
+            <th>Purchases</th>
+            <th>Total Spent</th>
             <th>PayPal Email</th>
             <th>Signed Up</th>
           </tr>
@@ -234,6 +238,8 @@ function renderUsers() {
       <td class="name">${esc(u.display_name)}</td>
       <td class="email">${esc(u.email)}</td>
       <td class="balance">$${parseFloat(u.balance || 0).toFixed(2)}</td>
+      <td class="purchases">${u.purchases || 0}</td>
+      <td class="spent">$${parseFloat(u.total_spent || 0).toFixed(2)}</td>
       <td class="paypal">${esc(u.paypal_email || '—')}</td>
       <td class="signup">${new Date(u.created_at).toLocaleDateString()}</td>
     </tr>

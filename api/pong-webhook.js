@@ -26,11 +26,15 @@ module.exports = async function handler(req, res) {
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
     try {
+      // player_id is only present in metadata for logged-in players (create-pong-checkout.js
+      // omits it entirely for guests), so guest purchases will have a null user_id.
+      const rawPlayerId = session.metadata && session.metadata.player_id;
+      const userId = rawPlayerId ? parseInt(rawPlayerId, 10) : null;
       // Unique index on stripe_payment_id makes this safe against Stripe's
       // at-least-once webhook delivery (duplicate events won't double-log revenue).
       await sql`
-        INSERT INTO sessions (game, mode, amount, stripe_payment_id)
-        VALUES (${'Pong'}, ${'solo'}, ${(session.amount_total || 299) / 100}, ${session.payment_intent})
+        INSERT INTO sessions (game, mode, amount, stripe_payment_id, user_id)
+        VALUES (${'Pong'}, ${'solo'}, ${(session.amount_total || 299) / 100}, ${session.payment_intent}, ${userId})
         ON CONFLICT (stripe_payment_id) DO NOTHING
       `;
     } catch (e) {

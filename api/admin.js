@@ -7,10 +7,18 @@ const ADMIN_KEY = 'TENTEN2025';
 async function listUsers(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
   const rows = await sql`
-    SELECT id, display_name, email, balance, paypal_email, created_at
-    FROM users ORDER BY balance DESC
+    SELECT u.id, u.display_name, u.email, u.balance, u.paypal_email, u.created_at,
+           COUNT(s.id) AS purchases, COALESCE(SUM(s.amount), 0) AS total_spent
+    FROM users u
+    LEFT JOIN sessions s ON s.user_id = u.id
+    GROUP BY u.id
+    ORDER BY u.balance DESC
   `;
-  res.status(200).json(rows);
+  res.status(200).json(rows.map(r => ({
+    id: r.id, display_name: r.display_name, email: r.email, balance: r.balance,
+    paypal_email: r.paypal_email, created_at: r.created_at,
+    purchases: parseInt(r.purchases, 10), total_spent: parseFloat(r.total_spent)
+  })));
 }
 
 async function salesStats(req, res) {
@@ -80,6 +88,23 @@ async function deleteSessions(req, res) {
   res.status(200).json({ deleted_count: rows.length, deleted: rows });
 }
 
+async function deleteUsers(req, res) {
+  if (req.method !== 'POST') return res.status(405).end();
+  const idsParam = req.body && req.body.ids;
+  if (!Array.isArray(idsParam) || !idsParam.length) return res.status(400).json({ error: 'Missing ids array' });
+  const ids = idsParam.map(n => parseInt(n, 10));
+  if (ids.some(n => !Number.isInteger(n))) return res.status(400).json({ error: 'ids must be integers' });
+  // Deletes ONLY the exact row ids passed in — no criteria-based matching.
+  const rows = await sql`DELETE FROM users WHERE id = ANY(${ids}) RETURNING id, display_name, email`;
+  res.status(200).json({ deleted_count: rows.length, deleted: rows });
+}
+
+async function addUserIdColumn(req, res) {
+  if (req.method !== 'POST') return res.status(405).end();
+  await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id)`;
+  res.status(200).json({ ok: true });
+}
+
 const KNOWN_TABLES = ['users', 'sessions', 'game_tokens', 'player_game_state', 'game_wins', 'auth_sessions'];
 async function tableSchema(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
@@ -118,6 +143,8 @@ const ACTIONS = {
   'list-sessions': listSessions,
   'inspect-payment': inspectPayment,
   'delete-sessions': deleteSessions,
+  'delete-users': deleteUsers,
+  'add-user-id-column': addUserIdColumn,
   'table-schema': tableSchema,
   'payout-requests': payoutRequests,
   'mark-paid': markPayoutPaid,
