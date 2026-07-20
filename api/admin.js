@@ -115,6 +115,18 @@ async function listGameTokens(req, res) {
   res.status(200).json(rows);
 }
 
+async function resetPongCycle(req, res) {
+  if (req.method !== 'POST') return res.status(405).end();
+  const before = await sql`SELECT player_id, match_position FROM player_game_state WHERE game = 'pong' ORDER BY player_id`;
+  const updated = await sql`UPDATE player_game_state SET match_position = 0 WHERE game = 'pong' RETURNING player_id, match_position`;
+  const after = await sql`SELECT player_id, match_position FROM player_game_state WHERE game = 'pong' ORDER BY player_id`;
+  res.status(200).json({
+    rows_before: before,
+    rows_affected: updated.length,
+    rows_after: after,
+  });
+}
+
 async function deleteUsers(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
   const idsParam = req.body && req.body.ids;
@@ -177,6 +189,7 @@ const ACTIONS = {
   'inspect-checkout-session': inspectCheckoutSession,
   'delete-sessions': deleteSessions,
   'delete-users': deleteUsers,
+  'reset-pong-cycle': resetPongCycle,
   'list-game-tokens': listGameTokens,
   'add-user-id-column': addUserIdColumn,
   'table-schema': tableSchema,
