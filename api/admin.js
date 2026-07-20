@@ -94,7 +94,12 @@ async function deleteUsers(req, res) {
   if (!Array.isArray(idsParam) || !idsParam.length) return res.status(400).json({ error: 'Missing ids array' });
   const ids = idsParam.map(n => parseInt(n, 10));
   if (ids.some(n => !Number.isInteger(n))) return res.status(400).json({ error: 'ids must be integers' });
-  // Deletes ONLY the exact row ids passed in — no criteria-based matching.
+  // Clear FK-dependent rows for the SAME exact id list first (still no criteria-based
+  // matching — every statement here is scoped to the ids the caller passed in).
+  await sql`DELETE FROM game_tokens WHERE user_id = ANY(${ids})`;
+  await sql`DELETE FROM auth_sessions WHERE user_id = ANY(${ids})`;
+  await sql`DELETE FROM player_game_state WHERE player_id = ANY(${ids})`;
+  await sql`DELETE FROM game_wins WHERE player_id = ANY(${ids})`;
   const rows = await sql`DELETE FROM users WHERE id = ANY(${ids}) RETURNING id, display_name, email`;
   res.status(200).json({ deleted_count: rows.length, deleted: rows });
 }
