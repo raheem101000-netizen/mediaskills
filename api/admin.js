@@ -43,19 +43,35 @@ async function listSessions(req, res) {
   let rows;
   if (game && mode) {
     rows = await sql`
-      SELECT id, game, mode, amount, stripe_payment_id, created_at
+      SELECT id, game, mode, amount, stripe_payment_id, user_id, created_at
       FROM sessions WHERE game = ${game} AND mode = ${mode} ORDER BY created_at ASC
     `;
   } else {
     rows = await sql`
-      SELECT id, game, mode, amount, stripe_payment_id, created_at
+      SELECT id, game, mode, amount, stripe_payment_id, user_id, created_at
       FROM sessions ORDER BY created_at ASC
     `;
   }
   res.status(200).json(rows.map(r => ({
     id: r.id, game: r.game, mode: r.mode,
-    amount: parseFloat(r.amount), stripe_payment_id: r.stripe_payment_id, created_at: r.created_at
+    amount: parseFloat(r.amount), stripe_payment_id: r.stripe_payment_id, user_id: r.user_id, created_at: r.created_at
   })));
+}
+
+async function inspectCheckoutSession(req, res) {
+  if (req.method !== 'GET') return res.status(405).end();
+  const { pi } = req.query;
+  if (!pi) return res.status(400).json({ error: 'Missing pi (payment_intent id)' });
+  const list = await stripe.checkout.sessions.list({ payment_intent: pi, limit: 1 });
+  const session = list.data[0];
+  if (!session) return res.status(404).json({ error: 'No checkout session found for that payment_intent' });
+  res.status(200).json({
+    id: session.id,
+    payment_intent: session.payment_intent,
+    amount_total: session.amount_total,
+    metadata: session.metadata,
+    created: new Date(session.created * 1000).toISOString(),
+  });
 }
 
 async function inspectPayment(req, res) {
@@ -147,6 +163,7 @@ const ACTIONS = {
   'sales-stats': salesStats,
   'list-sessions': listSessions,
   'inspect-payment': inspectPayment,
+  'inspect-checkout-session': inspectCheckoutSession,
   'delete-sessions': deleteSessions,
   'delete-users': deleteUsers,
   'add-user-id-column': addUserIdColumn,
