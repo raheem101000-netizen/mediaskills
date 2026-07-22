@@ -3,6 +3,8 @@ const Stripe = require('stripe');
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 const ADMIN_KEY = 'TENTEN2025';
+const PONG_CYCLE_LENGTH = 10;
+const PONG_WIN_PAYOUT = 5.00;
 
 async function listUsers(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
@@ -181,7 +183,48 @@ async function markPayoutPaid(req, res) {
   res.status(200).json({ ok: true });
 }
 
+async function playerReport(req, res) {
+  if (req.method !== 'GET') return res.status(405).end();
+  const playerId = parseInt(req.query.player_id, 10);
+  if (!playerId) return res.status(400).json({ error: 'Missing player_id' });
+
+  const userRows = await sql`SELECT id, display_name, email, balance FROM users WHERE id = ${playerId}`;
+  if (!userRows.length) return res.status(404).json({ error: 'User not found' });
+
+  const purchaseRows = await sql`
+    SELECT COUNT(*) AS cnt, COALESCE(SUM(amount), 0) AS total
+    FROM sessions WHERE game = 'Pong' AND mode = 'solo' AND user_id = ${playerId}
+  `;
+  const stateRows = await sql`
+    SELECT match_position, updated_at FROM player_game_state WHERE player_id = ${playerId} AND game = 'pong'
+  `;
+  const winRows = await sql`
+    SELECT match_number FROM game_wins WHERE player_id = ${playerId} AND game = 'pong' ORDER BY match_number
+  `;
+
+  const balance = parseFloat(userRows[0].balance);
+  const winCount = winRows.length;
+  const winsExpectedBalance = winCount * PONG_WIN_PAYOUT;
+
+  res.status(200).json({
+    player_id: playerId,
+    display_name: userRows[0].display_name,
+    email: userRows[0].email,
+    games_purchased: parseInt(purchaseRows[0].cnt, 10),
+    total_paid: parseFloat(purchaseRows[0].total),
+    match_position: stateRows.length ? stateRows[0].match_position : null,
+    cycle_number: stateRows.length ? Math.floor(stateRows[0].match_position / PONG_CYCLE_LENGTH) : null,
+    slot_in_cycle: stateRows.length ? stateRows[0].match_position % PONG_CYCLE_LENGTH : null,
+    games_won: winCount,
+    won_match_numbers: winRows.map(r => r.match_number),
+    balance,
+    wins_times_5: winsExpectedBalance,
+    balance_matches_wins: Math.abs(balance - winsExpectedBalance) < 0.001,
+  });
+}
+
 const ACTIONS = {
+  'player-report': playerReport,
   'list-users': listUsers,
   'sales-stats': salesStats,
   'list-sessions': listSessions,
