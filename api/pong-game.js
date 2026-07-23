@@ -21,21 +21,14 @@ function hashSeed(str) {
   return h;
 }
 
-// Mirrors the client's buildCycleOrder(): 2 Easy, 3 Medium, 4 Hard, 1 Super per 10-slot
-// cycle. Game 1 always Easy; liability (Easy/Medium) and safe (Hard/Super) slots alternate.
+// Mirrors the client's buildCycleOrder(): 1C composition — 2 Easy, 2 Medium, 6 Super Hard
+// per 10-slot cycle (no Hard tier). Game 1 always Easy; the remaining 9 slots
+// (1 Easy, 2 Medium, 6 Super) are shuffled as a single Fisher-Yates pass.
 function buildCycleOrder(seed) {
   const rand = mulberry32(seed);
-  const liability = ['MEDIUM', 'MEDIUM', 'MEDIUM', 'EASY'];
-  const safe = ['HARD', 'HARD', 'HARD', 'HARD', 'SUPER'];
-  for (let i = liability.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [liability[i], liability[j]] = [liability[j], liability[i]]; }
-  for (let i = safe.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [safe[i], safe[j]] = [safe[j], safe[i]]; }
-  const seq = ['EASY'];
-  let li = 0, si = 0;
-  for (let pos = 2; pos <= CYCLE_LENGTH; pos++) {
-    if (pos % 2 === 0) seq.push(safe[si++]);
-    else seq.push(liability[li++]);
-  }
-  return seq;
+  const rest = ['EASY', 'MEDIUM', 'MEDIUM', 'SUPER', 'SUPER', 'SUPER', 'SUPER', 'SUPER', 'SUPER'];
+  for (let i = rest.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [rest[i], rest[j]] = [rest[j], rest[i]]; }
+  return ['EASY', ...rest];
 }
 
 async function matchConfig(req, res) {
