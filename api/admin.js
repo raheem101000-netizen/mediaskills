@@ -164,6 +164,17 @@ async function addUserIdColumn(req, res) {
   res.status(200).json({ ok: true });
 }
 
+// One-off, idempotent migration: adds the column record-win will dedupe wins on
+// (Stripe payment_intent instead of match_number, which repeats after a cycle reset).
+// Nullable by design — legacy game_wins rows stay NULL here rather than being backfilled
+// with a guessed payment attribution; NULLs never collide in a unique index.
+async function addGameWinsPaymentColumn(req, res) {
+  if (req.method !== 'POST') return res.status(405).end();
+  await sql`ALTER TABLE game_wins ADD COLUMN IF NOT EXISTS stripe_payment_id TEXT`;
+  await sql`CREATE UNIQUE INDEX IF NOT EXISTS game_wins_stripe_payment_id_key ON game_wins (stripe_payment_id)`;
+  res.status(200).json({ ok: true });
+}
+
 const KNOWN_TABLES = ['users', 'sessions', 'game_tokens', 'player_game_state', 'game_wins', 'auth_sessions'];
 async function tableSchema(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
@@ -268,6 +279,7 @@ const ACTIONS = {
   'list-game-tokens': listGameTokens,
   'list-game-wins': listGameWins,
   'add-user-id-column': addUserIdColumn,
+  'add-game-wins-payment-column': addGameWinsPaymentColumn,
   'table-schema': tableSchema,
   'table-constraints': tableConstraints,
   'payout-requests': payoutRequests,
