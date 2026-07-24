@@ -117,6 +117,19 @@ async function listGameTokens(req, res) {
   res.status(200).json(rows);
 }
 
+// Diagnostic-only, read-only: raw game_wins rows for a player, with credited_at, so we
+// can line up win timing against purchase/session history without guessing.
+async function listGameWins(req, res) {
+  if (req.method !== 'GET') return res.status(405).end();
+  const userId = parseInt(req.query.player_id, 10);
+  if (!userId) return res.status(400).json({ error: 'Missing player_id' });
+  const rows = await sql`
+    SELECT player_id, game, match_number, credited_at
+    FROM game_wins WHERE player_id = ${userId} ORDER BY credited_at ASC NULLS LAST, match_number ASC
+  `;
+  res.status(200).json(rows);
+}
+
 async function resetPongCycle(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
   const before = await sql`SELECT player_id, match_position FROM player_game_state WHERE game = 'pong' ORDER BY player_id`;
@@ -253,6 +266,7 @@ const ACTIONS = {
   'delete-users': deleteUsers,
   'reset-pong-cycle': resetPongCycle,
   'list-game-tokens': listGameTokens,
+  'list-game-wins': listGameWins,
   'add-user-id-column': addUserIdColumn,
   'table-schema': tableSchema,
   'table-constraints': tableConstraints,
