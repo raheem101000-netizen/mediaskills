@@ -3,32 +3,10 @@ const sql = require('./_db');
 const CYCLE_LENGTH = 10;
 const PAYOUTS = { pong: 5.00 };
 
-// Deterministic seeded RNG (mulberry32) so the same player+cycle always gets the same
-// shuffle — the client only randomizes once per cycle, not per match, so the server has
-// to reproduce that same one-shuffle-per-cycle behavior without persisting the shuffle.
-function mulberry32(seed) {
-  return function () {
-    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
-    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function hashSeed(str) {
-  let h = 0;
-  for (let i = 0; i < str.length; i++) h = (Math.imul(31, h) + str.charCodeAt(i)) | 0;
-  return h;
-}
-
-// Mirrors the client's buildCycleOrder(): 1C composition — 2 Easy, 2 Medium, 6 Super Hard
-// per 10-slot cycle (no Hard tier). Game 1 always Easy; the remaining 9 slots
-// (1 Easy, 2 Medium, 6 Super) are shuffled as a single Fisher-Yates pass.
-function buildCycleOrder(seed) {
-  const rand = mulberry32(seed);
-  const rest = ['EASY', 'MEDIUM', 'MEDIUM', 'SUPER', 'SUPER', 'SUPER', 'SUPER', 'SUPER', 'SUPER'];
-  for (let i = rest.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [rest[i], rest[j]] = [rest[j], rest[i]]; }
-  return ['EASY', ...rest];
+// Mirrors the client's buildCycleOrder(): fixed 1C order, identical for every player,
+// no shuffle.
+function buildCycleOrder() {
+  return ['EASY', 'SUPER', 'MEDIUM', 'SUPER', 'SUPER', 'EASY', 'SUPER', 'MEDIUM', 'SUPER', 'SUPER'];
 }
 
 async function matchConfig(req, res) {
@@ -52,10 +30,8 @@ async function matchConfig(req, res) {
     SELECT match_position FROM player_game_state WHERE player_id=${playerId} AND game=${game}
   `;
   const position = stateRows[0].match_position;
-  const cycleNumber = Math.floor(position / CYCLE_LENGTH);
   const slot = position % CYCLE_LENGTH;
-  const seed = hashSeed(`${playerId}:${game}:${cycleNumber}`);
-  const tier = buildCycleOrder(seed)[slot];
+  const tier = buildCycleOrder()[slot];
 
   await sql`
     UPDATE player_game_state SET match_position=${position + 1}, updated_at=NOW()
