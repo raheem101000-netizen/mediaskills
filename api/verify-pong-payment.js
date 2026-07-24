@@ -10,7 +10,7 @@ module.exports = async function handler(req, res) {
   if (!session_id) return res.status(400).json({ error: 'Missing session_id' });
   try {
     const session = await stripe.checkout.sessions.retrieve(session_id);
-    res.status(200).json({ paid: session.payment_status === 'paid' });
+    res.status(200).json({ paid: session.payment_status === 'paid', payment_intent: session.payment_intent });
   } catch (e) {
     console.error(e);
     res.status(200).json({ paid: false });
