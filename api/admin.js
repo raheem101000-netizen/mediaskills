@@ -165,6 +165,25 @@ async function tableSchema(req, res) {
   res.status(200).json(cols);
 }
 
+// Diagnostic-only, read-only: reports actual constraint/index definitions for a table
+// so we can confirm what a unique constraint actually covers instead of guessing.
+async function tableConstraints(req, res) {
+  if (req.method !== 'GET') return res.status(405).end();
+  const { table } = req.query;
+  if (!KNOWN_TABLES.includes(table)) return res.status(400).json({ error: 'Unknown table' });
+  const constraints = await sql`
+    SELECT tc.constraint_name, tc.constraint_type,
+           string_agg(kcu.column_name, ', ' ORDER BY kcu.ordinal_position) AS columns
+    FROM information_schema.table_constraints tc
+    JOIN information_schema.key_column_usage kcu
+      ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema
+    WHERE tc.table_name = ${table}
+    GROUP BY tc.constraint_name, tc.constraint_type
+  `;
+  const indexes = await sql`SELECT indexname, indexdef FROM pg_indexes WHERE tablename = ${table}`;
+  res.status(200).json({ constraints, indexes });
+}
+
 async function payoutRequests(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
   const rows = await sql`
@@ -236,6 +255,7 @@ const ACTIONS = {
   'list-game-tokens': listGameTokens,
   'add-user-id-column': addUserIdColumn,
   'table-schema': tableSchema,
+  'table-constraints': tableConstraints,
   'payout-requests': payoutRequests,
   'mark-paid': markPayoutPaid,
 };
