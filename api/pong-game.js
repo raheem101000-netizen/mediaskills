@@ -42,22 +42,40 @@ async function matchConfig(req, res) {
 
 async function recordWin(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
-  const { token, game } = req.body || {};
+  const { token, game, payment_intent: paymentIntent } = req.body || {};
   const playerId = parseInt(req.body && req.body.player_id, 10);
   const matchNumber = parseInt(req.body && req.body.match_number, 10);
   const payout = PAYOUTS[game];
-  if (!playerId || !token || !payout || !matchNumber) return res.status(400).json({ error: 'Missing or invalid params' });
+  if (!playerId || !token || !payout || !matchNumber || !paymentIntent) {
+    return res.status(400).json({ error: 'Missing or invalid params' });
+  }
 
   const tokRows = await sql`SELECT 1 FROM game_tokens WHERE token=${token} AND user_id=${playerId}`;
   if (!tokRows.length) return res.status(401).json({ error: 'Invalid token' });
 
-  // Dedup on (player, game, match_number): only the first credit claim for a given match
-  // pays out, so replaying this request (e.g. from devtools) can't farm balance indefinitely.
-  const claim = await sql`
-    INSERT INTO game_wins (player_id, game, match_number) VALUES (${playerId}, ${game}, ${matchNumber})
-    ON CONFLICT DO NOTHING RETURNING *
+  // Don't trust the client's payment_intent blindly — it must match a real,
+  // webhook-confirmed payment for this exact player before it can ever credit anything.
+  const paidRows = await sql`
+    SELECT 1 FROM sessions WHERE stripe_payment_id = ${paymentIntent} AND user_id = ${playerId} AND game = 'Pong' AND mode = 'solo'
   `;
-  if (!claim.length) return res.status(200).json({ ok: true, credited: 0, note: 'already credited' });
+  if (!paidRows.length) {
+    // Logged so a genuine winner who hits this (e.g. webhook delivery lagging the
+    // match) can be found and credited manually instead of failing silently.
+    console.error('[record-win] 403 no matching payment', { playerId, game, matchNumber, paymentIntent });
+    return res.status(403).json({ error: 'No matching payment found for this player' });
+  }
+
+  // Dedup on the payment itself, not match_number: match_number is a cycle-position
+  // counter that repeats after a cycle reset, but a payment_intent is unique per match.
+  const claim = await sql`
+    INSERT INTO game_wins (player_id, game, match_number, stripe_payment_id)
+    VALUES (${playerId}, ${game}, ${matchNumber}, ${paymentIntent})
+    ON CONFLICT (stripe_payment_id) DO NOTHING RETURNING *
+  `;
+  if (!claim.length) {
+    console.error('[record-win] credited:0 already claimed', { playerId, game, matchNumber, paymentIntent });
+    return res.status(200).json({ ok: true, credited: 0, note: 'already credited' });
+  }
 
   const rows = await sql`UPDATE users SET balance = balance + ${payout} WHERE id=${playerId} RETURNING balance`;
   res.status(200).json({ ok: true, credited: payout, balance: parseFloat(rows[0].balance).toFixed(2) });
