@@ -175,6 +175,51 @@ async function addGameWinsPaymentColumn(req, res) {
   res.status(200).json({ ok: true });
 }
 
+// Manual-recovery path for a genuine win that recordWin failed to credit (e.g. the
+// match_number-collision bug, or a future 403 from webhook-timing lag). Deliberately
+// mirrors recordWin's own logic — sessions cross-check + dedupe on stripe_payment_id —
+// so a manual credit is exactly as safe as a normal one and can never double-pay the
+// same payment_intent even if run twice by mistake. match_number here is descriptive
+// only; must be a value not already used by that player (the original PK still applies).
+async function manualCreditWin(req, res) {
+  if (req.method !== 'POST') return res.status(405).end();
+  const playerId = parseInt(req.body && req.body.player_id, 10);
+  const game = req.body && req.body.game;
+  const matchNumber = parseInt(req.body && req.body.match_number, 10);
+  const paymentIntent = req.body && req.body.payment_intent;
+  if (!playerId || game !== 'pong' || !matchNumber || !paymentIntent) {
+    return res.status(400).json({ error: 'Missing or invalid params' });
+  }
+
+  const before = await sql`SELECT balance FROM users WHERE id = ${playerId}`;
+  if (!before.length) return res.status(404).json({ error: 'User not found' });
+
+  const paidRows = await sql`
+    SELECT 1 FROM sessions WHERE stripe_payment_id = ${paymentIntent} AND user_id = ${playerId} AND game = 'Pong' AND mode = 'solo'
+  `;
+  if (!paidRows.length) return res.status(403).json({ error: 'No matching payment found for this player' });
+
+  const claim = await sql`
+    INSERT INTO game_wins (player_id, game, match_number, stripe_payment_id)
+    VALUES (${playerId}, ${game}, ${matchNumber}, ${paymentIntent})
+    ON CONFLICT (stripe_payment_id) DO NOTHING RETURNING *
+  `;
+  if (!claim.length) {
+    return res.status(200).json({
+      ok: true, credited: 0, note: 'already credited',
+      balance_before: parseFloat(before[0].balance).toFixed(2),
+      balance_after: parseFloat(before[0].balance).toFixed(2),
+    });
+  }
+
+  const after = await sql`UPDATE users SET balance = balance + ${PONG_WIN_PAYOUT} WHERE id = ${playerId} RETURNING balance`;
+  res.status(200).json({
+    ok: true, credited: PONG_WIN_PAYOUT,
+    balance_before: parseFloat(before[0].balance).toFixed(2),
+    balance_after: parseFloat(after[0].balance).toFixed(2),
+  });
+}
+
 const KNOWN_TABLES = ['users', 'sessions', 'game_tokens', 'player_game_state', 'game_wins', 'auth_sessions'];
 async function tableSchema(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
@@ -280,6 +325,7 @@ const ACTIONS = {
   'list-game-wins': listGameWins,
   'add-user-id-column': addUserIdColumn,
   'add-game-wins-payment-column': addGameWinsPaymentColumn,
+  'manual-credit-win': manualCreditWin,
   'table-schema': tableSchema,
   'table-constraints': tableConstraints,
   'payout-requests': payoutRequests,
