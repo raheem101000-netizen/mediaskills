@@ -175,6 +175,37 @@ async function addGameWinsPaymentColumn(req, res) {
   res.status(200).json({ ok: true });
 }
 
+// One-off, idempotent migration: creates the match_results audit table — one row per
+// match END, win or loss, written unconditionally by the server so a match outcome is
+// never unverifiable again (this is what we couldn't answer when investigating a
+// disputed win — no record existed of the attempt at all, only of a successful credit).
+// stripe_payment_id is nullable by design: if it's ever missing at write time we still
+// want the row (player/tier/outcome/timestamp) rather than losing the record entirely —
+// a NULL payment_id is itself a visible signal worth investigating, not a reason to drop
+// the row. No CHECK on tier since it's meant to be shared across games with different
+// tier vocabularies (Pong: EASY/MEDIUM/SUPER; Kurver: EASY/SUPER).
+async function migrateMatchResults(req, res) {
+  if (req.method !== 'POST') return res.status(405).end();
+  await sql`
+    CREATE TABLE IF NOT EXISTS match_results (
+      id                 SERIAL PRIMARY KEY,
+      player_id          INTEGER NOT NULL,
+      game               TEXT NOT NULL,
+      stripe_payment_id  TEXT,
+      outcome            TEXT NOT NULL CHECK (outcome IN ('win','loss')),
+      tier               TEXT NOT NULL,
+      match_number       INTEGER NOT NULL,
+      credited           BOOLEAN NOT NULL DEFAULT false,
+      created_at         TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await sql`
+    CREATE UNIQUE INDEX IF NOT EXISTS match_results_payment_unique
+    ON match_results (stripe_payment_id) WHERE stripe_payment_id IS NOT NULL
+  `;
+  res.status(200).json({ ok: true });
+}
+
 // Manual-recovery path for a genuine win that recordWin failed to credit (e.g. the
 // match_number-collision bug, or a future 403 from webhook-timing lag). Deliberately
 // mirrors recordWin's own logic — sessions cross-check + dedupe on stripe_payment_id —
@@ -220,7 +251,20 @@ async function manualCreditWin(req, res) {
   });
 }
 
-const KNOWN_TABLES = ['users', 'sessions', 'game_tokens', 'player_game_state', 'game_wins', 'auth_sessions'];
+// Diagnostic-only, read-only: every win match_results has on record that never got
+// credited — the reconciliation list of who's owed money, with payment_intent as proof.
+async function listUnclaimedWins(req, res) {
+  if (req.method !== 'GET') return res.status(405).end();
+  const rows = await sql`
+    SELECT player_id, game, stripe_payment_id, tier, match_number, created_at
+    FROM match_results
+    WHERE outcome = 'win' AND credited = false
+    ORDER BY created_at ASC
+  `;
+  res.status(200).json(rows);
+}
+
+const KNOWN_TABLES = ['users', 'sessions', 'game_tokens', 'player_game_state', 'game_wins', 'auth_sessions', 'match_results'];
 async function tableSchema(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
   const { table } = req.query;
@@ -326,6 +370,8 @@ const ACTIONS = {
   'add-user-id-column': addUserIdColumn,
   'add-game-wins-payment-column': addGameWinsPaymentColumn,
   'manual-credit-win': manualCreditWin,
+  'migrate-match-results': migrateMatchResults,
+  'list-unclaimed-wins': listUnclaimedWins,
   'table-schema': tableSchema,
   'table-constraints': tableConstraints,
   'payout-requests': payoutRequests,
