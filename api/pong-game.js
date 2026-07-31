@@ -3,10 +3,10 @@ const sql = require('./_db');
 const CYCLE_LENGTH = 10;
 const PAYOUTS = { pong: 5.00 };
 
-// Mirrors the client's buildCycleOrder(): fixed 1C order, identical for every player,
-// no shuffle.
+// Mirrors the client's buildCycleOrder(): fixed 1D order, identical for every player,
+// no shuffle — every match position is SUPER.
 function buildCycleOrder() {
-  return ['EASY', 'SUPER', 'MEDIUM', 'SUPER', 'SUPER', 'EASY', 'SUPER', 'MEDIUM', 'SUPER', 'SUPER'];
+  return ['SUPER', 'SUPER', 'SUPER', 'SUPER', 'SUPER', 'SUPER', 'SUPER', 'SUPER', 'SUPER', 'SUPER'];
 }
 
 // tier is a pure function of match_number (the cycle order never shuffles), so
