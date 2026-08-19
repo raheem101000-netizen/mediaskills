@@ -34,6 +34,14 @@ module.exports = async function handler(req, res) {
       success_url: 'https://all-solo-ggames.vercel.app/pong/?paid=true&session_id={CHECKOUT_SESSION_ID}',
       cancel_url: 'https://all-solo-ggames.vercel.app/pong/',
     });
+    // TEMPORARY: diagnosing why "Play Again" checkouts show fewer payment methods
+    // than fresh-from-homepage ones. Logs what Stripe actually resolved for this
+    // session so the two flows can be diffed directly. Remove once root-caused.
+    console.log('[pong-checkout] resolved payment methods', JSON.stringify({
+      session_id: session.id,
+      player_id: playerId,
+      payment_method_types: session.payment_method_types,
+    }));
     res.status(200).json({ url: session.url });
   } catch (e) {
     console.error(e);
