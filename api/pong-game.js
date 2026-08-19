@@ -4,9 +4,10 @@ const CYCLE_LENGTH = 10;
 const PAYOUTS = { pong: 5.00 };
 
 // Mirrors the client's buildCycleOrder(): fixed 1D order, identical for every player,
-// no shuffle — every match position is SUPER.
+// no shuffle.
+// TEMPORARY: forced all-EASY for testing the win→balance crediting flow. Revert after testing.
 function buildCycleOrder() {
-  return ['SUPER', 'SUPER', 'SUPER', 'SUPER', 'SUPER', 'SUPER', 'SUPER', 'SUPER', 'SUPER', 'SUPER'];
+  return ['EASY', 'EASY', 'EASY', 'EASY', 'EASY', 'EASY', 'EASY', 'EASY', 'EASY', 'EASY'];
 }
 
 // tier is a pure function of match_number (the cycle order never shuffles), so
