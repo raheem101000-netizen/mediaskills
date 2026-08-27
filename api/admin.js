@@ -3,7 +3,7 @@ const Stripe = require('stripe');
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 const ADMIN_KEY = 'TENTEN2025';
-const PONG_CYCLE_LENGTH = 10;
+const PONG_CYCLE_LENGTH = 20;
 const PONG_WIN_PAYOUT = 5.00;
 
 async function listUsers(req, res) {

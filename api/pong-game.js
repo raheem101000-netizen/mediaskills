@@ -1,13 +1,14 @@
 const sql = require('./_db');
 
-const CYCLE_LENGTH = 10;
+const CYCLE_LENGTH = 20;
 const PAYOUTS = { pong: 5.00 };
 
 // Mirrors the client's buildCycleOrder(): fixed 1D order, identical for every player,
 // no shuffle.
-// TEMPORARY: forced all-EASY for testing the win→balance crediting flow. Revert after testing.
+// Fixed 20-position cycle: Cycle 1 (games 1-10) = 5 Easy/5 Super; Cycle 2 (games 11-20) = 6 Easy/4 Super. Repeats every 20.
 function buildCycleOrder() {
-  return ['EASY', 'EASY', 'EASY', 'EASY', 'EASY', 'EASY', 'EASY', 'EASY', 'EASY', 'EASY'];
+  return ['EASY', 'EASY', 'SUPER', 'EASY', 'SUPER', 'SUPER', 'EASY', 'SUPER', 'EASY', 'SUPER',
+          'EASY', 'SUPER', 'EASY', 'EASY', 'SUPER', 'EASY', 'EASY', 'SUPER', 'EASY', 'SUPER'];
 }
 
 // tier is a pure function of match_number (the cycle order never shuffles), so
