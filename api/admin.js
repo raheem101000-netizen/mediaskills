@@ -206,6 +206,67 @@ async function migrateMatchResults(req, res) {
   res.status(200).json({ ok: true });
 }
 
+// One-off migration: fixes two win-crediting bugs found together in the same 500 —
+// (1) game_wins' composite PK on (player_id, game, match_number) collides once
+// match_number recycles through the 20-position cycle, even for a brand-new payment;
+// stripe_payment_id (already unique, already what recordWin's ON CONFLICT targets) is
+// the real uniqueness guarantee, so the composite PK is dropped and replaced with a
+// surrogate serial id. The legacy rows with stripe_payment_id IS NULL are left exactly
+// as they are — this only changes the PK, it never touches a column value.
+// (2) match_results' existing unique index is PARTIAL (WHERE stripe_payment_id IS NOT
+// NULL), which Postgres can't use as an ON CONFLICT (stripe_payment_id) arbiter — an
+// inference target must match an index's predicate exactly. Swapped for a plain UNIQUE
+// constraint (verified beforehand: zero duplicate non-null stripe_payment_id rows exist,
+// so this is safe to add outright).
+// Runs as a single non-interactive transaction (sql.transaction) so either both land or
+// neither does. Before/after snapshots are returned so the caller can verify nothing was
+// dropped or duplicated without a separate round trip.
+async function fixWinCreditingConstraints(req, res) {
+  if (req.method !== 'POST') return res.status(405).end();
+
+  const beforeCount = (await sql`SELECT COUNT(*)::int AS n FROM game_wins`)[0].n;
+  const beforeNullRows = await sql`
+    SELECT player_id, game, match_number, credited_at FROM game_wins
+    WHERE stripe_payment_id IS NULL ORDER BY player_id, game, match_number
+  `;
+
+  await sql.transaction([
+    sql`ALTER TABLE game_wins DROP CONSTRAINT game_wins_pkey`,
+    sql`ALTER TABLE game_wins ADD COLUMN id SERIAL PRIMARY KEY`,
+    sql`DROP INDEX IF EXISTS match_results_payment_unique`,
+    sql`ALTER TABLE match_results ADD CONSTRAINT match_results_payment_unique UNIQUE (stripe_payment_id)`,
+  ]);
+
+  const afterCount = (await sql`SELECT COUNT(*)::int AS n FROM game_wins`)[0].n;
+  const afterNullRows = await sql`
+    SELECT player_id, game, match_number, credited_at FROM game_wins
+    WHERE stripe_payment_id IS NULL ORDER BY player_id, game, match_number
+  `;
+
+  const gameWinsConstraints = await sql`
+    SELECT con.conname, con.contype, pg_get_constraintdef(con.oid) AS definition
+    FROM pg_constraint con JOIN pg_class rel ON rel.oid = con.conrelid
+    WHERE rel.relname = 'game_wins'
+  `;
+  const matchResultsConstraints = await sql`
+    SELECT con.conname, con.contype, pg_get_constraintdef(con.oid) AS definition
+    FROM pg_constraint con JOIN pg_class rel ON rel.oid = con.conrelid
+    WHERE rel.relname = 'match_results'
+  `;
+
+  res.status(200).json({
+    ok: true,
+    game_wins_row_count_before: beforeCount,
+    game_wins_row_count_after: afterCount,
+    row_count_unchanged: beforeCount === afterCount,
+    legacy_null_rows_before: beforeNullRows,
+    legacy_null_rows_after: afterNullRows,
+    legacy_rows_untouched: JSON.stringify(beforeNullRows) === JSON.stringify(afterNullRows),
+    game_wins_constraints: gameWinsConstraints,
+    match_results_constraints: matchResultsConstraints,
+  });
+}
+
 // Manual-recovery path for a genuine win that recordWin failed to credit (e.g. the
 // match_number-collision bug, or a future 403 from webhook-timing lag). Deliberately
 // mirrors recordWin's own logic — sessions cross-check + dedupe on stripe_payment_id —
@@ -371,6 +432,7 @@ const ACTIONS = {
   'add-game-wins-payment-column': addGameWinsPaymentColumn,
   'manual-credit-win': manualCreditWin,
   'migrate-match-results': migrateMatchResults,
+  'fix-win-crediting-constraints': fixWinCreditingConstraints,
   'list-unclaimed-wins': listUnclaimedWins,
   'table-schema': tableSchema,
   'table-constraints': tableConstraints,
