@@ -8,9 +8,13 @@ const PONG_WIN_PAYOUT = 5.00;
 
 async function listUsers(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
+  // purchases/total_spent are windowed to "since last_payout_at" (or lifetime, if the user
+  // has never been paid out) so they cover the same period as balance, which resets to 0
+  // on payout. See markPayoutPaid.
   const rows = await sql`
-    SELECT u.id, u.display_name, u.email, u.balance, u.paypal_email, u.created_at,
-           COUNT(s.id) AS purchases, COALESCE(SUM(s.amount), 0) AS total_spent
+    SELECT u.id, u.display_name, u.email, u.balance, u.paypal_email, u.created_at, u.last_payout_at,
+           COUNT(s.id) FILTER (WHERE u.last_payout_at IS NULL OR s.created_at > u.last_payout_at) AS purchases,
+           COALESCE(SUM(s.amount) FILTER (WHERE u.last_payout_at IS NULL OR s.created_at > u.last_payout_at), 0) AS total_spent
     FROM users u
     LEFT JOIN sessions s ON s.user_id = u.id
     GROUP BY u.id
@@ -18,7 +22,7 @@ async function listUsers(req, res) {
   `;
   res.status(200).json(rows.map(r => ({
     id: r.id, display_name: r.display_name, email: r.email, balance: r.balance,
-    paypal_email: r.paypal_email, created_at: r.created_at,
+    paypal_email: r.paypal_email, created_at: r.created_at, last_payout_at: r.last_payout_at,
     purchases: parseInt(r.purchases, 10), total_spent: parseFloat(r.total_spent)
   })));
 }
@@ -161,6 +165,16 @@ async function deleteUsers(req, res) {
 async function addUserIdColumn(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
   await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id)`;
+  res.status(200).json({ ok: true });
+}
+
+// One-off, idempotent migration: adds the timestamp markPayoutPaid stamps so "spend since
+// last payout" has a dated anchor to count from. Nullable by design — a user who has never
+// been paid out (or was paid out before this column existed) stays NULL, which listUsers
+// treats as "sum from the beginning," not backfilled with a guessed date.
+async function addLastPayoutAtColumn(req, res) {
+  if (req.method !== 'POST') return res.status(405).end();
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_payout_at TIMESTAMPTZ`;
   res.status(200).json({ ok: true });
 }
 
@@ -371,9 +385,14 @@ async function markPayoutPaid(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
   const userId = parseInt(req.body && req.body.user_id, 10);
   if (!userId) return res.status(400).json({ error: 'Missing user_id' });
-  const rows = await sql`UPDATE users SET balance = 0 WHERE id = ${userId} RETURNING id`;
+  // Single statement, so the zero-out and the new anchor timestamp commit atomically —
+  // there's no window where balance reads 0 against a stale (or missing) last_payout_at.
+  const rows = await sql`
+    UPDATE users SET balance = 0, last_payout_at = NOW()
+    WHERE id = ${userId} RETURNING id, last_payout_at
+  `;
   if (!rows.length) return res.status(404).json({ error: 'User not found' });
-  res.status(200).json({ ok: true });
+  res.status(200).json({ ok: true, last_payout_at: rows[0].last_payout_at });
 }
 
 async function playerReport(req, res) {
@@ -429,6 +448,7 @@ const ACTIONS = {
   'list-game-tokens': listGameTokens,
   'list-game-wins': listGameWins,
   'add-user-id-column': addUserIdColumn,
+  'add-last-payout-at-column': addLastPayoutAtColumn,
   'add-game-wins-payment-column': addGameWinsPaymentColumn,
   'manual-credit-win': manualCreditWin,
   'migrate-match-results': migrateMatchResults,
