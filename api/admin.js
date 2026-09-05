@@ -179,6 +179,18 @@ async function addLastPayoutAtColumn(req, res) {
   res.status(200).json({ ok: true });
 }
 
+// One-off, idempotent migration: adds the marker that distinguishes an actual pending
+// payout request from just "has a saved paypal_email and a positive balance" (the bug
+// payoutRequests used to key on — a user stays in that state forever once they've ever
+// entered a paypal_email, whether or not they've asked to be paid recently). Nullable by
+// design — every existing row starts NULL, i.e. "no active request," until update-payout
+// sets it; markPayoutPaid clears it back to NULL once paid.
+async function addPayoutRequestedAtColumn(req, res) {
+  if (req.method !== 'POST') return res.status(405).end();
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS payout_requested_at TIMESTAMPTZ`;
+  res.status(200).json({ ok: true });
+}
+
 // One-off, idempotent migration: adds the column record-win will dedupe wins on
 // (Stripe payment_intent instead of match_number, which repeats after a cycle reset).
 // Nullable by design — legacy game_wins rows stay NULL here rather than being backfilled
@@ -394,9 +406,12 @@ async function tableConstraints(req, res) {
 
 async function payoutRequests(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
+  // Filters on an actual request (payout_requested_at set), not "has paypal_email and a
+  // positive balance" — the latter stays true forever once a user has ever entered a
+  // paypal_email, regardless of whether they've asked to be paid recently.
   const rows = await sql`
     SELECT id, display_name, email, balance, paypal_email, created_at
-    FROM users WHERE paypal_email IS NOT NULL AND balance > 0 ORDER BY balance DESC
+    FROM users WHERE payout_requested_at IS NOT NULL ORDER BY balance DESC
   `;
   res.status(200).json(rows);
 }
@@ -405,10 +420,11 @@ async function markPayoutPaid(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
   const userId = parseInt(req.body && req.body.user_id, 10);
   if (!userId) return res.status(400).json({ error: 'Missing user_id' });
-  // Single statement, so the zero-out and the new anchor timestamp commit atomically —
-  // there's no window where balance reads 0 against a stale (or missing) last_payout_at.
+  // Single statement, so the zero-out, the new anchor timestamp, and clearing the request
+  // flag all commit atomically — there's no window where balance reads 0 against a stale
+  // last_payout_at, or where a paid-out user still shows as having an active request.
   const rows = await sql`
-    UPDATE users SET balance = 0, last_payout_at = NOW()
+    UPDATE users SET balance = 0, last_payout_at = NOW(), payout_requested_at = NULL
     WHERE id = ${userId} RETURNING id, last_payout_at
   `;
   if (!rows.length) return res.status(404).json({ error: 'User not found' });
@@ -469,6 +485,7 @@ const ACTIONS = {
   'list-game-wins': listGameWins,
   'add-user-id-column': addUserIdColumn,
   'add-last-payout-at-column': addLastPayoutAtColumn,
+  'add-payout-requested-at-column': addPayoutRequestedAtColumn,
   'add-game-wins-payment-column': addGameWinsPaymentColumn,
   'manual-credit-win': manualCreditWin,
   'migrate-match-results': migrateMatchResults,
