@@ -121,14 +121,15 @@ async function listGameTokens(req, res) {
   res.status(200).json(rows);
 }
 
-// Diagnostic-only, read-only: raw game_wins rows for a player, with credited_at, so we
-// can line up win timing against purchase/session history without guessing.
+// Diagnostic-only, read-only: raw game_wins rows for a player, with stripe_payment_id and
+// credited_at, so a win can be joined back to the exact sessions row that funded it instead
+// of guessing from timing alone.
 async function listGameWins(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
   const userId = parseInt(req.query.player_id, 10);
   if (!userId) return res.status(400).json({ error: 'Missing player_id' });
   const rows = await sql`
-    SELECT player_id, game, match_number, credited_at
+    SELECT player_id, game, match_number, stripe_payment_id, credited_at
     FROM game_wins WHERE player_id = ${userId} ORDER BY credited_at ASC NULLS LAST, match_number ASC
   `;
   res.status(200).json(rows);
@@ -339,6 +340,25 @@ async function listUnclaimedWins(req, res) {
   res.status(200).json(rows);
 }
 
+// Diagnostic-only, read-only: raw match_results rows, most recent first, optionally
+// scoped to one player — lets us confirm every match END (win or loss) is actually being
+// logged post-deploy, rather than inferring it indirectly from game_wins/list-unclaimed-wins.
+async function listMatchResults(req, res) {
+  if (req.method !== 'GET') return res.status(405).end();
+  const playerId = req.query.player_id ? parseInt(req.query.player_id, 10) : null;
+  const limit = Math.min(parseInt(req.query.limit, 10) || 50, 200);
+  const rows = playerId
+    ? await sql`
+        SELECT id, player_id, game, stripe_payment_id, outcome, tier, match_number, credited, created_at
+        FROM match_results WHERE player_id = ${playerId} ORDER BY created_at DESC LIMIT ${limit}
+      `
+    : await sql`
+        SELECT id, player_id, game, stripe_payment_id, outcome, tier, match_number, credited, created_at
+        FROM match_results ORDER BY created_at DESC LIMIT ${limit}
+      `;
+  res.status(200).json(rows);
+}
+
 const KNOWN_TABLES = ['users', 'sessions', 'game_tokens', 'player_game_state', 'game_wins', 'auth_sessions', 'match_results'];
 async function tableSchema(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
@@ -454,6 +474,7 @@ const ACTIONS = {
   'migrate-match-results': migrateMatchResults,
   'fix-win-crediting-constraints': fixWinCreditingConstraints,
   'list-unclaimed-wins': listUnclaimedWins,
+  'list-match-results': listMatchResults,
   'table-schema': tableSchema,
   'table-constraints': tableConstraints,
   'payout-requests': payoutRequests,
