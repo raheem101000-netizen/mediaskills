@@ -11,7 +11,7 @@ module.exports = async function handler(req, res) {
   try {
     const s = await sql`SELECT user_id FROM auth_sessions WHERE id=${sid} AND expires_at > NOW()`;
     if (!s.length) return res.status(401).json({ error: 'Session expired' });
-    await sql`UPDATE users SET paypal_email=${paypal_email} WHERE id=${s[0].user_id}`;
+    await sql`UPDATE users SET paypal_email=${paypal_email}, payout_requested_at=NOW() WHERE id=${s[0].user_id}`;
     res.status(200).json({ ok: true });
   } catch (e) {
     console.error(e);
