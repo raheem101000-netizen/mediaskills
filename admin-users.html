@@ -115,6 +115,46 @@ td.signup{color:rgba(200,195,255,.35);font-family:'Share Tech Mono',monospace;fo
 }
 .pxbtn-gold:hover{background:#ffe066;}
 .pxbtn-gold:active{transform:translate(1px,1px);box-shadow:1px 1px 0 #aa9000;}
+
+tbody tr.clickable{cursor:pointer;}
+
+.modal-backdrop{
+  position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.75);
+  display:flex;align-items:flex-start;justify-content:center;
+  padding:40px 20px;overflow-y:auto;
+}
+.modal-backdrop.hidden{display:none;}
+.modal-box{
+  background:var(--card);border:3px solid var(--teal);box-shadow:6px 6px 0 var(--teal2);
+  max-width:920px;width:100%;
+}
+.modal-hdr{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+  padding:20px 24px;border-bottom:2px solid var(--border);
+}
+.modal-title{font-size:11px;color:var(--white);letter-spacing:1px;margin-bottom:8px;}
+.modal-sub{font-size:7px;color:var(--muted);letter-spacing:.5px;font-family:'Share Tech Mono',monospace;}
+.modal-close{
+  font-family:'Press Start 2P',monospace;font-size:10px;
+  background:none;border:2px solid var(--red);color:var(--red);
+  padding:6px 10px;cursor:pointer;flex-shrink:0;
+}
+.modal-close:hover{background:var(--red);color:#000;}
+.modal-body{padding:24px;}
+
+.detail-totals{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px;}
+.detail-total-box{
+  flex:1;min-width:150px;background:rgba(255,255,255,0.02);
+  border:2px solid var(--border);padding:12px 14px;
+}
+.detail-total-label{font-size:6px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;line-height:1.5;}
+.detail-total-num{font-family:'Share Tech Mono',monospace;font-size:18px;color:var(--teal);}
+.detail-caption{font-size:6px;color:rgba(200,195,255,0.4);letter-spacing:.5px;line-height:1.7;margin:4px 0 20px;}
+
+td.outcome-win{color:var(--green);}
+td.outcome-loss{color:var(--red);}
+td.credited-yes{color:var(--green);}
+td.credited-no{color:rgba(200,195,255,.35);}
 </style>
 </head>
 <body>
@@ -204,6 +244,21 @@ td.signup{color:rgba(200,195,255,.35);font-family:'Share Tech Mono',monospace;fo
   </div>
 </div>
 
+<div class="modal-backdrop hidden" id="detail-modal" onclick="if(event.target===this) closeUserDetail()">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <div>
+        <div class="modal-title" id="detail-title">—</div>
+        <div class="modal-sub" id="detail-sub">—</div>
+      </div>
+      <button class="modal-close" onclick="closeUserDetail()">✕</button>
+    </div>
+    <div class="modal-body" id="detail-body">
+      <div class="breakdown-empty">Loading...</div>
+    </div>
+  </div>
+</div>
+
 <script>
 const adminKey = 'TENTEN2025';
 let users = [];
@@ -233,7 +288,7 @@ function renderUsers() {
   }
   emptyNote.style.display = 'none';
   rows.innerHTML = sorted.map(u => `
-    <tr>
+    <tr class="clickable" onclick="openUserDetail(${u.id})">
       <td class="id">${esc(u.id)}</td>
       <td class="name">${esc(u.display_name)}</td>
       <td class="email">${esc(u.email)}</td>
@@ -356,7 +411,120 @@ function tickCountdown() {
   document.getElementById('countdown').textContent = countdown + 's';
 }
 
+// Populated once from the earliest row match_results has, across all players — used to
+// caption the win/loss totals in the detail panel so a low "recent" count next to a much
+// higher all-time credited-wins count reads as expected, not as a bug. Computed from real
+// data rather than hardcoded, since it should reflect whenever logging actually started
+// producing rows in this environment, not when the migration happened to be written.
+let auditStartLabel = null;
+
+async function loadAuditStartDate() {
+  try {
+    const res = await fetch(`/api/admin?action=list-match-results&limit=200&key=${encodeURIComponent(adminKey)}`, { cache: 'no-store' });
+    if (!res.ok) return;
+    const rows = await res.json();
+    if (!rows.length) return;
+    const earliest = rows.reduce((min, r) => new Date(r.created_at) < new Date(min) ? r.created_at : min, rows[0].created_at);
+    auditStartLabel = new Date(earliest).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  } catch (e) {}
+}
+
+async function openUserDetail(userId) {
+  const user = users.find(u => u.id === userId);
+  if (!user) return;
+
+  document.getElementById('detail-modal').classList.remove('hidden');
+  document.getElementById('detail-title').textContent = user.display_name;
+  document.getElementById('detail-sub').textContent = `${user.email} · player_id ${user.id}`;
+  document.getElementById('detail-body').innerHTML = '<div class="breakdown-empty">Loading match history...</div>';
+
+  try {
+    const [mrRes, gwRes] = await Promise.all([
+      fetch(`/api/admin?action=list-match-results&player_id=${user.id}&limit=200&key=${encodeURIComponent(adminKey)}`, { cache: 'no-store' }),
+      fetch(`/api/admin?action=list-game-wins&player_id=${user.id}&key=${encodeURIComponent(adminKey)}`, { cache: 'no-store' }),
+    ]);
+    if (!mrRes.ok || !gwRes.ok) throw new Error('bad response');
+    const matchResults = await mrRes.json();
+    const gameWins = await gwRes.json();
+    renderUserDetail(user, matchResults, gameWins);
+  } catch (e) {
+    document.getElementById('detail-body').innerHTML = '<div class="breakdown-empty">Failed to load match history.</div>';
+  }
+}
+
+function closeUserDetail() {
+  document.getElementById('detail-modal').classList.add('hidden');
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeUserDetail();
+});
+
+function renderUserDetail(user, matchResults, gameWins) {
+  const wins = matchResults.filter(r => r.outcome === 'win').length;
+  const losses = matchResults.filter(r => r.outcome === 'loss').length;
+  const creditedWins = gameWins.length;
+  const sinceLabel = auditStartLabel ? `Since ${auditStartLabel}` : 'Recent';
+  const cappedNote = matchResults.length >= 200 ? ' Showing the most recent 200 rows.' : '';
+
+  let historyHtml;
+  if (!matchResults.length) {
+    historyHtml = `<div class="empty-note">No match_results rows for this player${auditStartLabel ? ' since ' + auditStartLabel : ''}. This account's activity may predate match-level logging entirely.</div>`;
+  } else {
+    historyHtml = `
+      <div class="table-box">
+        <table>
+          <thead>
+            <tr><th>Date</th><th>Tier</th><th>Outcome</th><th>Credited</th></tr>
+          </thead>
+          <tbody>
+            ${matchResults.map(r => `
+              <tr>
+                <td class="signup">${new Date(r.created_at).toLocaleString()}</td>
+                <td class="purchases">${esc(r.tier)}</td>
+                <td class="${r.outcome === 'win' ? 'outcome-win' : 'outcome-loss'}">${r.outcome === 'win' ? 'WIN' : 'LOSS'}</td>
+                <td class="${r.credited ? 'credited-yes' : 'credited-no'}">${r.credited ? 'Y' : 'N'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  document.getElementById('detail-body').innerHTML = `
+    <div class="detail-totals">
+      <div class="detail-total-box">
+        <div class="detail-total-label">Wins (${sinceLabel})</div>
+        <div class="detail-total-num" style="color:var(--green)">${wins}</div>
+      </div>
+      <div class="detail-total-box">
+        <div class="detail-total-label">Losses (${sinceLabel})</div>
+        <div class="detail-total-num" style="color:var(--red)">${losses}</div>
+      </div>
+      <div class="detail-total-box">
+        <div class="detail-total-label">Credited Wins (All-Time)</div>
+        <div class="detail-total-num">${creditedWins}</div>
+      </div>
+      <div class="detail-total-box">
+        <div class="detail-total-label">Balance</div>
+        <div class="detail-total-num" style="color:var(--green)">$${parseFloat(user.balance || 0).toFixed(2)}</div>
+      </div>
+      <div class="detail-total-box">
+        <div class="detail-total-label">Spend Since Last Payout</div>
+        <div class="detail-total-num" style="color:var(--teal)">$${parseFloat(user.total_spent || 0).toFixed(2)}</div>
+      </div>
+    </div>
+    <div class="detail-caption">
+      Wins/Losses reflect match_results logging, which only began ${auditStartLabel || 'recently'} — Credited Wins is the
+      all-time total from game_wins, so it will legitimately be higher for accounts with activity from before that date.${cappedNote}
+    </div>
+    ${historyHtml}
+  `;
+}
+
 loadAll(true);
+loadAuditStartDate();
 setInterval(tickCountdown, 1000);
 </script>
 </body>
