@@ -107,8 +107,20 @@ async function recordWin(req, res) {
       return res.status(200).json({ ok: true, credited: 0, note: 'already credited' });
     }
 
+    const before = await sql`SELECT balance FROM users WHERE id=${playerId}`;
     const rows = await sql`UPDATE users SET balance = balance + ${payout} WHERE id=${playerId} RETURNING balance`;
     await logMatchResult({ playerId, game, paymentIntent, outcome: 'win', matchNumber, credited: true });
+    // Best-effort: the win is already credited above regardless of whether this succeeds
+    // (e.g. balance_ledger not migrated yet) — a missing ledger row must never undo or
+    // block a real credit.
+    try {
+      await sql`
+        INSERT INTO balance_ledger (player_id, game, match_number, reason, delta, balance_before, balance_after, stripe_payment_id)
+        VALUES (${playerId}, ${game}, ${matchNumber}, 'win_credit', ${payout}, ${before[0].balance}, ${rows[0].balance}, ${paymentIntent})
+      `;
+    } catch (ledgerErr) {
+      console.error('[record-win] balance_ledger insert failed (credit already applied)', ledgerErr, { playerId, game, matchNumber, paymentIntent });
+    }
     res.status(200).json({ ok: true, credited: payout, balance: parseFloat(rows[0].balance).toFixed(2) });
   } catch (err) {
     // Something failed AFTER the payment was already verified real (e.g. the

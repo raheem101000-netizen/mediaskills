@@ -233,6 +233,32 @@ async function migrateMatchResults(req, res) {
   res.status(200).json({ ok: true });
 }
 
+// One-off, idempotent migration: creates the balance_ledger table — one row per balance
+// mutation (win credit, manual credit, or payout), with balance_before/balance_after
+// captured at the moment of the write. Nothing before this migration is backfilled —
+// pre-existing balance changes have no recoverable before/after, and fabricating one
+// would be worse than admitting the gap. stripe_payment_id is nullable (a payout event
+// has no single payment_intent behind it); match_number is nullable for the same reason.
+async function migrateBalanceLedger(req, res) {
+  if (req.method !== 'POST') return res.status(405).end();
+  await sql`
+    CREATE TABLE IF NOT EXISTS balance_ledger (
+      id                 SERIAL PRIMARY KEY,
+      player_id          INTEGER NOT NULL REFERENCES users(id),
+      game               TEXT,
+      match_number       INTEGER,
+      reason             TEXT NOT NULL CHECK (reason IN ('win_credit', 'manual_credit', 'payout')),
+      delta              NUMERIC NOT NULL,
+      balance_before     NUMERIC NOT NULL,
+      balance_after      NUMERIC NOT NULL,
+      stripe_payment_id  TEXT,
+      created_at         TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS balance_ledger_player_id_idx ON balance_ledger (player_id)`;
+  res.status(200).json({ ok: true });
+}
+
 // One-off migration: fixes two win-crediting bugs found together in the same 500 —
 // (1) game_wins' composite PK on (player_id, game, match_number) collides once
 // match_number recycles through the 20-position cycle, even for a brand-new payment;
@@ -332,6 +358,10 @@ async function manualCreditWin(req, res) {
   }
 
   const after = await sql`UPDATE users SET balance = balance + ${PONG_WIN_PAYOUT} WHERE id = ${playerId} RETURNING balance`;
+  await sql`
+    INSERT INTO balance_ledger (player_id, game, match_number, reason, delta, balance_before, balance_after, stripe_payment_id)
+    VALUES (${playerId}, ${game}, ${matchNumber}, 'manual_credit', ${PONG_WIN_PAYOUT}, ${before[0].balance}, ${after[0].balance}, ${paymentIntent})
+  `;
   res.status(200).json({
     ok: true, credited: PONG_WIN_PAYOUT,
     balance_before: parseFloat(before[0].balance).toFixed(2),
@@ -420,6 +450,10 @@ async function markPayoutPaid(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
   const userId = parseInt(req.body && req.body.user_id, 10);
   if (!userId) return res.status(400).json({ error: 'Missing user_id' });
+
+  const before = await sql`SELECT balance FROM users WHERE id = ${userId}`;
+  if (!before.length) return res.status(404).json({ error: 'User not found' });
+
   // Single statement, so the zero-out, the new anchor timestamp, and clearing the request
   // flag all commit atomically — there's no window where balance reads 0 against a stale
   // last_payout_at, or where a paid-out user still shows as having an active request.
@@ -427,8 +461,194 @@ async function markPayoutPaid(req, res) {
     UPDATE users SET balance = 0, last_payout_at = NOW(), payout_requested_at = NULL
     WHERE id = ${userId} RETURNING id, last_payout_at
   `;
-  if (!rows.length) return res.status(404).json({ error: 'User not found' });
+  // The amount actually paid is whatever balance was before this zeroed it — logged here
+  // because this UPDATE is the only place that number ever existed; a payout has no
+  // stripe_payment_id (it isn't a single Stripe charge), so that column stays NULL.
+  await sql`
+    INSERT INTO balance_ledger (player_id, game, match_number, reason, delta, balance_before, balance_after, stripe_payment_id)
+    VALUES (${userId}, NULL, NULL, 'payout', ${-before[0].balance}, ${before[0].balance}, 0, NULL)
+  `;
   res.status(200).json({ ok: true, last_payout_at: rows[0].last_payout_at });
+}
+
+// Dispute-grade, read-only detail view for one user: every entry charge, every logged
+// match (win/loss), every balance-ledger event, and every payout — merged into one
+// timeline. Never edits anything. Two honesty rules throughout: (1) a match_results row
+// with credited=false is shown as a red flag, never silently hidden; (2) any balance
+// change or payout that predates the balance_ledger table (or the ledger table not
+// existing yet) is labeled "no ledger data on record" rather than backfilled with a
+// guess — see migrateBalanceLedger's comment for why.
+async function userDetail(req, res) {
+  if (req.method !== 'GET') return res.status(405).end();
+  const userId = parseInt(req.query.id, 10);
+  if (!userId) return res.status(400).json({ error: 'Missing id' });
+
+  const userRows = await sql`
+    SELECT id, email, display_name, balance, paypal_email, created_at, last_payout_at, payout_requested_at
+    FROM users WHERE id = ${userId}
+  `;
+  if (!userRows.length) return res.status(404).json({ error: 'User not found' });
+  const user = userRows[0];
+
+  const sessions = await sql`
+    SELECT id, game, mode, amount, stripe_payment_id, created_at
+    FROM sessions WHERE user_id = ${userId} ORDER BY created_at ASC
+  `;
+  const matchResults = await sql`
+    SELECT id, game, stripe_payment_id, outcome, tier, match_number, credited, created_at
+    FROM match_results WHERE player_id = ${userId} ORDER BY created_at DESC
+  `;
+  // Legacy wins from before match_results existed (or before a given win was ever
+  // migrated) have no reliable link to match_results — only include game_wins rows whose
+  // payment isn't already represented there, so a modern win never shows up twice.
+  const matchResultPaymentIds = new Set(matchResults.map(r => r.stripe_payment_id).filter(Boolean));
+  const legacyWinsRaw = await sql`
+    SELECT player_id, game, match_number, stripe_payment_id, credited_at
+    FROM game_wins WHERE player_id = ${userId} ORDER BY credited_at DESC
+  `;
+  const legacyWins = legacyWinsRaw.filter(w => !w.stripe_payment_id || !matchResultPaymentIds.has(w.stripe_payment_id));
+
+  // balance_ledger may not exist yet if migrate-balance-ledger hasn't been run — degrade
+  // to "no ledger data" instead of a 500, since that's a real, expected deployment state
+  // (code and migration are intentionally applied as separate, approved steps).
+  let ledger = [];
+  let ledgerAvailable = true;
+  try {
+    ledger = await sql`
+      SELECT id, game, match_number, reason, delta, balance_before, balance_after, stripe_payment_id, created_at
+      FROM balance_ledger WHERE player_id = ${userId} ORDER BY created_at DESC
+    `;
+  } catch (e) {
+    ledgerAvailable = false;
+  }
+  const ledgerByPaymentId = new Map(ledger.filter(l => l.stripe_payment_id).map(l => [l.stripe_payment_id, l]));
+  const sessionByPaymentId = new Map(sessions.filter(s => s.stripe_payment_id).map(s => [s.stripe_payment_id, s]));
+
+  // ── Game log: match_results rows (modern, has tier + win/loss) + legacy game_wins-only
+  // rows (pre-audit, win-only, no tier) — merged and sorted newest first.
+  const gameLog = [];
+  for (const m of matchResults) {
+    const entrySession = m.stripe_payment_id ? sessionByPaymentId.get(m.stripe_payment_id) : null;
+    const ledgerRow = m.stripe_payment_id ? ledgerByPaymentId.get(m.stripe_payment_id) : null;
+    gameLog.push({
+      source: 'match_results',
+      timestamp: m.created_at,
+      game: m.game,
+      tier: m.tier,
+      outcome: m.outcome,
+      match_number: m.match_number,
+      stripe_payment_id: m.stripe_payment_id,
+      entry_fee: entrySession ? parseFloat(entrySession.amount) : null,
+      credited: m.outcome === 'win' ? m.credited : null,
+      ledger_available: !!ledgerRow,
+      balance_before: ledgerRow ? parseFloat(ledgerRow.balance_before) : null,
+      balance_after: ledgerRow ? parseFloat(ledgerRow.balance_after) : null,
+      payout_amount: ledgerRow ? parseFloat(ledgerRow.delta) : (m.outcome === 'win' && m.credited ? PONG_WIN_PAYOUT : 0),
+    });
+  }
+  for (const w of legacyWins) {
+    gameLog.push({
+      source: 'legacy_game_wins',
+      timestamp: w.credited_at,
+      game: w.game,
+      tier: null,
+      outcome: 'win',
+      match_number: w.match_number,
+      stripe_payment_id: w.stripe_payment_id,
+      entry_fee: null,
+      credited: true, // a game_wins row only ever exists because a credit already happened
+      ledger_available: false,
+      balance_before: null,
+      balance_after: null,
+      payout_amount: PONG_WIN_PAYOUT,
+    });
+  }
+  gameLog.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+  // ── Payouts: ledger-recorded events (exact amount, exact before/after) + a single
+  // undated legacy marker if last_payout_at is set but predates every ledger payout row
+  // (i.e., the payout happened before this table existed, so its amount is unrecoverable).
+  const ledgerPayouts = ledger
+    .filter(l => l.reason === 'payout')
+    .map(l => ({
+      timestamp: l.created_at,
+      amount: Math.abs(parseFloat(l.delta)),
+      balance_before: parseFloat(l.balance_before),
+      balance_after: parseFloat(l.balance_after),
+      status: 'paid',
+      method: 'PayPal',
+      processor_reference: user.paypal_email || null,
+      source: 'balance_ledger',
+    }));
+  const payouts = [...ledgerPayouts];
+  // markPayoutPaid writes last_payout_at and its balance_ledger row in the same request,
+  // so a real ledger-covered payout always lands within a few seconds of last_payout_at.
+  // No match that close means this payout predates the ledger entirely.
+  const hasLedgerPayoutNearLastPayout = user.last_payout_at && ledgerPayouts.some(
+    p => Math.abs(new Date(p.timestamp) - new Date(user.last_payout_at)) < 5000
+  );
+  if (user.last_payout_at && !hasLedgerPayoutNearLastPayout) {
+    payouts.push({
+      timestamp: user.last_payout_at,
+      amount: null,
+      balance_before: null,
+      balance_after: null,
+      status: 'paid',
+      method: 'PayPal',
+      processor_reference: user.paypal_email || null,
+      source: 'legacy_last_payout_at',
+      note: 'Predates balance_ledger — amount not on record',
+    });
+  }
+  if (user.payout_requested_at) {
+    payouts.unshift({
+      timestamp: user.payout_requested_at,
+      amount: parseFloat(user.balance),
+      balance_before: null,
+      balance_after: null,
+      status: 'pending',
+      method: 'PayPal',
+      processor_reference: user.paypal_email || null,
+      source: 'payout_requested_at',
+    });
+  }
+  payouts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+  // ── Needs-attention flags
+  const winsNotCredited = matchResults.filter(m => m.outcome === 'win' && !m.credited);
+  const entriesNeverCompleted = sessions.filter(s => s.stripe_payment_id && !matchResultPaymentIds.has(s.stripe_payment_id) && !legacyWins.some(w => w.stripe_payment_id === s.stripe_payment_id));
+
+  // ── Summary
+  const wins = matchResults.filter(m => m.outcome === 'win').length + legacyWins.length;
+  const losses = matchResults.filter(m => m.outcome === 'loss').length;
+  const gamesPlayed = wins + losses;
+  const totalEntries = sessions.reduce((sum, s) => sum + parseFloat(s.amount), 0);
+  const totalPayoutsRecorded = ledgerPayouts.reduce((sum, p) => sum + p.amount, 0);
+
+  res.status(200).json({
+    user: {
+      id: user.id, email: user.email, display_name: user.display_name,
+      balance: parseFloat(user.balance), paypal_email: user.paypal_email,
+      created_at: user.created_at,
+    },
+    summary: {
+      games_played: gamesPlayed, wins, losses,
+      win_rate: gamesPlayed ? wins / gamesPlayed : null,
+      total_entries_paid: totalEntries,
+      total_payouts_recorded: totalPayoutsRecorded,
+      has_undated_legacy_payout: payouts.some(p => p.source === 'legacy_last_payout_at'),
+      net_position_recorded_only: totalPayoutsRecorded - totalEntries,
+    },
+    needs_attention: {
+      wins_not_credited: winsNotCredited.map(m => ({ match_number: m.match_number, tier: m.tier, stripe_payment_id: m.stripe_payment_id, created_at: m.created_at })),
+      entries_never_completed: entriesNeverCompleted.map(s => ({ id: s.id, amount: parseFloat(s.amount), stripe_payment_id: s.stripe_payment_id, created_at: s.created_at })),
+      pending_payout: user.payout_requested_at ? { requested_at: user.payout_requested_at, amount: parseFloat(user.balance) } : null,
+      failed_payouts_note: 'This system has no automated payout processor — payouts are manual PayPal transfers with no failure/status feedback, so "failed" is not a trackable state here.',
+    },
+    game_log: gameLog,
+    payouts,
+    ledger_available: ledgerAvailable,
+  });
 }
 
 async function playerReport(req, res) {
@@ -489,6 +709,8 @@ const ACTIONS = {
   'add-game-wins-payment-column': addGameWinsPaymentColumn,
   'manual-credit-win': manualCreditWin,
   'migrate-match-results': migrateMatchResults,
+  'migrate-balance-ledger': migrateBalanceLedger,
+  'user-detail': userDetail,
   'fix-win-crediting-constraints': fixWinCreditingConstraints,
   'list-unclaimed-wins': listUnclaimedWins,
   'list-match-results': listMatchResults,
