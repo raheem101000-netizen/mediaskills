@@ -117,6 +117,8 @@ td.pi{color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:7px;}
     ⚠ balance_ledger table not found. Balance-before/after and payout amounts cannot be shown until the migration is run. Everything else on this page (game log, credited flags, entries, legacy payout dates) is unaffected.
   </div>
 
+  <div class="empty-note" id="loading-note">Loading user history… this can take up to 30s on a cold database connection.</div>
+
   <div id="content" style="display:none;">
     <div class="section-label">Summary</div>
     <div class="stat-grid" id="summary-grid"></div>
@@ -331,15 +333,28 @@ function exportCsv() {
   URL.revokeObjectURL(url);
 }
 
+// 45s: comfortably above the worst cold-database latency measured for this endpoint
+// (22-24s sequential, now parallelized and expected lower, but this leaves real margin)
+// — so a slow-but-successful load never gets cut off and mislabeled as a failure.
+const FETCH_TIMEOUT_MS = 45000;
+
 async function load() {
+  const loadingNote = document.getElementById('loading-note');
+  const errorNote = document.getElementById('load-error');
   if (!userId) {
-    document.getElementById('load-error').style.display = 'block';
+    loadingNote.style.display = 'none';
+    errorNote.textContent = 'Missing user id in URL.';
+    errorNote.style.display = 'block';
     return;
   }
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
-    const res = await fetch(`/api/admin?action=user-detail&key=${encodeURIComponent(adminKey)}&id=${encodeURIComponent(userId)}`, { cache: 'no-store' });
-    if (!res.ok) throw new Error('bad response');
+    const res = await fetch(`/api/admin?action=user-detail&key=${encodeURIComponent(adminKey)}&id=${encodeURIComponent(userId)}`, { cache: 'no-store', signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (!res.ok) throw new Error('bad response: ' + res.status);
     detail = await res.json();
+    loadingNote.style.display = 'none';
     document.getElementById('content').style.display = 'block';
     document.getElementById('ledger-warn').style.display = detail.ledger_available ? 'none' : 'block';
     renderSummary(detail.summary, detail.user);
@@ -347,7 +362,12 @@ async function load() {
     renderGameLog(detail.game_log);
     renderPayouts(detail.payouts);
   } catch (e) {
-    document.getElementById('load-error').style.display = 'block';
+    clearTimeout(timeoutId);
+    loadingNote.style.display = 'none';
+    errorNote.textContent = (e.name === 'AbortError')
+      ? `Timed out after ${FETCH_TIMEOUT_MS / 1000}s waiting for the server — the database may be slow to wake up. Try reloading.`
+      : 'Failed to load user detail: ' + e.message;
+    errorNote.style.display = 'block';
   }
 }
 
