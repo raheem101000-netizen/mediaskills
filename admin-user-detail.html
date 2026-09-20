@@ -83,6 +83,7 @@ td.win{color:var(--green);}
 td.loss{color:var(--red);}
 td.tier{color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:8px;}
 td.credited-yes{color:var(--green);font-family:'Share Tech Mono',monospace;font-size:8px;}
+td.credited-warn{color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:8px;}
 td.credited-no{color:var(--red);font-family:'Share Tech Mono',monospace;font-size:8px;font-weight:700;}
 td.credited-na{color:rgba(200,195,255,.25);font-family:'Share Tech Mono',monospace;}
 td.muted{color:rgba(200,195,255,.3);font-family:'Share Tech Mono',monospace;font-size:8px;}
@@ -287,19 +288,21 @@ function renderGameLog(rows) {
   if (!rows.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
   tbody.innerHTML = rows.map(r => {
+    // Three-state, schema-backed - never assumed. See deriveCreditState() server-side
+    // for the exact priority order (ledger proof > match_results.credited > unverified).
     let creditedCell;
     if (r.outcome !== 'win') {
       creditedCell = '<td class="credited-na">—</td>';
-    } else if (r.credited === false) {
-      creditedCell = '<td class="credited-no">WIN — NOT CREDITED</td>';
-    } else if (r.ledger_available) {
-      creditedCell = `<td class="credited-yes">+${money(r.payout_amount)}</td>`;
+    } else if (r.credit_state === 'verified') {
+      creditedCell = `<td class="credited-yes">+${money(r.payout_amount)} <span style="color:rgba(200,195,255,.3);">(verified)</span></td>`;
+    } else if (r.credit_state === 'system_recorded') {
+      creditedCell = `<td class="credited-warn">+${money(r.payout_amount)} <span style="color:rgba(200,195,255,.3);">(system-recorded, no ledger proof)</span></td>`;
     } else {
-      creditedCell = `<td class="credited-yes">+${money(r.payout_amount)} <span style="color:rgba(200,195,255,.3);">(no ledger data)</span></td>`;
+      creditedCell = `<td class="credited-no">${esc(r.credit_label)}</td>`;
     }
     const balCell = (r.balance_before !== null && r.balance_after !== null)
       ? `${money(r.balance_before)} → ${money(r.balance_after)}`
-      : (r.outcome === 'win' ? 'no ledger data' : '—');
+      : (r.outcome === 'win' ? (r.credit_state === 'verified' ? '—' : 'no ledger proof') : '—');
     return `
       <tr>
         <td class="mono">${fmtTs(r.timestamp)}</td>
@@ -344,9 +347,9 @@ function exportCsv() {
   if (!detail) return;
   const lines = [];
   lines.push('=== GAME LOG ===');
-  lines.push(['timestamp','game','mode','tier','result','entry_fee','credited','payout_amount','balance_before','balance_after','match_number','stripe_payment_id','source'].join(','));
+  lines.push(['timestamp','game','mode','tier','result','entry_fee','credit_state','credit_label','payout_amount','balance_before','balance_after','match_number','stripe_payment_id','source'].join(','));
   detail.game_log.forEach(r => {
-    lines.push([r.timestamp, r.game, r.mode || 'unknown', r.tier, r.outcome, r.entry_fee, r.credited, r.payout_amount, r.balance_before, r.balance_after, r.match_number, r.stripe_payment_id, r.source].map(toCsvValue).join(','));
+    lines.push([r.timestamp, r.game, r.mode || 'unknown', r.tier, r.outcome, r.entry_fee, r.credit_state || '', r.credit_label || '', r.payout_amount, r.balance_before, r.balance_after, r.match_number, r.stripe_payment_id, r.source].map(toCsvValue).join(','));
   });
   lines.push('');
   lines.push('=== PAYOUTS ===');
