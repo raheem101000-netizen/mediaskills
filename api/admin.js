@@ -490,37 +490,41 @@ async function userDetail(req, res) {
   if (!userRows.length) return res.status(404).json({ error: 'User not found' });
   const user = userRows[0];
 
-  const sessions = await sql`
-    SELECT id, game, mode, amount, stripe_payment_id, created_at
-    FROM sessions WHERE user_id = ${userId} ORDER BY created_at ASC
-  `;
-  const matchResults = await sql`
-    SELECT id, game, stripe_payment_id, outcome, tier, match_number, credited, created_at
-    FROM match_results WHERE player_id = ${userId} ORDER BY created_at DESC
-  `;
+  // These four are independent of each other (only the merge logic below needs all of
+  // them together), so they run concurrently instead of stacking their latency — on a
+  // cold Neon connection each query alone can take several seconds, and this endpoint
+  // was measured at 22-24s when they ran sequentially versus 2-4s warm.
+  const [sessions, matchResults, legacyWinsRaw, ledgerResult] = await Promise.all([
+    sql`
+      SELECT id, game, mode, amount, stripe_payment_id, created_at
+      FROM sessions WHERE user_id = ${userId} ORDER BY created_at ASC
+    `,
+    sql`
+      SELECT id, game, stripe_payment_id, outcome, tier, match_number, credited, created_at
+      FROM match_results WHERE player_id = ${userId} ORDER BY created_at DESC
+    `,
+    sql`
+      SELECT player_id, game, match_number, stripe_payment_id, credited_at
+      FROM game_wins WHERE player_id = ${userId} ORDER BY credited_at DESC
+    `,
+    // balance_ledger may not exist yet if migrate-balance-ledger hasn't been run —
+    // degrade to "no ledger data" instead of a 500, since that's a real, expected
+    // deployment state (code and migration are intentionally applied as separate,
+    // approved steps).
+    sql`
+      SELECT id, game, match_number, reason, delta, balance_before, balance_after, stripe_payment_id, created_at
+      FROM balance_ledger WHERE player_id = ${userId} ORDER BY created_at DESC
+    `.catch(() => null),
+  ]);
+  const ledgerAvailable = ledgerResult !== null;
+  const ledger = ledgerResult || [];
+
   // Legacy wins from before match_results existed (or before a given win was ever
   // migrated) have no reliable link to match_results — only include game_wins rows whose
   // payment isn't already represented there, so a modern win never shows up twice.
   const matchResultPaymentIds = new Set(matchResults.map(r => r.stripe_payment_id).filter(Boolean));
-  const legacyWinsRaw = await sql`
-    SELECT player_id, game, match_number, stripe_payment_id, credited_at
-    FROM game_wins WHERE player_id = ${userId} ORDER BY credited_at DESC
-  `;
   const legacyWins = legacyWinsRaw.filter(w => !w.stripe_payment_id || !matchResultPaymentIds.has(w.stripe_payment_id));
 
-  // balance_ledger may not exist yet if migrate-balance-ledger hasn't been run — degrade
-  // to "no ledger data" instead of a 500, since that's a real, expected deployment state
-  // (code and migration are intentionally applied as separate, approved steps).
-  let ledger = [];
-  let ledgerAvailable = true;
-  try {
-    ledger = await sql`
-      SELECT id, game, match_number, reason, delta, balance_before, balance_after, stripe_payment_id, created_at
-      FROM balance_ledger WHERE player_id = ${userId} ORDER BY created_at DESC
-    `;
-  } catch (e) {
-    ledgerAvailable = false;
-  }
   const ledgerByPaymentId = new Map(ledger.filter(l => l.stripe_payment_id).map(l => [l.stripe_payment_id, l]));
   const sessionByPaymentId = new Map(sessions.filter(s => s.stripe_payment_id).map(s => [s.stripe_payment_id, s]));
 
