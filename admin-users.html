@@ -233,7 +233,7 @@ function renderUsers() {
   }
   emptyNote.style.display = 'none';
   rows.innerHTML = sorted.map(u => `
-    <tr>
+    <tr class="user-row" style="cursor:pointer;" onclick="location.href='/admin-users/${esc(u.id)}'">
       <td class="id">${esc(u.id)}</td>
       <td class="name">${esc(u.display_name)}</td>
       <td class="email">${esc(u.email)}</td>

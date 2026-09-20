@@ -2,6 +2,7 @@
   "version": 2,
   "routes": [
     { "src": "/admin", "dest": "/admin.html" },
+    { "src": "/admin-users/([0-9]+)", "dest": "/admin-user-detail.html?id=$1" },
     { "src": "/admin-users", "dest": "/admin-users.html" },
     { "src": "/signup", "dest": "/signup.html" },
     { "src": "/login", "dest": "/login.html" },
