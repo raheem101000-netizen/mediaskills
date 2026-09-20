@@ -536,12 +536,51 @@ async function userDetail(req, res) {
   const ledgerByPaymentId = new Map(ledger.filter(l => l.stripe_payment_id).map(l => [l.stripe_payment_id, l]));
   const sessionByPaymentId = new Map(sessions.filter(s => s.stripe_payment_id).map(s => [s.stripe_payment_id, s]));
 
+  // ── Credit verification: three states, in strict priority order, never assumed.
+  // 1. VERIFIED     - a balance_ledger row (win_credit/manual_credit) exists for this
+  //                    payment: real balance_before/balance_after, an observed mutation.
+  //                    This is the only state proof-backed by an actual balance change.
+  // 2. SYSTEM_RECORDED - no ledger row, but match_results.credited = true: the app's own
+  //                    code path claims a credit ran, with no independent proof it landed.
+  // 3. UNVERIFIED   - everything else for a win: match_results.credited = false, OR a
+  //                    legacy game_wins row with no matching ledger row. Critically, a
+  //                    game_wins row existing is NOT treated as proof of a credit here -
+  //                    that was the false-positive this replaces.
+  function deriveCreditState(source, matchResultsCredited, ledgerRow) {
+    if (ledgerRow && (ledgerRow.reason === 'win_credit' || ledgerRow.reason === 'manual_credit')) {
+      return {
+        state: 'verified',
+        label: 'VERIFIED CREDITED',
+        payout_amount: parseFloat(ledgerRow.delta),
+        balance_before: parseFloat(ledgerRow.balance_before),
+        balance_after: parseFloat(ledgerRow.balance_after),
+      };
+    }
+    if (source === 'match_results' && matchResultsCredited === true) {
+      return {
+        state: 'system_recorded',
+        label: 'SYSTEM-RECORDED CREDITED',
+        payout_amount: PONG_WIN_PAYOUT,
+        balance_before: null,
+        balance_after: null,
+      };
+    }
+    return {
+      state: 'unverified',
+      label: source === 'legacy_game_wins' ? 'CREDITED UNVERIFIED (pre-ledger)' : 'WIN — NOT VERIFIED / possibly not credited',
+      payout_amount: 0,
+      balance_before: null,
+      balance_after: null,
+    };
+  }
+
   // ── Game log: match_results rows (modern, has tier + win/loss) + legacy game_wins-only
   // rows (pre-audit, win-only, no tier) — merged and sorted newest first.
   const gameLog = [];
   for (const m of matchResults) {
     const entrySession = m.stripe_payment_id ? sessionByPaymentId.get(m.stripe_payment_id) : null;
     const ledgerRow = m.stripe_payment_id ? ledgerByPaymentId.get(m.stripe_payment_id) : null;
+    const credit = m.outcome === 'win' ? deriveCreditState('match_results', m.credited, ledgerRow) : null;
     gameLog.push({
       source: 'match_results',
       timestamp: m.created_at,
@@ -552,15 +591,18 @@ async function userDetail(req, res) {
       match_number: m.match_number,
       stripe_payment_id: m.stripe_payment_id,
       entry_fee: entrySession ? parseFloat(entrySession.amount) : null,
-      credited: m.outcome === 'win' ? m.credited : null,
+      credit_state: credit ? credit.state : null,
+      credit_label: credit ? credit.label : null,
       ledger_available: !!ledgerRow,
-      balance_before: ledgerRow ? parseFloat(ledgerRow.balance_before) : null,
-      balance_after: ledgerRow ? parseFloat(ledgerRow.balance_after) : null,
-      payout_amount: ledgerRow ? parseFloat(ledgerRow.delta) : (m.outcome === 'win' && m.credited ? PONG_WIN_PAYOUT : 0),
+      balance_before: credit ? credit.balance_before : null,
+      balance_after: credit ? credit.balance_after : null,
+      payout_amount: credit ? credit.payout_amount : 0,
     });
   }
   for (const w of legacyWins) {
     const legacySession = w.stripe_payment_id ? sessionByPaymentId.get(w.stripe_payment_id) : null;
+    const legacyLedgerRow = w.stripe_payment_id ? ledgerByPaymentId.get(w.stripe_payment_id) : null;
+    const credit = deriveCreditState('legacy_game_wins', null, legacyLedgerRow);
     gameLog.push({
       source: 'legacy_game_wins',
       timestamp: w.credited_at,
@@ -571,11 +613,12 @@ async function userDetail(req, res) {
       match_number: w.match_number,
       stripe_payment_id: w.stripe_payment_id,
       entry_fee: null,
-      credited: true, // a game_wins row only ever exists because a credit already happened
-      ledger_available: false,
-      balance_before: null,
-      balance_after: null,
-      payout_amount: PONG_WIN_PAYOUT,
+      credit_state: credit.state,
+      credit_label: credit.label,
+      ledger_available: !!legacyLedgerRow,
+      balance_before: credit.balance_before,
+      balance_after: credit.balance_after,
+      payout_amount: credit.payout_amount,
     });
   }
   gameLog.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
