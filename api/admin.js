@@ -546,6 +546,7 @@ async function userDetail(req, res) {
       source: 'match_results',
       timestamp: m.created_at,
       game: m.game,
+      mode: entrySession ? entrySession.mode : null, // derived via sessions join; null = mode unknown, never guessed
       tier: m.tier,
       outcome: m.outcome,
       match_number: m.match_number,
@@ -559,10 +560,12 @@ async function userDetail(req, res) {
     });
   }
   for (const w of legacyWins) {
+    const legacySession = w.stripe_payment_id ? sessionByPaymentId.get(w.stripe_payment_id) : null;
     gameLog.push({
       source: 'legacy_game_wins',
       timestamp: w.credited_at,
       game: w.game,
+      mode: legacySession ? legacySession.mode : null, // most legacy rows have no stripe_payment_id at all -> null
       tier: null,
       outcome: 'win',
       match_number: w.match_number,
@@ -661,8 +664,8 @@ async function userDetail(req, res) {
       net_position_recorded_only: totalPayoutsRecorded - totalEntries,
     },
     needs_attention: {
-      wins_not_credited: winsNotCredited.map(m => ({ match_number: m.match_number, tier: m.tier, stripe_payment_id: m.stripe_payment_id, created_at: m.created_at })),
-      entries_never_completed: entriesNeverCompleted.map(s => ({ id: s.id, amount: parseFloat(s.amount), stripe_payment_id: s.stripe_payment_id, created_at: s.created_at })),
+      wins_not_credited: winsNotCredited.map(m => ({ match_number: m.match_number, tier: m.tier, mode: (m.stripe_payment_id && sessionByPaymentId.get(m.stripe_payment_id)?.mode) || null, stripe_payment_id: m.stripe_payment_id, created_at: m.created_at })),
+      entries_never_completed: entriesNeverCompleted.map(s => ({ id: s.id, amount: parseFloat(s.amount), mode: s.mode, stripe_payment_id: s.stripe_payment_id, created_at: s.created_at })),
       pending_payout: user.payout_requested_at ? { requested_at: user.payout_requested_at, amount: parseFloat(user.balance) } : null,
       failed_payouts_note: 'This system has no automated payout processor — payouts are manual PayPal transfers with no failure/status feedback, so "failed" is not a trackable state here.',
     },
@@ -672,7 +675,7 @@ async function userDetail(req, res) {
     // actually wrong with these charges.
     entries_predating_outcome_logging: {
       outcome_logging_started_at: outcomeLoggingStartedAt,
-      entries: entriesPreOutcomeLogging.map(s => ({ id: s.id, amount: parseFloat(s.amount), stripe_payment_id: s.stripe_payment_id, created_at: s.created_at })),
+      entries: entriesPreOutcomeLogging.map(s => ({ id: s.id, amount: parseFloat(s.amount), mode: s.mode, stripe_payment_id: s.stripe_payment_id, created_at: s.created_at })),
     },
     game_log: gameLog,
     payouts,

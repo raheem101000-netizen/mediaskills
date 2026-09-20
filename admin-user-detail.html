@@ -135,6 +135,7 @@ td.pi{color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:7px;}
           <tr>
             <th>Date / Time</th>
             <th>Game</th>
+            <th>Mode</th>
             <th>Tier</th>
             <th>Result</th>
             <th>Entry Fee</th>
@@ -203,6 +204,13 @@ function shortPi(pi) {
   if (!pi) return '—';
   return pi.length > 20 ? pi.slice(0, 10) + '…' + pi.slice(-6) : pi;
 }
+// mode is derived server-side via a join to sessions.mode - null means it genuinely
+// couldn't be determined (no linked session), never a guess.
+function modeLabel(mode) {
+  if (!mode) return '<span style="color:rgba(200,195,255,.3);">MODE UNKNOWN</span>';
+  const color = mode === 'solo' ? 'var(--amber)' : 'var(--teal)';
+  return `<span style="color:${color};">${esc(mode.toUpperCase())}</span>`;
+}
 
 function renderSummary(s, user) {
   document.getElementById('hdr-sub').textContent =
@@ -231,7 +239,7 @@ function renderAttention(a) {
     blocks.push(`
       <div class="attn-box">
         <div class="attn-title">⚠ ${a.wins_not_credited.length} WIN(S) — NOT CREDITED</div>
-        ${a.wins_not_credited.map(w => `<div class="attn-row">Match #${w.match_number} (${esc(w.tier || '—')}) — ${fmtTs(w.created_at)} — ${shortPi(w.stripe_payment_id)}</div>`).join('')}
+        ${a.wins_not_credited.map(w => `<div class="attn-row">Match #${w.match_number} (${esc(w.tier || '—')}) — ${modeLabel(w.mode)} — ${fmtTs(w.created_at)} — ${shortPi(w.stripe_payment_id)}</div>`).join('')}
       </div>
     `);
   }
@@ -239,7 +247,7 @@ function renderAttention(a) {
     blocks.push(`
       <div class="attn-box">
         <div class="attn-title">⚠ ${a.entries_never_completed.length} ENTRY(S) CHARGED — GAME NEVER COMPLETED</div>
-        ${a.entries_never_completed.map(e => `<div class="attn-row">${money(e.amount)} — ${fmtTs(e.created_at)} — ${shortPi(e.stripe_payment_id)}</div>`).join('')}
+        ${a.entries_never_completed.map(e => `<div class="attn-row">${money(e.amount)} — ${modeLabel(e.mode)} — ${fmtTs(e.created_at)} — ${shortPi(e.stripe_payment_id)}</div>`).join('')}
       </div>
     `);
   }
@@ -267,7 +275,7 @@ function renderPreLoggingNote(p) {
     <div class="attn-box neutral">
       <div class="attn-title neutral">ℹ ${p.entries.length} ENTRY(S) PREDATE OUTCOME LOGGING — RESULT UNKNOWN, NOT NECESSARILY A PROBLEM</div>
       <div class="attn-note" style="padding-top:0;margin-bottom:8px;">Outcome logging (match_results) began ${fmtTs(p.outcome_logging_started_at)}. These entries were charged before that and have no result on record anywhere (checked both match_results and game_wins) — this is a known gap, not evidence of a broken charge. Verified against Stripe: sampled charges from this period were real, successfully captured payments.</div>
-      ${p.entries.map(e => `<div class="attn-row">${money(e.amount)} — ${fmtTs(e.created_at)} — ${shortPi(e.stripe_payment_id)}</div>`).join('')}
+      ${p.entries.map(e => `<div class="attn-row">${money(e.amount)} — ${modeLabel(e.mode)} — ${fmtTs(e.created_at)} — ${shortPi(e.stripe_payment_id)}</div>`).join('')}
     </div>
   `);
 }
@@ -296,6 +304,7 @@ function renderGameLog(rows) {
       <tr>
         <td class="mono">${fmtTs(r.timestamp)}</td>
         <td>${esc(r.game)}</td>
+        <td class="mono">${modeLabel(r.mode)}</td>
         <td class="tier">${esc(r.tier || '—')}</td>
         <td class="${r.outcome === 'win' ? 'win' : 'loss'}">${r.outcome.toUpperCase()}</td>
         <td class="mono">${money(r.entry_fee)}</td>
@@ -335,9 +344,9 @@ function exportCsv() {
   if (!detail) return;
   const lines = [];
   lines.push('=== GAME LOG ===');
-  lines.push(['timestamp','game','tier','result','entry_fee','credited','payout_amount','balance_before','balance_after','match_number','stripe_payment_id','source'].join(','));
+  lines.push(['timestamp','game','mode','tier','result','entry_fee','credited','payout_amount','balance_before','balance_after','match_number','stripe_payment_id','source'].join(','));
   detail.game_log.forEach(r => {
-    lines.push([r.timestamp, r.game, r.tier, r.outcome, r.entry_fee, r.credited, r.payout_amount, r.balance_before, r.balance_after, r.match_number, r.stripe_payment_id, r.source].map(toCsvValue).join(','));
+    lines.push([r.timestamp, r.game, r.mode || 'unknown', r.tier, r.outcome, r.entry_fee, r.credited, r.payout_amount, r.balance_before, r.balance_after, r.match_number, r.stripe_payment_id, r.source].map(toCsvValue).join(','));
   });
   lines.push('');
   lines.push('=== PAYOUTS ===');
@@ -348,9 +357,9 @@ function exportCsv() {
   if (detail.entries_predating_outcome_logging && detail.entries_predating_outcome_logging.entries.length) {
     lines.push('');
     lines.push(`=== ENTRIES PREDATING OUTCOME LOGGING (logging began ${detail.entries_predating_outcome_logging.outcome_logging_started_at}; result unknown, not necessarily a problem) ===`);
-    lines.push(['timestamp','amount','stripe_payment_id'].join(','));
+    lines.push(['timestamp','amount','mode','stripe_payment_id'].join(','));
     detail.entries_predating_outcome_logging.entries.forEach(e => {
-      lines.push([e.created_at, e.amount, e.stripe_payment_id].map(toCsvValue).join(','));
+      lines.push([e.created_at, e.amount, e.mode || 'unknown', e.stripe_payment_id].map(toCsvValue).join(','));
     });
   }
   const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
