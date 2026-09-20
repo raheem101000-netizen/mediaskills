@@ -401,7 +401,7 @@ async function listMatchResults(req, res) {
   res.status(200).json(rows);
 }
 
-const KNOWN_TABLES = ['users', 'sessions', 'game_tokens', 'player_game_state', 'game_wins', 'auth_sessions', 'match_results'];
+const KNOWN_TABLES = ['users', 'sessions', 'game_tokens', 'player_game_state', 'game_wins', 'auth_sessions', 'match_results', 'balance_ledger'];
 async function tableSchema(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
   const { table } = req.query;
