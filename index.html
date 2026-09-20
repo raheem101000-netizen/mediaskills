@@ -924,6 +924,41 @@ body{
   .offers-wrap{grid-template-columns:1fr;}
 }
 
+/* ── GAME MODE MODAL ── */
+.game-modal-backdrop{
+  position:fixed;inset:0;background:rgba(0,0,0,0.85);
+  display:none;align-items:center;justify-content:center;
+  z-index:10000;padding:20px;
+  -webkit-overflow-scrolling:touch;
+}
+.game-modal-backdrop.open{display:flex;}
+.game-modal{
+  background:#0d0d0d;border:3px solid rgba(255,255,255,0.15);
+  box-shadow:6px 6px 0 #000;
+  max-width:700px;width:100%;max-height:90vh;overflow-y:auto;
+  padding:32px 20px 24px;position:relative;
+}
+.game-modal-close{
+  position:absolute;top:10px;right:10px;
+  font-family:'Press Start 2P',monospace;font-size:12px;
+  background:#111;color:#fff;border:2px solid rgba(255,255,255,0.25);
+  width:34px;height:34px;cursor:pointer;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+}
+.game-modal-close:hover{background:#222;}
+.game-modal-title{
+  font-family:'Press Start 2P',monospace;font-size:13px;color:#fff;
+  letter-spacing:1px;margin-bottom:18px;text-align:center;
+}
+.game-modal-cards{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;
+}
+/* neutralize the offer-card carousel sizing (min-width:300px, flex-shrink:0) so cards
+   fill their grid cell instead of forcing horizontal overflow on narrow screens */
+.game-modal-cards .offer-card{
+  width:100%;min-width:0;flex-shrink:1;
+}
+
 </style>
 </head>
 <body>
@@ -1189,8 +1224,7 @@ END OLD GAMES HIDDEN -->
 END OLD GAMES HIDDEN -->
 
         <!-- PONG -->
-        <div class="gc" style="--border-c:var(--blue);--shadow:var(--blue2);">
-          <a href="https://pong-wju4.onrender.com/" style="text-decoration:none;">
+        <div class="gc" style="--border-c:var(--blue);--shadow:var(--blue2);" onclick="openGameModal('pong')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openGameModal('pong');}">
           <div class="gc-wrap">
             <div class="gc-art">
               <div class="gc-art-inner a-pong">
@@ -1209,11 +1243,9 @@ END OLD GAMES HIDDEN -->
               </div>
             </div>
           </div>
-          </a>
         </div>
 
-        <div class="gc" style="--border-c:var(--teal);--shadow:var(--teal2);">
-          <a href="https://kurver-e7ow.onrender.com/multiplayer#/" style="text-decoration:none;">
+        <div class="gc" style="--border-c:var(--teal);--shadow:var(--teal2);" onclick="openGameModal('kurver')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openGameModal('kurver');}">
           <div class="gc-wrap">
             <div class="gc-art">
               <div class="gc-art-inner a-kurver">
@@ -1234,7 +1266,6 @@ END OLD GAMES HIDDEN -->
               </div>
             </div>
           </div>
-          </a>
         </div>
 
 <!-- OLD GAMES HIDDEN - RESTORE LATER
@@ -1265,7 +1296,7 @@ END OLD GAMES HIDDEN -->
         </div>
 END OLD GAMES HIDDEN -->
 
-        <div class="gc" style="--border-c:var(--red);--shadow:var(--red2);"><a href="https://battle-royale-agnc.onrender.com/rooms" style="text-decoration:none;"><div class="gc-wrap"><div class="gc-art"><div class="gc-art-inner" style="background:radial-gradient(ellipse at 50% 40%,#1a0808 0%,#0a0404 60%,#000 100%);"><div style="width:100%;height:100%;position:relative;overflow:hidden;background:#111;"><div style="display:flex;justify-content:space-between;padding:3px 6px;background:rgba(0,0,0,0.95);font-family:'Press Start 2P',monospace;font-size:5px;position:absolute;top:0;left:0;right:0;z-index:2;"><span id="gc-hp" style="color:#4CFF6C">HP:100</span><span id="gc-ammo" style="color:#FFD700">30/30</span><span id="gc-alive" style="color:rgba(255,255,255,0.6)">8▶</span><span id="gc-zone" style="color:#FF6B6B">30s</span></div><canvas id="gc-canvas" style="display:block;width:100%;height:100%;position:absolute;top:14px;left:0;"></canvas></div></div><div class="gc-scanlines"></div><div class="gc-fade"></div><div class="gc-ov"><div class="gc-play-px">▶ PLAY</div></div><div class="gc-badge b-hot" style="background:var(--red);color:#fff;border-color:var(--red2);box-shadow:2px 2px 0 var(--red2);">NEW</div><div class="gc-prize-tag">$20/WIN</div></div><div class="gc-info"><div class="gc-name">Puz Royale</div><div class="gc-desc">Battle royale. You vs 7 bots or real players. Last one standing wins real cash.</div><div class="gc-row"><span class="gc-prize-txt">$20/Win</span><span class="gc-players">Now live</span></div></div></div></a></div>
+        <div class="gc" style="--border-c:var(--red);--shadow:var(--red2);" onclick="openGameModal('puzroyale')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openGameModal('puzroyale');}"><div class="gc-wrap"><div class="gc-art"><div class="gc-art-inner" style="background:radial-gradient(ellipse at 50% 40%,#1a0808 0%,#0a0404 60%,#000 100%);"><div style="width:100%;height:100%;position:relative;overflow:hidden;background:#111;"><div style="display:flex;justify-content:space-between;padding:3px 6px;background:rgba(0,0,0,0.95);font-family:'Press Start 2P',monospace;font-size:5px;position:absolute;top:0;left:0;right:0;z-index:2;"><span id="gc-hp" style="color:#4CFF6C">HP:100</span><span id="gc-ammo" style="color:#FFD700">30/30</span><span id="gc-alive" style="color:rgba(255,255,255,0.6)">8▶</span><span id="gc-zone" style="color:#FF6B6B">30s</span></div><canvas id="gc-canvas" style="display:block;width:100%;height:100%;position:absolute;top:14px;left:0;"></canvas></div></div><div class="gc-scanlines"></div><div class="gc-fade"></div><div class="gc-ov"><div class="gc-play-px">▶ PLAY</div></div><div class="gc-badge b-hot" style="background:var(--red);color:#fff;border-color:var(--red2);box-shadow:2px 2px 0 var(--red2);">NEW</div><div class="gc-prize-tag">$20/WIN</div></div><div class="gc-info"><div class="gc-name">Puz Royale</div><div class="gc-desc">Battle royale. You vs 7 bots or real players. Last one standing wins real cash.</div><div class="gc-row"><span class="gc-prize-txt">$20/Win</span><span class="gc-players">Now live</span></div></div></div></div>
 
         <!-- MORE GAMES — COMING SOON PLACEHOLDER -->
         <div class="gc gc-locked" style="--border-c:rgba(255,255,255,0.15);--shadow:#000;">
@@ -1333,7 +1364,103 @@ END OLD GAMES HIDDEN -->
   </div>
 </div>
 
+<!-- ════════ GAME MODE MODAL ════════ -->
+<div class="game-modal-backdrop" id="game-modal-backdrop" onclick="if(event.target===this) closeGameModal()">
+  <div class="game-modal">
+    <button class="game-modal-close" onclick="closeGameModal()" aria-label="Close">✕</button>
+    <div class="game-modal-title" id="game-modal-title"></div>
+    <div class="game-modal-cards" id="game-modal-cards"></div>
+  </div>
+</div>
+
 <script>
+// ── GAME MODE MODAL ──────────────────────────────────────────────────────────
+// One reusable modal fed by this config — each game lists only the modes that
+// actually exist for it (Puz Royale has no solo, so it lists one card, not two).
+const GAME_MODES = {
+  pong: {
+    title: 'PONG',
+    cards: [
+      `<div class="offer-card" style="--oc:var(--blue);--os:var(--blue2);">
+        <div class="offer-game-tag" style="color:var(--blue);border-color:var(--blue2);background:rgba(61,158,255,.08);">PONG</div>
+        <div class="offer-type">SOLO CHALLENGE</div>
+        <div class="offer-amount" style="color:var(--blue);text-shadow:2px 2px 0 var(--blue2);">$5</div>
+        <div class="offer-desc">Beat the AI to win $5. Play as many times as you want.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;"><div style="background:rgba(255,176,32,.15);border:2px solid var(--amber);padding:8px 10px;text-align:center;"><div style="font-size:5px;color:var(--amber);letter-spacing:1px;margin-bottom:4px;text-align:center;">ENTRY FEE</div><div style="font-size:12px;color:var(--amber);">$2.99</div></div><div style="background:rgba(61,158,255,.15);border:2px solid var(--blue);padding:8px 10px;text-align:center;"><div style="font-size:5px;color:var(--blue);letter-spacing:1px;margin-bottom:4px;">PER WIN</div><div style="font-size:12px;color:var(--blue);">$5.00</div></div></div>
+        <a href="https://all-solo-ggames.vercel.app/pong/" onclick="goToPong(event)" class="btn" style="width:100%;justify-content:center;font-size:7px;margin-top:14px;display:block;text-align:center;text-decoration:none;background:var(--blue);color:#fff;border:2px solid var(--blue2);box-shadow:3px 3px 0 var(--blue2);">▶ PLAY SOLO</a>
+      </div>`,
+      `<div class="offer-card" style="--oc:var(--blue);--os:var(--blue2);">
+        <div class="offer-game-tag" style="color:var(--blue);border-color:var(--blue2);background:rgba(61,158,255,.08);">PONG</div>
+        <div class="offer-type">MULTIPLAYER</div>
+        <div class="offer-desc" style="margin-top:6px;">Challenge real players in a live multiplayer room. Unlimited plays.</div>
+        <a href="https://pong-wju4.onrender.com/" class="btn" style="width:100%;justify-content:center;font-size:7px;margin-top:14px;display:block;text-align:center;text-decoration:none;background:var(--blue);color:#fff;border:2px solid var(--blue2);box-shadow:3px 3px 0 var(--blue2);">▶ PLAY MULTIPLAYER</a>
+      </div>`,
+    ],
+  },
+  kurver: {
+    title: 'KURVER',
+    cards: [
+      `<div class="offer-card" style="--oc:var(--teal);--os:var(--teal2);">
+        <div class="offer-game-tag" style="color:var(--teal);border-color:var(--teal2);background:rgba(0,245,212,.08);">KURVER</div>
+        <div class="offer-type">SOLO CHALLENGE</div>
+        <div class="offer-amount" style="color:var(--teal);text-shadow:2px 2px 0 var(--teal2);font-size:32px;">$100</div>
+        <div class="offer-desc">Complete the Kurver solo challenge. Navigate the curve perfectly to claim the prize.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;"><div style="background:rgba(255,176,32,.15);border:2px solid var(--amber);padding:8px 10px;text-align:center;"><div style="font-size:5px;color:var(--amber);letter-spacing:1px;margin-bottom:4px;text-align:center;">SERVICE FEE</div><div style="font-size:12px;color:var(--amber);text-shadow:1px 1px 0 var(--amber2);">$2.99</div></div><div style="background:rgba(0,245,212,.15);border:2px solid var(--teal);padding:8px 10px;text-align:center;"><div style="font-size:5px;color:var(--teal);letter-spacing:1px;margin-bottom:4px;">YOU WIN</div><div style="font-size:12px;color:var(--teal);text-shadow:1px 1px 0 var(--teal2);">$100</div></div></div>
+        <a href="https://all-solo-ggames.vercel.app/kurver/" class="btn btn-teal" style="width:100%;justify-content:center;font-size:7px;margin-top:14px;text-decoration:none;">▶ PLAY SOLO</a>
+      </div>`,
+      `<div class="offer-card" style="--oc:var(--green);--os:var(--green2);">
+        <div class="offer-game-tag" style="color:var(--green);border-color:var(--green2);background:rgba(34,255,110,.08);">KURVER</div>
+        <div class="offer-type">MULTIPLAYER</div>
+        <div class="scale-bar">
+          <div class="entry-banner"><span class="amt">$2</span><span class="lbl">TO&nbsp;PLAY</span></div>
+          <div class="st">MORE PLAYERS = <b>BIGGER PRIZE</b></div>
+          <div class="tiers">
+            <div class="tier">3p <b>$5</b></div><div class="tier">4p <b>$6</b></div><div class="tier">5p <b>$8</b></div>
+            <div class="tier">6p <b>$10</b></div>
+          </div>
+        </div>
+        <a href="https://kurver-e7ow.onrender.com/multiplayer#/" class="btn" style="width:100%;justify-content:center;font-size:7px;margin-top:14px;background:var(--green);color:#020a04;border:2px solid var(--green2);box-shadow:3px 3px 0 var(--green2);text-decoration:none;">▶ PLAY MULTIPLAYER</a>
+      </div>`,
+    ],
+  },
+  puzroyale: {
+    title: 'PUZ ROYALE',
+    cards: [
+      `<div class="offer-card" style="--oc:var(--pink);--os:#aa0066;">
+        <div class="offer-game-tag" style="color:var(--pink);border-color:#aa0066;background:rgba(255,79,160,.08);">PUZ ROYALE</div>
+        <div class="offer-type">MULTIPLAYER</div>
+        <div class="scale-bar">
+          <div class="entry-banner"><span class="amt">$2</span><span class="lbl">TO&nbsp;PLAY</span></div>
+          <div class="st">MORE PLAYERS = <b>BIGGER PRIZE</b></div>
+          <div class="tiers">
+            <div class="tier" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.1);">3p <b>$5</b></div><div class="tier" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.1);">4p <b>$6</b></div><div class="tier" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.1);">5p <b>$8</b></div>
+            <div class="tier" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.1);">6p <b>$10</b></div><div class="tier" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.1);">8p <b>$14</b></div><div class="tier" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.1);">10p <b>$18</b></div>
+          </div>
+        </div>
+        <a href="https://battle-royale-agnc.onrender.com/rooms" class="btn" style="width:100%;justify-content:center;font-size:7px;margin-top:14px;display:block;text-align:center;text-decoration:none;background:var(--pink);color:#fff;border:2px solid #aa0066;box-shadow:3px 3px 0 #aa0066;">▶ PLAY MULTIPLAYER</a>
+      </div>`,
+    ],
+  },
+};
+
+function gameModalKeydownHandler(e) {
+  if (e.key === 'Escape') closeGameModal();
+}
+function openGameModal(gameKey) {
+  const g = GAME_MODES[gameKey];
+  if (!g) return;
+  document.getElementById('game-modal-title').textContent = g.title;
+  document.getElementById('game-modal-cards').innerHTML = g.cards.join('');
+  document.getElementById('game-modal-backdrop').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  document.addEventListener('keydown', gameModalKeydownHandler);
+}
+function closeGameModal() {
+  document.getElementById('game-modal-backdrop').classList.remove('open');
+  document.body.style.overflow = '';
+  document.removeEventListener('keydown', gameModalKeydownHandler);
+}
+
 const starsEl = document.getElementById('stars');
 const heroStarsEl = document.getElementById('hero-stars');
 if(heroStarsEl){for(let i=0;i<80;i++){const s=document.createElement('div');s.className='star';const sz=Math.random()<0.15?3:Math.random()<0.4?2:1;s.style.cssText=`width:${sz}px;height:${sz}px;top:${Math.random()*100}%;left:${Math.random()*100}%;--d:${1+Math.random()*3}s;--dl:${-Math.random()*3}s;opacity:${0.3+Math.random()*0.7};`;heroStarsEl.appendChild(s);}}
