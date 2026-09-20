@@ -5,10 +5,12 @@ const PAYOUTS = { pong: 5.00 };
 
 // Mirrors the client's buildCycleOrder(): fixed 1D order, identical for every player,
 // no shuffle.
-// Fixed 20-position cycle: Cycle 1 (games 1-10) = 5 Easy/5 Super; Cycle 2 (games 11-20) = 6 Easy/4 Super. Repeats every 20.
+// Two 10-match blocks that alternate forever: Block A (matches 1-10) = 5 Easy/5 Super,
+// Block B (matches 11-20) = 4 Easy/6 Super. 9 Easy / 11 Super per 20-match cycle.
+const BLOCK_A = ['EASY', 'EASY', 'SUPER', 'EASY', 'SUPER', 'EASY', 'SUPER', 'SUPER', 'EASY', 'SUPER'];
+const BLOCK_B = ['EASY', 'SUPER', 'EASY', 'SUPER', 'SUPER', 'EASY', 'SUPER', 'EASY', 'SUPER', 'SUPER'];
 function buildCycleOrder() {
-  return ['EASY', 'EASY', 'SUPER', 'EASY', 'SUPER', 'SUPER', 'EASY', 'SUPER', 'EASY', 'SUPER',
-          'EASY', 'SUPER', 'EASY', 'EASY', 'SUPER', 'EASY', 'EASY', 'SUPER', 'EASY', 'SUPER'];
+  return [...BLOCK_A, ...BLOCK_B];
 }
 
 // tier is a pure function of match_number (the cycle order never shuffles), so
