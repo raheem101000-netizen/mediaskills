@@ -171,8 +171,15 @@ td.pi{color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:7px;}
 
 <script>
 const adminKey = 'TENTEN2025';
+// Vercel's routes rewrite (/admin-users/([0-9]+) -> admin-user-detail.html?id=$1) is a
+// transparent server-side rewrite for a static file, not a redirect — the browser's
+// address bar (and therefore location.search) still shows the original /admin-users/19,
+// never the rewritten ?id=19. So the id has to come from the trailing path segment; the
+// query param is kept as a fallback in case this page is ever linked to directly with
+// ?id= (e.g. from a future dynamic route that really does pass it that way).
 const params = new URLSearchParams(location.search);
-const userId = params.get('id');
+const pathMatch = location.pathname.match(/\/admin-users\/(\d+)/);
+const userId = (pathMatch && pathMatch[1]) || params.get('id');
 let detail = null;
 
 function esc(s) {
