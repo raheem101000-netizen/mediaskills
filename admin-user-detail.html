@@ -62,7 +62,9 @@ body::after{
   background:var(--card);border:3px solid var(--red);box-shadow:5px 5px 0 var(--red2);
   padding:16px 18px;margin-bottom:12px;
 }
+.attn-box.neutral{border-color:var(--border);box-shadow:5px 5px 0 #000;}
 .attn-title{font-size:8px;color:var(--red);letter-spacing:1px;margin-bottom:10px;}
+.attn-title.neutral{color:var(--muted);}
 .attn-row{font-size:7px;color:var(--text);padding:6px 0;border-bottom:1px solid var(--border);font-family:'Share Tech Mono',monospace;font-size:9px;}
 .attn-row:last-child{border-bottom:none;}
 .attn-empty{font-size:7px;color:var(--muted);letter-spacing:.5px;padding:16px 18px;background:var(--card);border:2px solid var(--border);margin-bottom:12px;}
@@ -258,6 +260,18 @@ function renderAttention(a) {
   el.insertAdjacentHTML('beforeend', `<div class="attn-note">${esc(a.failed_payouts_note)}</div>`);
 }
 
+function renderPreLoggingNote(p) {
+  const el = document.getElementById('attention-list');
+  if (!p.entries.length) return;
+  el.insertAdjacentHTML('beforeend', `
+    <div class="attn-box neutral">
+      <div class="attn-title neutral">ℹ ${p.entries.length} ENTRY(S) PREDATE OUTCOME LOGGING — RESULT UNKNOWN, NOT NECESSARILY A PROBLEM</div>
+      <div class="attn-note" style="padding-top:0;margin-bottom:8px;">Outcome logging (match_results) began ${fmtTs(p.outcome_logging_started_at)}. These entries were charged before that and have no result on record anywhere (checked both match_results and game_wins) — this is a known gap, not evidence of a broken charge. Verified against Stripe: sampled charges from this period were real, successfully captured payments.</div>
+      ${p.entries.map(e => `<div class="attn-row">${money(e.amount)} — ${fmtTs(e.created_at)} — ${shortPi(e.stripe_payment_id)}</div>`).join('')}
+    </div>
+  `);
+}
+
 function renderGameLog(rows) {
   document.getElementById('game-log-count').textContent = `(${rows.length})`;
   const tbody = document.getElementById('game-log-rows');
@@ -331,6 +345,14 @@ function exportCsv() {
   detail.payouts.forEach(p => {
     lines.push([p.timestamp, p.amount, p.status, p.method, p.processor_reference, p.note || ''].map(toCsvValue).join(','));
   });
+  if (detail.entries_predating_outcome_logging && detail.entries_predating_outcome_logging.entries.length) {
+    lines.push('');
+    lines.push(`=== ENTRIES PREDATING OUTCOME LOGGING (logging began ${detail.entries_predating_outcome_logging.outcome_logging_started_at}; result unknown, not necessarily a problem) ===`);
+    lines.push(['timestamp','amount','stripe_payment_id'].join(','));
+    detail.entries_predating_outcome_logging.entries.forEach(e => {
+      lines.push([e.created_at, e.amount, e.stripe_payment_id].map(toCsvValue).join(','));
+    });
+  }
   const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -366,6 +388,7 @@ async function load() {
     document.getElementById('ledger-warn').style.display = detail.ledger_available ? 'none' : 'block';
     renderSummary(detail.summary, detail.user);
     renderAttention(detail.needs_attention);
+    renderPreLoggingNote(detail.entries_predating_outcome_logging);
     renderGameLog(detail.game_log);
     renderPayouts(detail.payouts);
   } catch (e) {

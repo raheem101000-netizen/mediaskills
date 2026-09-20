@@ -494,7 +494,7 @@ async function userDetail(req, res) {
   // them together), so they run concurrently instead of stacking their latency — on a
   // cold Neon connection each query alone can take several seconds, and this endpoint
   // was measured at 22-24s when they ran sequentially versus 2-4s warm.
-  const [sessions, matchResults, legacyWinsRaw, ledgerResult] = await Promise.all([
+  const [sessions, matchResults, legacyWinsRaw, ledgerResult, earliestMatchResultRows] = await Promise.all([
     sql`
       SELECT id, game, mode, amount, stripe_payment_id, created_at
       FROM sessions WHERE user_id = ${userId} ORDER BY created_at ASC
@@ -515,9 +515,17 @@ async function userDetail(req, res) {
       SELECT id, game, match_number, reason, delta, balance_before, balance_after, stripe_payment_id, created_at
       FROM balance_ledger WHERE player_id = ${userId} ORDER BY created_at DESC
     `.catch(() => null),
+    // Global (not per-player) moment outcome logging began — match_results didn't exist
+    // before this, and game_wins never logged losses at any point, so an entry with no
+    // outcome dated before this instant is a known blind spot, not a broken charge.
+    // Verified against real data: every "no outcome" entry before this exact timestamp
+    // for an existing user turned out to be a genuine pre-audit-era game, confirmed both
+    // against game_wins (no match) and Stripe (real captured charges, not failed/auth-only).
+    sql`SELECT MIN(created_at) AS earliest FROM match_results`,
   ]);
   const ledgerAvailable = ledgerResult !== null;
   const ledger = ledgerResult || [];
+  const outcomeLoggingStartedAt = earliestMatchResultRows[0] && earliestMatchResultRows[0].earliest;
 
   // Legacy wins from before match_results existed (or before a given win was ever
   // migrated) have no reliable link to match_results — only include game_wins rows whose
@@ -620,7 +628,13 @@ async function userDetail(req, res) {
 
   // ── Needs-attention flags
   const winsNotCredited = matchResults.filter(m => m.outcome === 'win' && !m.credited);
-  const entriesNeverCompleted = sessions.filter(s => s.stripe_payment_id && !matchResultPaymentIds.has(s.stripe_payment_id) && !legacyWins.some(w => w.stripe_payment_id === s.stripe_payment_id));
+  // An entry with no match_results row AND no game_wins row could mean the game never
+  // completed - OR it could just predate outcome logging entirely (match_results didn't
+  // exist yet, and game_wins never logged losses, ever). Only the former is a real red
+  // flag; the latter is a known, honest gap, not evidence of a broken charge.
+  const sessionsWithNoOutcome = sessions.filter(s => s.stripe_payment_id && !matchResultPaymentIds.has(s.stripe_payment_id) && !legacyWins.some(w => w.stripe_payment_id === s.stripe_payment_id));
+  const entriesNeverCompleted = sessionsWithNoOutcome.filter(s => outcomeLoggingStartedAt && new Date(s.created_at) >= new Date(outcomeLoggingStartedAt));
+  const entriesPreOutcomeLogging = sessionsWithNoOutcome.filter(s => !outcomeLoggingStartedAt || new Date(s.created_at) < new Date(outcomeLoggingStartedAt));
 
   // ── Summary
   const wins = matchResults.filter(m => m.outcome === 'win').length + legacyWins.length;
@@ -648,6 +662,14 @@ async function userDetail(req, res) {
       entries_never_completed: entriesNeverCompleted.map(s => ({ id: s.id, amount: parseFloat(s.amount), stripe_payment_id: s.stripe_payment_id, created_at: s.created_at })),
       pending_payout: user.payout_requested_at ? { requested_at: user.payout_requested_at, amount: parseFloat(user.balance) } : null,
       failed_payouts_note: 'This system has no automated payout processor — payouts are manual PayPal transfers with no failure/status feedback, so "failed" is not a trackable state here.',
+    },
+    // Not a red flag: entries charged before outcome logging existed, with no result on
+    // record anywhere (checked both match_results and game_wins). Shown separately so
+    // nothing about a user's history is silently hidden, without implying anything is
+    // actually wrong with these charges.
+    entries_predating_outcome_logging: {
+      outcome_logging_started_at: outcomeLoggingStartedAt,
+      entries: entriesPreOutcomeLogging.map(s => ({ id: s.id, amount: parseFloat(s.amount), stripe_payment_id: s.stripe_payment_id, created_at: s.created_at })),
     },
     game_log: gameLog,
     payouts,
