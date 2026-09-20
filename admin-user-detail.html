@@ -214,13 +214,13 @@ function renderSummary(s, user) {
     <div class="stat-box neutral"><div class="stat-label">Wins / Losses</div><div class="stat-num">${s.wins} / ${s.losses}</div></div>
     <div class="stat-box neutral"><div class="stat-label">Win Rate</div><div class="stat-num">${s.win_rate === null ? '—' : (s.win_rate * 100).toFixed(1) + '%'}</div></div>
     <div class="stat-box neutral"><div class="stat-label">Total Entries Paid</div><div class="stat-num">${money(s.total_entries_paid)}</div></div>
-    <div class="stat-box neutral"><div class="stat-label">Total Payouts Recorded</div><div class="stat-num">${money(s.total_payouts_recorded)}${s.has_undated_legacy_payout ? ' *' : ''}</div></div>
+    <div class="stat-box neutral">
+      <div class="stat-label">Total Payouts Recorded</div>
+      <div class="stat-num">${money(s.total_payouts_recorded)}</div>
+      ${s.undated_legacy_payout_count ? `<div style="font-size:6px;color:var(--amber);margin-top:8px;letter-spacing:.5px;line-height:1.6;">+ ${s.undated_legacy_payout_count} earlier payout${s.undated_legacy_payout_count > 1 ? 's' : ''} — amount not recorded (pre-ledger)</div>` : ''}
+    </div>
     <div class="stat-box neutral"><div class="stat-label">Net Position (recorded)</div><div class="stat-num ${netClass}">${money(s.net_position_recorded_only)}</div></div>
   `;
-  if (s.has_undated_legacy_payout) {
-    document.getElementById('summary-grid').insertAdjacentHTML('beforeend',
-      `<div class="attn-note" style="grid-column:1/-1;">* At least one historical payout predates the balance ledger — its amount is not included above (see Payouts section).</div>`);
-  }
 }
 
 function renderAttention(a) {

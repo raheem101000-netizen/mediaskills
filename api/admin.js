@@ -609,7 +609,7 @@ async function userDetail(req, res) {
       method: 'PayPal',
       processor_reference: user.paypal_email || null,
       source: 'legacy_last_payout_at',
-      note: 'Predates balance_ledger — amount not on record',
+      note: 'Amount not recorded (pre-ledger)',
     });
   }
   if (user.payout_requested_at) {
@@ -654,7 +654,10 @@ async function userDetail(req, res) {
       win_rate: gamesPlayed ? wins / gamesPlayed : null,
       total_entries_paid: totalEntries,
       total_payouts_recorded: totalPayoutsRecorded,
-      has_undated_legacy_payout: payouts.some(p => p.source === 'legacy_last_payout_at'),
+      // last_payout_at is a single scalar on users (not a real history), so this can
+      // only ever be 0 or 1 today - counted rather than a bare boolean so the UI reads
+      // as "N earlier payouts" and stays correct if payout history is ever backfilled.
+      undated_legacy_payout_count: payouts.filter(p => p.source === 'legacy_last_payout_at').length,
       net_position_recorded_only: totalPayoutsRecorded - totalEntries,
     },
     needs_attention: {
