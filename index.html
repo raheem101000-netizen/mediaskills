@@ -1162,17 +1162,6 @@ END OLD GAMES HIDDEN -->
   <!-- PONG SOLO -->
   <div class="offer-card" style="--oc:var(--blue);--os:var(--blue2);"><div style="width:100%;height:200px;overflow:hidden;margin-bottom:12px;background:#000;border:2px solid rgba(61,158,255,0.3);position:relative;"><canvas id="pong-solo-canvas-real" style="width:100%;height:100%;display:block;"></canvas></div><div class="offer-game-tag" style="color:var(--blue);border-color:var(--blue2);background:rgba(61,158,255,.08);">PONG</div><div class="offer-type">SOLO CHALLENGE</div><div class="offer-amount" style="color:var(--blue);text-shadow:2px 2px 0 var(--blue2);">$5</div><div class="offer-desc">Beat the AI to win $5. Play as many times as you want.</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;"><div style="background:rgba(255,176,32,.15);border:2px solid var(--amber);padding:8px 10px;text-align:center;"><div style="font-size:5px;color:var(--amber);letter-spacing:1px;margin-bottom:4px;text-align:center;">ENTRY FEE</div><div style="font-size:12px;color:var(--amber);">$2.99</div></div><div style="background:rgba(61,158,255,.15);border:2px solid var(--blue);padding:8px 10px;text-align:center;"><div style="font-size:5px;color:var(--blue);letter-spacing:1px;margin-bottom:4px;">PER WIN</div><div style="font-size:12px;color:var(--blue);">$5.00</div></div></div><div style='font-size:5px;color:rgba(200,195,255,.3);text-align:center;margin-bottom:10px;font-family:Press Start 2P,monospace;'>UNLIMITED PLAYS</div><a href="https://all-solo-ggames.vercel.app/pong/" onclick="goToPong(event)" class="btn" style="width:100%;justify-content:center;font-size:7px;margin-top:14px;display:block;text-align:center;text-decoration:none;background:var(--blue);color:#fff;border:2px solid var(--blue2);box-shadow:3px 3px 0 var(--blue2);">▶ PLAY SOLO</a></div>
 
-  <!-- KURVER $100 SOLO -->
-  <div class="offer-card" style="--oc:var(--teal);--os:var(--teal2);">
-    <div style="width:100%;height:200px;overflow:hidden;margin-bottom:12px;background:#000;border:2px solid rgba(0,245,212,0.3);"><img src="https://kurver-e7ow.onrender.com/images/tuto/turn.gif" style="width:100%;height:100%;object-fit:contain;background:#000;" alt="Kurver gameplay"/></div>
-    <div class="offer-game-tag" style="color:var(--teal);border-color:var(--teal2);background:rgba(0,245,212,.08);">KURVER</div>
-    <div class="offer-type">SOLO CHALLENGE</div>
-    <div class="offer-amount" style="color:var(--teal);text-shadow:2px 2px 0 var(--teal2);font-size:32px;">$100</div>
-    <div class="offer-desc">Complete the Kurver solo challenge. Navigate the curve perfectly to claim the prize.</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;"><div style="background:rgba(255,176,32,.15);border:2px solid var(--amber);padding:8px 10px;text-align:center;"><div style="font-size:5px;color:var(--amber);letter-spacing:1px;margin-bottom:4px;text-align:center;">SERVICE FEE</div><div style="font-size:12px;color:var(--amber);text-shadow:1px 1px 0 var(--amber2);">$2.99</div></div><div style="background:rgba(0,245,212,.15);border:2px solid var(--teal);padding:8px 10px;text-align:center;"><div style="font-size:5px;color:var(--teal);letter-spacing:1px;margin-bottom:4px;">YOU WIN</div><div style="font-size:12px;color:var(--teal);text-shadow:1px 1px 0 var(--teal2);">$100</div></div></div>
-    <a href="https://all-solo-ggames.vercel.app/kurver/" class="btn btn-teal" style="width:100%;justify-content:center;font-size:7px;margin-top:14px;text-decoration:none;">▶ PLAY KURVER</a>
-  </div>
-
 </div>
 
 <div class="rainbow"></div>
@@ -1404,15 +1393,6 @@ const GAME_MODES = {
   kurver: {
     title: 'KURVER',
     cards: [
-      `<div class="offer-card" style="--oc:var(--teal);--os:var(--teal2);">
-        <div style="background:var(--amber);color:#000;font-family:'Press Start 2P',monospace;font-size:11px;letter-spacing:1.5px;text-align:center;padding:10px 0;margin:-18px -18px 16px;">★ SOLO</div>
-        <div class="offer-game-tag" style="color:var(--teal);border-color:var(--teal2);background:rgba(0,245,212,.08);">KURVER</div>
-        <div class="offer-type">SOLO CHALLENGE</div>
-        <div class="offer-amount" style="color:var(--teal);text-shadow:2px 2px 0 var(--teal2);font-size:32px;">$100</div>
-        <div class="offer-desc">Complete the Kurver solo challenge. Navigate the curve perfectly to claim the prize.</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;"><div style="background:rgba(255,176,32,.15);border:2px solid var(--amber);padding:8px 10px;text-align:center;"><div style="font-size:5px;color:var(--amber);letter-spacing:1px;margin-bottom:4px;text-align:center;">SERVICE FEE</div><div style="font-size:12px;color:var(--amber);text-shadow:1px 1px 0 var(--amber2);">$2.99</div></div><div style="background:rgba(0,245,212,.15);border:2px solid var(--teal);padding:8px 10px;text-align:center;"><div style="font-size:5px;color:var(--teal);letter-spacing:1px;margin-bottom:4px;">YOU WIN</div><div style="font-size:12px;color:var(--teal);text-shadow:1px 1px 0 var(--teal2);">$100</div></div></div>
-        <a href="https://all-solo-ggames.vercel.app/kurver/" class="btn btn-teal" style="width:100%;justify-content:center;font-size:7px;margin-top:14px;text-decoration:none;">▶ PLAY SOLO</a>
-      </div>`,
       `<div class="offer-card" style="--oc:var(--green);--os:var(--green2);">
         <div style="background:var(--teal);color:#000;font-family:'Press Start 2P',monospace;font-size:11px;letter-spacing:1.5px;text-align:center;padding:10px 0;margin:-18px -18px 16px;">★ MULTIPLAYER</div>
         <div class="offer-game-tag" style="color:var(--green);border-color:var(--green2);background:rgba(34,255,110,.08);">KURVER</div>
