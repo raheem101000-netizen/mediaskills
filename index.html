@@ -1621,7 +1621,7 @@ createPongPreview('hero-pong-canvas-slide', 640, 400, '#3d9eff', '#bf5fff');
     slides[cur].classList.add('on');pds[cur].classList.add('on');
   },5000);
 })();
-function initKurverClip(canvas, numLines=6, maxMs=15000, holdFrames=60, smart=false){
+function initKurverClip(canvas, numLines=6, maxMs=15000, holdFrames=60){
   const ctx=canvas.getContext('2d');
   let W,H,grid,curves,dead,deadAge,startT;
   const STEP=1.3,LINE_W=3,D=0.05,LAG=13;
@@ -1633,19 +1633,6 @@ function initKurverClip(canvas, numLines=6, maxMs=15000, holdFrames=60, smart=fa
   }
   function occ(x,y){const xi=x|0,yi=y|0;if(xi<8||yi<8||xi>=W-8||yi>=H-8)return true;return grid[yi*W+xi]===1;}
   function mark(x,y){const xi=x|0,yi=y|0;if(xi>=0&&yi>=0&&xi<W&&yi<H)grid[yi*W+xi]=1;}
-  // Read-only look-ahead: walks a candidate heading forward up to 40 steps using
-  // the same 5x5 collision test as the real move, and returns how many steps it
-  // survives before hitting a trail/wall. Never calls mark().
-  function lookAhead(x,y,angle){
-    const ca=Math.cos(angle),sa=Math.sin(angle);
-    for(let i=0;i<40;i++){
-      x+=ca*STEP; y+=sa*STEP;
-      let hit=false;
-      for(let dx=-2;dx<=2&&!hit;dx++)for(let dy=-2;dy<=2&&!hit;dy++)if(occ(x+dx,y+dy))hit=true;
-      if(hit)return i;
-    }
-    return 40;
-  }
   function reset(){
     curves=[];dead=false;startT=performance.now();grid=new Uint8Array(W*H);
     ctx.fillStyle='#0d0d1a';ctx.fillRect(0,0,W,H);
@@ -1655,17 +1642,7 @@ function initKurverClip(canvas, numLines=6, maxMs=15000, holdFrames=60, smart=fa
   function loop(){
     if(!dead){
       curves.forEach(c=>{if(!c.alive)return;
-        if(smart){
-          const cand=[-0.09,-0.06,-0.03,0,0.03,0.06,0.09];
-          let bestOff=0,bestSurvive=-1;
-          for(const off of cand){
-            const surv=lookAhead(c.x,c.y,c.a+off);
-            if(surv>bestSurvive||(surv===bestSurvive&&Math.abs(off)<Math.abs(bestOff))){bestSurvive=surv;bestOff=off;}
-          }
-          c.a+=bestOff;
-        } else {
-          c.a+=Math.sin(performance.now()*0.001+c.x*0.008)*D*0.5+(Math.random()-0.5)*D*0.6;
-        }
+        c.a+=Math.sin(performance.now()*0.001+c.x*0.008)*D*0.5+(Math.random()-0.5)*D*0.6;
         const px=c.x,py=c.y;c.x+=Math.cos(c.a)*STEP;c.y+=Math.sin(c.a)*STEP;
         let hit=false;for(let dx=-2;dx<=2&&!hit;dx++)for(let dy=-2;dy<=2&&!hit;dy++)if(occ(c.x+dx,c.y+dy))hit=true;
         let inHole=false;if(c.holeLen>0){inHole=true;c.holeLen--;}else{c.holeCD--;if(c.holeCD<=0){c.holeCD=60+(Math.random()*60|0);c.holeLen=8;}}
@@ -1689,7 +1666,7 @@ function initKurverClip(canvas, numLines=6, maxMs=15000, holdFrames=60, smart=fa
 const kurvEl=document.getElementById('kurv');
 if(kurvEl) initKurverClip(kurvEl, 6);
 const kurvCardEl=document.getElementById('kurv-card');
-if(kurvCardEl) initKurverClip(kurvCardEl, 3, 60000, 90, true);
+if(kurvCardEl) initKurverClip(kurvCardEl, 3, 60000, 90);
 </script>
 
 </body>
