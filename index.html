@@ -959,6 +959,33 @@ body{
   width:100%;min-width:0;flex-shrink:1;
 }
 
+/* ═══════════════════════════════
+   HERO — COMPETE! WIN! GET PAID!
+═══════════════════════════════ */
+.hero{position:relative;overflow:hidden;background:radial-gradient(ellipse at 12% 0%,#12002e,#000 62%);border-bottom:4px solid rgba(255,255,255,0.08);}
+.hero-inner{max-width:1180px;margin:0 auto;padding:54px 32px;display:grid;grid-template-columns:1fr 1.05fr;gap:44px;align-items:center;}
+.hf-eye{font-family:'Press Start 2P',monospace;font-size:7px;color:var(--purple);letter-spacing:2px;margin-bottom:18px;text-transform:uppercase;}
+.hf-h1{font-family:'Press Start 2P',monospace;font-size:32px;line-height:1.45;letter-spacing:1px;margin-bottom:20px;color:var(--text);}
+.hf-h1 .p{color:var(--gold);}
+.hf-hook{display:inline-flex;align-items:center;gap:8px;font-family:'Press Start 2P',monospace;font-size:8px;letter-spacing:1px;color:var(--gold);border:2px solid var(--gold2);background:rgba(255,228,77,.08);padding:10px 14px;box-shadow:2px 2px 0 var(--gold2);margin-bottom:26px;}
+.hf-hook b{color:#fff;}
+.hf-btns{display:flex;gap:12px;flex-wrap:wrap;}
+.showwin{background:#0d0d0d;border:3px solid var(--purple);box-shadow:6px 6px 0 var(--purple2);}
+.showwin .bar{background:var(--purple);padding:8px 12px;display:flex;justify-content:space-between;align-items:center;font-family:'Press Start 2P',monospace;font-size:7px;color:#fff;letter-spacing:1px;}
+.showwin .bar .dots{display:flex;gap:4px;}
+.showwin .bar .d{width:9px;height:9px;border:2px solid rgba(0,0,0,0.3);}
+.showwin .screen{position:relative;height:320px;overflow:hidden;background:#000;}
+.showwin .slide{position:absolute;inset:0;opacity:0;transition:opacity .6s;}
+.showwin .slide.on{opacity:1;}
+.showwin .slide .slide-media{width:100%;height:100%;}
+.showwin .slide .slide-media video,.showwin .slide .slide-media canvas,.showwin .slide .slide-media img{width:100%;height:100%;object-fit:cover;display:block;}
+.showwin .gtag{position:absolute;bottom:10px;left:10px;font-family:'Press Start 2P',monospace;font-size:8px;letter-spacing:1px;padding:6px 10px;border:2px solid;z-index:3;}
+.showwin .gprize{position:absolute;bottom:10px;right:10px;font-family:'Press Start 2P',monospace;font-size:8px;padding:6px 10px;background:rgba(0,0,0,.82);color:var(--gold);border:2px solid var(--gold2);z-index:3;}
+.showwin .progress{display:flex;gap:6px;justify-content:center;padding:11px;background:#0d0d0d;}
+.showwin .pd{width:26px;height:4px;background:rgba(255,255,255,0.15);transition:background .3s;}
+.showwin .pd.on{background:var(--purple);}
+@media(max-width:900px){.hero-inner{grid-template-columns:1fr;}.hf-h1{font-size:26px;}}
+
 </style>
 </head>
 <body>
@@ -1013,52 +1040,41 @@ async function goToPong(e) {
 </script>
 
 
-<!-- ════════ HERO PIXEL SCENE ════════ -->
+<!-- ════════ HERO — COMPETE! WIN! GET PAID! ════════ -->
 <div class="hero">
-  <div class="hero-sky"></div>
-  <div class="stars" id="hero-stars"></div>
-  <!-- pixel moon - REMOVED -->
-  <!-- pixel clouds - REMOVED -->
-  <!-- pixel city skyline - REMOVED -->
-  <!-- pixel mushrooms - REMOVED -->
-  <!-- pixel ground - REMOVED -->
-  <!-- pixel frog character - REMOVED -->
-
-  <!-- HERO CONTENT -->
-  <div class="hero-content">
+  <div class="hero-inner">
     <div>
-      <div class="px-badge">TENTEN</div>
-      <h1 class="hero-h1">
-        MORE GAMES
-        <span style="display:block;font-size:14px;color:#ffffff;">COMING SOON</span>
-      </h1>
-      <p class="hero-desc">
-        We're building the next challenge. Play Pong now while you wait.
-      </p>
-      <div class="hero-btns">
-        <a href="https://pong-wju4.onrender.com/" class="btn btn-gold" style="border-radius:8px;font-size:8px;padding:12px 24px;text-decoration:none;">▶ PLAY PONG NOW</a>
+      <div class="hf-eye">⬡ SKILL GAMES · REAL PAYOUTS</div>
+      <div class="hf-h1">COMPETE!<br>WIN! <span class="p">GET PAID!</span></div>
+      <div class="hf-hook">🏆 MORE PLAYERS, <b>BIGGER POT</b></div>
+      <div class="hf-btns">
+        <a class="btn btn-gold" href="#games">▶ PLAY NOW</a>
+        <a class="btn btn-ghost" href="#how">HOW IT WORKS</a>
       </div>
     </div>
-
-    <!-- pixel OS window -->
-    <div class="challenge-win">
-      <div class="win-titlebar">
-        <span>★ PONG</span>
-        <div class="win-dots">
-          <div class="win-dot" style="background:#ff4757"></div>
-          <div class="win-dot" style="background:#ffe600"></div>
-          <div class="win-dot" style="background:#22ff6e"></div>
+    <div class="showwin">
+      <div class="bar"><span>★ LIVE GAMEPLAY</span><div class="dots"><div class="d" style="background:#ff4757"></div><div class="d" style="background:#ffe600"></div><div class="d" style="background:#22ff6e"></div></div></div>
+      <div class="screen">
+        <!-- SLIDE 1: PUZ ROYALE — same canvas battle-royale-bot preview used on the Puz Royale games-grid card (gc-canvas), same HUD, resized for this slide -->
+        <div class="slide on" data-i="0">
+          <div class="slide-media" id="slide-puz"><div style="width:100%;height:100%;position:relative;overflow:hidden;background:#111;"><div style="display:flex;justify-content:space-between;padding:3px 6px;background:rgba(0,0,0,0.95);font-family:'Press Start 2P',monospace;font-size:5px;position:absolute;top:0;left:0;right:0;z-index:2;"><span id="hero-puz-hp" style="color:#4CFF6C">HP:100</span><span id="hero-puz-ammo" style="color:#FFD700">30/30</span><span id="hero-puz-alive" style="color:rgba(255,255,255,0.6)">8▶</span><span id="hero-puz-zone" style="color:#FF6B6B">30s</span></div><canvas id="hero-puz-canvas" style="display:block;width:100%;height:100%;position:absolute;top:14px;left:0;"></canvas></div></div>
+          <div class="gtag" style="color:#ff4fa0;border-color:#aa0066;background:rgba(255,79,160,.12);">PUZ ROYALE</div>
+          <div class="gprize">WIN $18</div>
+        </div>
+        <!-- SLIDE 2: KURVER — new clip, canvas is driven by the JS block below -->
+        <div class="slide" data-i="1">
+          <canvas id="kurv" width="520" height="320" style="width:100%;height:100%;display:block;"></canvas>
+          <div class="gtag" style="color:#22ff6e;border-color:#00a030;background:rgba(34,255,110,.12);">KURVER</div>
+          <div class="gprize">WIN $10</div>
+        </div>
+        <!-- SLIDE 3: PONG — same canvas AI-pong preview used on the Pong games-grid card (gc-pong-canvas), same HUD, resized for this slide -->
+        <div class="slide" data-i="2">
+          <div class="slide-media" id="slide-pong"><div style="width:100%;height:100%;position:relative;"><div style="display:flex;justify-content:space-between;padding:3px 6px;background:rgba(0,0,0,0.95);font-family:'Press Start 2P',monospace;font-size:5px;position:absolute;top:0;left:0;right:0;z-index:2;"><span id="hero-pong-score" style="color:#3d9eff;">0 — 0</span></div><canvas id="hero-pong-canvas-slide" style="display:block;width:100%;height:100%;position:absolute;top:14px;left:0;"></canvas></div></div>
+          <div class="gtag" style="color:#3d9eff;border-color:#0044bb;background:rgba(61,158,255,.12);">PONG</div>
+          <div class="gprize">WIN $5</div>
         </div>
       </div>
-      <div class="win-body" style="padding:0;">
-        <div style="width:100%;overflow:hidden;position:relative;height:260px;background:#000;">
-          <canvas id="hero-pong-canvas" style="width:100%;height:100%;display:block;"></canvas>
-        </div>
-        <div style="padding:12px;">
-          <a href="https://pong-wju4.onrender.com/" class="btn btn-purple" style="width:100%;justify-content:center;font-size:7px;padding:12px;text-decoration:none;display:block;text-align:center;">★ PLAY PONG NOW</a>
-          <div style="text-align:center;margin-top:8px;font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(200,195,255,.25);">MULTIPLAYER ROOM · UNLIMITED PLAYS</div>
-        </div>
-      </div>
+      <div class="progress"><div class="pd on"></div><div class="pd"></div><div class="pd"></div></div>
     </div>
   </div>
 </div>
@@ -1561,7 +1577,6 @@ function createPongPreview(canvasId, W, H, color1, color2) {
   }
   requestAnimationFrame(loop);
 }
-createPongPreview('hero-pong-canvas', 420, 260, '#3d9eff', '#bf5fff');
 createPongPreview('pong-solo-canvas', 300, 160, '#3d9eff', '#bf5fff');
 createPongPreview('pong-mp-canvas', 300, 160, '#3d9eff', '#bf5fff');
 const urlParams = new URLSearchParams(window.location.search);
@@ -1576,6 +1591,55 @@ if (devMode) {
   });
 }
 createPongPreview('gc-pong-canvas', 200, 253, '#3d9eff', '#bf5fff');
+
+// Hero slideshow previews — same functions/HUD as the games-grid Puz Royale
+// and Pong cards, just instantiated into new canvases sized for the hero slide.
+createGame('hero-puz-canvas', {hp:'hero-puz-hp', ammo:'hero-puz-ammo', alive:'hero-puz-alive', zone:'hero-puz-zone'}, 520, 320);
+createPongPreview('hero-pong-canvas-slide', 520, 320, '#3d9eff', '#bf5fff');
+</script>
+
+<script>
+(function(){
+  const slides=[...document.querySelectorAll('.hero .slide')];
+  const pds=[...document.querySelectorAll('.hero .pd')];
+  if(!slides.length)return;
+  let cur=0;
+  setInterval(()=>{
+    slides[cur].classList.remove('on');pds[cur].classList.remove('on');
+    cur=(cur+1)%slides.length;
+    slides[cur].classList.add('on');pds[cur].classList.add('on');
+  },5000);
+})();
+(function(){
+  const el=document.getElementById('kurv');if(!el)return;
+  const ctx=el.getContext('2d');
+  const W=520,H=320,STEP=1.15,LINE_W=3,D=0.05,LAG=13;
+  const COLORS=['#FF4444','#FFD700','#4BA8FF','#DA70D6','#4CFF6C','#FF8C00'];
+  let curves,grid,dead,deadAge,startT;const MAXMS=15000;
+  function occ(x,y){const xi=x|0,yi=y|0;if(xi<8||yi<8||xi>=W-8||yi>=H-8)return true;return grid[yi*W+xi]===1;}
+  function mark(x,y){const xi=x|0,yi=y|0;if(xi>=0&&yi>=0&&xi<W&&yi<H)grid[yi*W+xi]=1;}
+  function reset(){curves=[];dead=false;startT=performance.now();grid=new Uint8Array(W*H);
+    ctx.fillStyle='#0d0d1a';ctx.fillRect(0,0,W,H);ctx.strokeStyle='rgba(255,80,80,0.45)';ctx.lineWidth=2;ctx.strokeRect(6,6,W-12,H-12);
+    [[100,90,0.3],[420,100,2.7],[260,250,-1.2],[100,250,-0.6],[420,250,3.6],[260,80,1.4]].forEach((s,i)=>
+      curves.push({x:s[0],y:s[1],a:s[2],col:COLORS[i],alive:true,buf:[],holeCD:60+(Math.random()*60|0),holeLen:0}));}
+  function loop(){
+    if(!dead){
+      curves.forEach(c=>{if(!c.alive)return;
+        c.a+=Math.sin(performance.now()*0.001+c.x*0.008)*D*0.5+(Math.random()-0.5)*D*0.6;
+        const px=c.x,py=c.y;c.x+=Math.cos(c.a)*STEP;c.y+=Math.sin(c.a)*STEP;
+        let hit=false;for(let dx=-2;dx<=2&&!hit;dx++)for(let dy=-2;dy<=2&&!hit;dy++)if(occ(c.x+dx,c.y+dy))hit=true;
+        let inHole=false;if(c.holeLen>0){inHole=true;c.holeLen--;}else{c.holeCD--;if(c.holeCD<=0){c.holeCD=60+(Math.random()*60|0);c.holeLen=8;}}
+        if(!inHole){ctx.beginPath();ctx.strokeStyle=c.col;ctx.lineWidth=LINE_W;ctx.lineCap='round';ctx.moveTo(px,py);ctx.lineTo(c.x,c.y);ctx.stroke();}
+        c.buf.push([px,py,c.x,c.y,inHole]);
+        if(c.buf.length>LAG){const o=c.buf.shift();if(!o[4]){const st=Math.ceil(STEP);for(let s=0;s<=st;s++){const t=s/st;mark(o[0]+(o[2]-o[0])*t,o[1]+(o[3]-o[1])*t);}}}
+        if(hit)c._die=true;});
+      curves.forEach(c=>{if(c._die){c.alive=false;c._die=false;}});
+      if(curves.filter(c=>c.alive).length<=1||performance.now()-startT>=MAXMS){dead=true;deadAge=0;}
+    } else {deadAge++;if(deadAge>60)reset();}
+    requestAnimationFrame(loop);
+  }
+  reset();loop();
+})();
 </script>
 
 </body>
