@@ -207,28 +207,72 @@ async function loadProfile() {
   }
 }
 
+// Reads a File, decodes it as an image, and re-encodes it as a small JPEG.
+// This is the real fix for "select a photo, nothing happens": real phone
+// photos are routinely 3-8MB (well over any sane inline-storage limit), and
+// iPhones default to HEIC, which most browsers can't render as <img src>.
+// Resizing+recompressing to JPEG here means every upload is small AND in a
+// universally-renderable format, regardless of what the user picked.
+function readAndCompressImage(file) {
+  return new Promise((resolve, reject) => {
+    if (!file.type || !file.type.startsWith('image/')) { reject(new Error('TYPE')); return; }
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('READ'));
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('DECODE'));
+      img.onload = () => {
+        const MAX = 512;
+        let { width, height } = img;
+        if (width > height && width > MAX) { height = Math.round(height * MAX / width); width = MAX; }
+        else if (height >= width && height > MAX) { width = Math.round(width * MAX / height); height = MAX; }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        try { resolve(canvas.toDataURL('image/jpeg', 0.85)); }
+        catch (_) { reject(new Error('ENCODE')); }
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 document.getElementById('avatar-file').addEventListener('change', async function(e) {
   const file = e.target.files[0];
+  e.target.value = ''; // let the user re-pick the same file later if needed
   if (!file) return;
-  if (file.size > 2 * 1024 * 1024) { showToast('Image must be under 2MB', true); return; }
-  const reader = new FileReader();
-  reader.onload = async function(ev) {
-    const dataUrl = ev.target.result;
-    try {
-      const r = await fetch('/api/upload-avatar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ avatar_url: dataUrl })
-      });
-      if (r.ok) {
-        document.getElementById('avatar-display').src = dataUrl;
-        showToast('Avatar updated!');
-      } else {
-        showToast('Failed to upload avatar', true);
-      }
-    } catch (_) { showToast('Network error', true); }
-  };
-  reader.readAsDataURL(file);
+  if (file.size > 20 * 1024 * 1024) { showToast('Image is too large (max 20MB)', true); return; }
+
+  let dataUrl;
+  try {
+    dataUrl = await readAndCompressImage(file);
+  } catch (err) {
+    const msg = err.message === 'TYPE' ? 'Please choose an image file (JPG, PNG, GIF, or WEBP)'
+      : err.message === 'DECODE' ? "Couldn't read that image — HEIC isn't supported, try a JPG or PNG"
+      : 'Could not process that image';
+    showToast(msg, true);
+    return;
+  }
+
+  try {
+    const r = await fetch('/api/upload-avatar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ avatar_url: dataUrl })
+    });
+    const data = await r.json().catch(() => ({}));
+    if (r.ok) {
+      const avatarEl = document.getElementById('avatar-display');
+      avatarEl.onerror = () => { avatarEl.src = DEFAULT_AVATAR; showToast("Uploaded, but the image couldn't be displayed", true); };
+      avatarEl.src = dataUrl;
+      showToast('Avatar updated!');
+    } else {
+      showToast(data.error || 'Failed to upload avatar', true);
+    }
+  } catch (_) {
+    showToast('Network error — check your connection and try again', true);
+  }
 });
 
 function openPayoutModal() {
