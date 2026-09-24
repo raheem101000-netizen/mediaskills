@@ -84,7 +84,6 @@ body{
   border:2px solid transparent;
   transition:all .1s;
 }
-.nav-links a:hover{color:var(--text);background:rgba(0,245,212,0.06);border-color:var(--teal);}
 .nav-links a.on{color:var(--teal);border-bottom:3px solid var(--teal);}
 
 .nav-r{display:flex;gap:8px;align-items:center;}
@@ -114,13 +113,11 @@ body{
   border:2px solid rgba(255,255,255,0.15);
   box-shadow:2px 2px 0 rgba(0,0,0,0.5);
 }
-.btn-ghost:hover{border-color:rgba(255,255,255,0.3);color:var(--text);}
 .btn-teal{
   background:var(--teal);color:#020c0a;
   border:2px solid var(--teal2);
   box-shadow:var(--px-teal);
 }
-.btn-teal:hover{background:#1ffcde;}
 .btn-gold{
   background:linear-gradient(135deg,var(--gold),var(--amber));
   color:#1a0800;
@@ -128,13 +125,11 @@ body{
   box-shadow:4px 4px 0 var(--gold2);
   font-size:8px;padding:12px 24px;
 }
-.btn-gold:hover{background:linear-gradient(135deg,#fff066,#ffc030);}
 .btn-purple{
   background:var(--purple);color:#fff;
   border:2px solid var(--purple2);
   box-shadow:var(--px-purple);
 }
-.btn-purple:hover{background:#cc66ff;}
 
 /* ═══════════════════════════════
    RAINBOW BAR
@@ -434,7 +429,6 @@ body{
   border-left:3px solid transparent;
   transition:all .1s;letter-spacing:.5px;
 }
-.sb-row:hover{color:var(--text);background:var(--card);border-left-color:rgba(255,255,255,.2);}
 .sb-row.on{color:var(--teal);background:rgba(0,245,212,.07);border-left-color:var(--teal);}
 .sb-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
 .sb-num{
@@ -489,7 +483,6 @@ body{
   cursor:pointer;
   transition:all .1s;letter-spacing:.5px;
 }
-.cat-pill:hover{border-color:rgba(255,255,255,.2);color:var(--text);}
 .cat-pill.on{
   background:rgba(0,245,212,.1);color:var(--teal);
   border:2px solid var(--teal);box-shadow:2px 2px 0 var(--teal2);
@@ -516,18 +509,11 @@ body{
 }
 
 .gc{cursor:pointer;transition:transform .05s;position:relative;}
-.gc:hover{transform:translate(-3px,-3px);}
-.gc:hover .gc-wrap{box-shadow:7px 7px 0 var(--shadow,#000);}
-.gc:hover .gc-art-inner{transform:scale(1.03);}
-.gc:hover .gc-ov{opacity:1;}
 .gc:active{transform:translate(2px,2px);}
 .gc:active .gc-wrap{box-shadow:1px 1px 0 var(--shadow,#000)!important;}
 
 /* coming-soon placeholder — inactive, no hover/click affordance */
 .gc.gc-locked{cursor:default;opacity:.6;}
-.gc.gc-locked:hover{transform:none;}
-.gc.gc-locked:hover .gc-wrap{box-shadow:4px 4px 0 var(--shadow,#000);}
-.gc.gc-locked:hover .gc-art-inner{transform:none;}
 .gc.gc-locked:active{transform:none;}
 .gc.gc-locked:active .gc-wrap{box-shadow:4px 4px 0 var(--shadow,#000)!important;}
 
@@ -674,10 +660,6 @@ body{
   position:relative;overflow:hidden;
   transition:transform .05s;
 }
-.step:hover{transform:translate(-2px,-2px);}
-.step:hover.s1{border-color:var(--teal);box-shadow:4px 4px 0 var(--teal2);}
-.step:hover.s2{border-color:var(--purple);box-shadow:4px 4px 0 var(--purple2);}
-.step:hover.s3{border-color:var(--gold);box-shadow:4px 4px 0 var(--gold2);}
 
 /* coloured top pixel bar */
 .s1::after,.s2::after,.s3::after{
@@ -743,7 +725,6 @@ body{
   border-bottom:2px solid rgba(255,255,255,.04);
   cursor:pointer;transition:background .1s;
 }
-.lb-row:hover{background:rgba(255,255,255,.03);}
 .lb-row:last-child{border:none;}
 .lb-rank{width:24px;font-size:14px;flex-shrink:0;text-align:center;}
 .lb-rank.rn{font-size:7px;color:rgba(200,195,255,.2);}
@@ -766,7 +747,6 @@ body{
   position:relative;overflow:hidden;
   transition:transform .05s;
 }
-.promo:hover{transform:translate(-2px,-2px);}
 .promo:active{transform:translate(2px,2px);}
 .promo-teal{
   border:3px solid var(--teal);
@@ -821,7 +801,6 @@ body{
   font-size:6px;color:rgba(200,195,255,.25);text-decoration:none;letter-spacing:.5px;
   border-bottom:1px solid rgba(200,195,255,.1);
 }
-.footer-links a:hover{color:var(--teal);border-color:var(--teal);}
 
 /* ═══════════════════════════════
    RESPONSIVE
@@ -859,13 +838,10 @@ body{
   transition:transform .05s;
   min-width:300px;width:300px;scroll-snap-align:start;flex-shrink:0;
 }
-.offer-card:hover{transform:translate(-2px,-2px);}
-.offer-card:hover{box-shadow:6px 6px 0 var(--os,#000);}
 .offer-card:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--os,#000);}
 
 /* coming-soon placeholder — inactive, no hover/click affordance */
 .offer-card.offer-locked{cursor:default;border-style:dashed;}
-.offer-card.offer-locked:hover{transform:none;box-shadow:4px 4px 0 var(--os,#000);}
 .offer-card.offer-locked:active{transform:none;box-shadow:4px 4px 0 var(--os,#000);}
 
 /* pixel corner accent */
@@ -922,7 +898,6 @@ body{
 .offer-soon{
   opacity:.6;
 }
-.offer-soon:hover{transform:none;cursor:default;}
 
 @media(max-width:960px){
   .offers-wrap{grid-template-columns:1fr 1fr;}
@@ -953,7 +928,6 @@ body{
   width:34px;height:34px;cursor:pointer;line-height:1;
   display:flex;align-items:center;justify-content:center;
 }
-.game-modal-close:hover{background:#222;}
 .game-modal-title{
   font-family:'Press Start 2P',monospace;font-size:13px;color:#fff;
   letter-spacing:1px;margin-bottom:18px;text-align:center;
@@ -995,6 +969,38 @@ body{
 .showwin .pd.on{background:var(--purple);}
 @media(max-width:900px){.hero-inner{grid-template-columns:1fr;}.hf-h1{font-size:34px;}}
 
+
+/* hover-only visual effects — scoped to real hover-capable pointers so touch
+   devices don't trigger the browser's tap-simulates-hover-first quirk, which
+   was requiring a second tap to actually navigate. */
+@media (hover: hover) and (pointer: fine) {
+  .nav-links a:hover{color:var(--text);background:rgba(0,245,212,0.06);border-color:var(--teal);}
+  .btn-ghost:hover{border-color:rgba(255,255,255,0.3);color:var(--text);}
+  .btn-teal:hover{background:#1ffcde;}
+  .btn-gold:hover{background:linear-gradient(135deg,#fff066,#ffc030);}
+  .btn-purple:hover{background:#cc66ff;}
+  .sb-row:hover{color:var(--text);background:var(--card);border-left-color:rgba(255,255,255,.2);}
+  .cat-pill:hover{border-color:rgba(255,255,255,.2);color:var(--text);}
+  .gc:hover{transform:translate(-3px,-3px);}
+  .gc:hover .gc-wrap{box-shadow:7px 7px 0 var(--shadow,#000);}
+  .gc:hover .gc-art-inner{transform:scale(1.03);}
+  .gc:hover .gc-ov{opacity:1;}
+  .gc.gc-locked:hover{transform:none;}
+  .gc.gc-locked:hover .gc-wrap{box-shadow:4px 4px 0 var(--shadow,#000);}
+  .gc.gc-locked:hover .gc-art-inner{transform:none;}
+  .step:hover{transform:translate(-2px,-2px);}
+  .step:hover.s1{border-color:var(--teal);box-shadow:4px 4px 0 var(--teal2);}
+  .step:hover.s2{border-color:var(--purple);box-shadow:4px 4px 0 var(--purple2);}
+  .step:hover.s3{border-color:var(--gold);box-shadow:4px 4px 0 var(--gold2);}
+  .lb-row:hover{background:rgba(255,255,255,.03);}
+  .promo:hover{transform:translate(-2px,-2px);}
+  .footer-links a:hover{color:var(--teal);border-color:var(--teal);}
+  .offer-card:hover{transform:translate(-2px,-2px);}
+  .offer-card:hover{box-shadow:6px 6px 0 var(--os,#000);}
+  .offer-card.offer-locked:hover{transform:none;box-shadow:4px 4px 0 var(--os,#000);}
+  .offer-soon:hover{transform:none;cursor:default;}
+  .game-modal-close:hover{background:#222;}
+}
 </style>
 </head>
 <body>
