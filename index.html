@@ -1621,18 +1621,24 @@ createPongPreview('hero-pong-canvas-slide', 640, 400, '#3d9eff', '#bf5fff');
     slides[cur].classList.add('on');pds[cur].classList.add('on');
   },5000);
 })();
-function initKurverClip(canvasId){
-  const el=document.getElementById(canvasId);if(!el)return;
-  const ctx=el.getContext('2d');
-  const W=640,H=400,STEP=1.3,LINE_W=3,D=0.05,LAG=13;
+function initKurverClip(canvas){
+  const ctx=canvas.getContext('2d');
+  let W,H,grid,curves,dead,deadAge,startT;
+  const STEP=1.3,LINE_W=3,D=0.05,LAG=13,MAXMS=15000;
   const COLORS=['#FF4444','#FFD700','#4BA8FF','#DA70D6','#4CFF6C','#FF8C00'];
-  let curves,grid,dead,deadAge,startT;const MAXMS=15000;
+  function resize(){
+    const r=canvas.getBoundingClientRect();
+    W=Math.max(80,Math.round(r.width)); H=Math.max(80,Math.round(r.height));
+    canvas.width=W; canvas.height=H; reset();
+  }
   function occ(x,y){const xi=x|0,yi=y|0;if(xi<8||yi<8||xi>=W-8||yi>=H-8)return true;return grid[yi*W+xi]===1;}
   function mark(x,y){const xi=x|0,yi=y|0;if(xi>=0&&yi>=0&&xi<W&&yi<H)grid[yi*W+xi]=1;}
-  function reset(){curves=[];dead=false;startT=performance.now();grid=new Uint8Array(W*H);
+  function reset(){
+    curves=[];dead=false;startT=performance.now();grid=new Uint8Array(W*H);
     ctx.fillStyle='#0d0d1a';ctx.fillRect(0,0,W,H);
-    [[120,110,0.3],[520,120,2.7],[320,320,-1.2],[120,320,-0.6],[520,320,3.6],[320,90,1.4]].forEach((s,i)=>
-      curves.push({x:s[0],y:s[1],a:s[2],col:COLORS[i],alive:true,buf:[],holeCD:60+(Math.random()*60|0),holeLen:0}));}
+    const pts=[[0.2,0.28,0.3],[0.8,0.3,2.7],[0.5,0.8,-1.2],[0.2,0.8,-0.6],[0.8,0.8,3.6],[0.5,0.22,1.4]];
+    pts.forEach(p=>curves.push({x:p[0]*W,y:p[1]*H,a:p[2],col:COLORS[curves.length],alive:true,buf:[],holeCD:60+(Math.random()*60|0),holeLen:0}));
+  }
   function loop(){
     if(!dead){
       curves.forEach(c=>{if(!c.alive)return;
@@ -1649,10 +1655,18 @@ function initKurverClip(canvasId){
     } else {deadAge++;if(deadAge>60)reset();}
     requestAnimationFrame(loop);
   }
-  reset();loop();
+  let resizeTimer=null;
+  new ResizeObserver(()=>{
+    clearTimeout(resizeTimer);
+    resizeTimer=setTimeout(resize,150);
+  }).observe(canvas);
+  resize();
+  loop();
 }
-initKurverClip('kurv');
-initKurverClip('kurv-card');
+const kurvEl=document.getElementById('kurv');
+if(kurvEl) initKurverClip(kurvEl);
+const kurvCardEl=document.getElementById('kurv-card');
+if(kurvCardEl) initKurverClip(kurvCardEl);
 </script>
 
 </body>
