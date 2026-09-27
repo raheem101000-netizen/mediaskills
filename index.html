@@ -941,6 +941,36 @@ body{
   width:100%;min-width:0;flex-shrink:1;
 }
 
+/* ── "NOT READY" MODAL — shown for gated (not-yet-open) games ── */
+.notready-backdrop{
+  position:fixed;inset:0;background:rgba(0,0,0,0.85);
+  display:none;align-items:center;justify-content:center;
+  z-index:10001;padding:20px;
+  -webkit-overflow-scrolling:touch;
+}
+.notready-backdrop.open{display:flex;}
+.notready-modal{
+  background:#0d0d0d;border:3px solid var(--gold);
+  box-shadow:6px 6px 0 var(--gold2);
+  max-width:380px;width:100%;
+  padding:32px 24px 24px;text-align:center;
+}
+.notready-emoji{font-size:44px;margin-bottom:16px;}
+.notready-title{
+  font-family:'Press Start 2P',monospace;font-size:12px;color:var(--gold);
+  letter-spacing:.5px;line-height:1.7;margin-bottom:12px;
+}
+.notready-sub{
+  font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;
+  color:var(--muted);line-height:1.5;margin-bottom:22px;
+}
+.notready-btn{
+  font-family:'Press Start 2P',monospace;font-size:9px;letter-spacing:1px;
+  padding:12px 28px;cursor:pointer;
+  background:var(--gold);color:#1a0800;
+  border:2px solid var(--gold2);box-shadow:3px 3px 0 var(--gold2);
+}
+
 /* ═══════════════════════════════
    HERO — COMPETE! WIN! GET PAID!
 ═══════════════════════════════ */
@@ -974,6 +1004,7 @@ body{
    devices don't trigger the browser's tap-simulates-hover-first quirk, which
    was requiring a second tap to actually navigate. */
 @media (hover: hover) and (pointer: fine) {
+  .notready-btn:hover{background:#fff066;}
   .nav-links a:hover{color:var(--text);background:rgba(0,245,212,0.06);border-color:var(--teal);}
   .btn-ghost:hover{border-color:rgba(255,255,255,0.3);color:var(--text);}
   .btn-teal:hover{background:#1ffcde;}
@@ -1147,7 +1178,7 @@ END OLD GAMES HIDDEN -->
 
 
   <!-- PONG $5/WIN -->
-  <div class="offer-card" style="--oc:var(--blue);--os:var(--blue2);"><div style="width:100%;height:200px;overflow:hidden;margin-bottom:12px;background:#000;border:2px solid rgba(61,158,255,0.3);position:relative;"><canvas id="pong-solo-canvas" style="width:100%;height:100%;display:block;"></canvas></div><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;"><div class="offer-game-tag" style="color:var(--blue);border-color:var(--blue2);background:rgba(61,158,255,.08);margin-bottom:0;">PONG</div><div class="plat phone" style="margin-bottom:0;">📱 BEST ON PHONE <span class="sub">· PC ok</span></div></div><div class="offer-type">MULTIPLAYER</div><div class="offer-amount" style="color:var(--blue);text-shadow:2px 2px 0 var(--blue2);">$5</div><div class="offer-desc">Join a live multiplayer room. Play as many times as you want.</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;"><div style="background:rgba(255,176,32,.15);border:2px solid var(--amber);padding:8px 10px;text-align:center;"><div style="font-size:5px;color:var(--amber);letter-spacing:1px;margin-bottom:4px;text-align:center;">ENTRY FEE</div><div style="font-size:12px;color:var(--amber);">$2.99</div></div><div style="background:rgba(61,158,255,.15);border:2px solid var(--blue);padding:8px 10px;text-align:center;"><div style="font-size:5px;color:var(--blue);letter-spacing:1px;margin-bottom:4px;">PER WIN</div><div style="font-size:12px;color:var(--blue);">$5.00</div></div></div><div style='font-size:5px;color:rgba(200,195,255,.3);text-align:center;margin-bottom:10px;font-family:Press Start 2P,monospace;'>UNLIMITED PLAYS</div><a href="https://pong-wju4.onrender.com/" class="btn" style="width:100%;justify-content:center;font-size:7px;margin-top:14px;display:block;text-align:center;text-decoration:none;background:var(--blue);color:#fff;border:2px solid var(--blue2);box-shadow:3px 3px 0 var(--blue2);">▶ PLAY PONG</a></div>
+  <div class="offer-card" style="--oc:var(--blue);--os:var(--blue2);"><div style="width:100%;height:200px;overflow:hidden;margin-bottom:12px;background:#000;border:2px solid rgba(61,158,255,0.3);position:relative;"><canvas id="pong-solo-canvas" style="width:100%;height:100%;display:block;"></canvas></div><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;"><div class="offer-game-tag" style="color:var(--blue);border-color:var(--blue2);background:rgba(61,158,255,.08);margin-bottom:0;">PONG</div><div class="plat phone" style="margin-bottom:0;">📱 BEST ON PHONE <span class="sub">· PC ok</span></div></div><div class="offer-type">MULTIPLAYER</div><div class="offer-amount" style="color:var(--blue);text-shadow:2px 2px 0 var(--blue2);">$5</div><div class="offer-desc">Join a live multiplayer room. Play as many times as you want.</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;"><div style="background:rgba(255,176,32,.15);border:2px solid var(--amber);padding:8px 10px;text-align:center;"><div style="font-size:5px;color:var(--amber);letter-spacing:1px;margin-bottom:4px;text-align:center;">ENTRY FEE</div><div style="font-size:12px;color:var(--amber);">$2.99</div></div><div style="background:rgba(61,158,255,.15);border:2px solid var(--blue);padding:8px 10px;text-align:center;"><div style="font-size:5px;color:var(--blue);letter-spacing:1px;margin-bottom:4px;">PER WIN</div><div style="font-size:12px;color:var(--blue);">$5.00</div></div></div><div style='font-size:5px;color:rgba(200,195,255,.3);text-align:center;margin-bottom:10px;font-family:Press Start 2P,monospace;'>UNLIMITED PLAYS</div><a href="https://pong-wju4.onrender.com/" onclick="event.preventDefault();showNotReady();" class="btn" style="width:100%;justify-content:center;font-size:7px;margin-top:14px;display:block;text-align:center;text-decoration:none;background:var(--blue);color:#fff;border:2px solid var(--blue2);box-shadow:3px 3px 0 var(--blue2);">▶ PLAY PONG</a></div>
 
 
   <!-- KURVER MULTIPLAYER -->
@@ -1166,7 +1197,7 @@ END OLD GAMES HIDDEN -->
         <div class="tier">6p <b>$10</b></div>
       </div>
     </div>
-    <a href="https://kurver-e7ow.onrender.com/multiplayer#/" class="btn" style="width:100%;justify-content:center;font-size:7px;margin-top:14px;background:var(--green);color:#020a04;border:2px solid var(--green2);box-shadow:3px 3px 0 var(--green2);text-decoration:none;">▶ PLAY MULTIPLAYER</a>
+    <a href="https://kurver-e7ow.onrender.com/multiplayer#/" onclick="event.preventDefault();showNotReady();" class="btn" style="width:100%;justify-content:center;font-size:7px;margin-top:14px;background:var(--green);color:#020a04;border:2px solid var(--green2);box-shadow:3px 3px 0 var(--green2);text-decoration:none;">▶ PLAY MULTIPLAYER</a>
   </div>
 
   <!-- PUZ ROYALE MULTIPLAYER -->
@@ -1185,7 +1216,7 @@ END OLD GAMES HIDDEN -->
         <div class="tier" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.1);">6p <b>$10</b></div><div class="tier" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.1);">8p <b>$14</b></div><div class="tier" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.1);">10p <b>$18</b></div>
       </div>
     </div>
-    <a href="https://battle-royale-agnc.onrender.com/rooms" class="btn" style="width:100%;justify-content:center;font-size:7px;margin-top:14px;display:block;text-align:center;text-decoration:none;background:var(--pink);color:#fff;border:2px solid #aa0066;box-shadow:3px 3px 0 #aa0066;">▶ PLAY MULTIPLAYER</a>
+    <a href="https://battle-royale-agnc.onrender.com/rooms" onclick="event.preventDefault();showNotReady();" class="btn" style="width:100%;justify-content:center;font-size:7px;margin-top:14px;display:block;text-align:center;text-decoration:none;background:var(--pink);color:#fff;border:2px solid #aa0066;box-shadow:3px 3px 0 #aa0066;">▶ PLAY MULTIPLAYER</a>
   </div>
 
 <!-- OLD GAMES HIDDEN - RESTORE LATER
@@ -1425,6 +1456,16 @@ END OLD GAMES HIDDEN -->
   </div>
 </div>
 
+<!-- ── NOT READY MODAL — shown for Pong Multiplayer / Kurver / Puz Royale ── -->
+<div class="notready-backdrop" id="notready-backdrop" onclick="if(event.target===this) closeNotReady()">
+  <div class="notready-modal">
+    <div class="notready-emoji">🍲</div>
+    <div class="notready-title">Still in the pot 🍲 — not done cooking yet!</div>
+    <div class="notready-sub">Pong Solo's ready to play right now.</div>
+    <button class="notready-btn" onclick="closeNotReady()">GOT IT</button>
+  </div>
+</div>
+
 <script>
 // ── GAME MODE MODAL ──────────────────────────────────────────────────────────
 // Shared template for the Pong Solo/Multiplayer cards, so they render from one
@@ -1450,7 +1491,7 @@ const GAME_MODES = {
     title: 'PONG',
     cards: [
       pongPrizeCard('SOLO', 'https://all-solo-ggames.vercel.app/pong/', 'onclick="goToPong(event)"'),
-      pongPrizeCard('MULTIPLAYER', 'https://pong-wju4.onrender.com/', ''),
+      pongPrizeCard('MULTIPLAYER', 'https://pong-wju4.onrender.com/', 'onclick="event.preventDefault();showNotReady();"'),
     ],
   },
   kurver: {
@@ -1468,7 +1509,7 @@ const GAME_MODES = {
             <div class="tier">6p <b>$10</b></div>
           </div>
         </div>
-        <a href="https://kurver-e7ow.onrender.com/multiplayer#/" class="btn" style="width:100%;justify-content:center;font-size:7px;margin-top:14px;background:var(--green);color:#020a04;border:2px solid var(--green2);box-shadow:3px 3px 0 var(--green2);text-decoration:none;">▶ PLAY MULTIPLAYER</a>
+        <a href="https://kurver-e7ow.onrender.com/multiplayer#/" onclick="event.preventDefault();showNotReady();" class="btn" style="width:100%;justify-content:center;font-size:7px;margin-top:14px;background:var(--green);color:#020a04;border:2px solid var(--green2);box-shadow:3px 3px 0 var(--green2);text-decoration:none;">▶ PLAY MULTIPLAYER</a>
       </div>`,
     ],
   },
@@ -1487,7 +1528,7 @@ const GAME_MODES = {
             <div class="tier" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.1);">6p <b>$10</b></div><div class="tier" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.1);">8p <b>$14</b></div><div class="tier" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.1);">10p <b>$18</b></div>
           </div>
         </div>
-        <a href="https://battle-royale-agnc.onrender.com/rooms" class="btn" style="width:100%;justify-content:center;font-size:7px;margin-top:14px;display:block;text-align:center;text-decoration:none;background:var(--pink);color:#fff;border:2px solid #aa0066;box-shadow:3px 3px 0 #aa0066;">▶ PLAY MULTIPLAYER</a>
+        <a href="https://battle-royale-agnc.onrender.com/rooms" onclick="event.preventDefault();showNotReady();" class="btn" style="width:100%;justify-content:center;font-size:7px;margin-top:14px;display:block;text-align:center;text-decoration:none;background:var(--pink);color:#fff;border:2px solid #aa0066;box-shadow:3px 3px 0 #aa0066;">▶ PLAY MULTIPLAYER</a>
       </div>`,
     ],
   },
@@ -1509,6 +1550,25 @@ function closeGameModal() {
   document.getElementById('game-modal-backdrop').classList.remove('open');
   document.body.style.overflow = '';
   document.removeEventListener('keydown', gameModalKeydownHandler);
+}
+
+// Pong Multiplayer / Kurver / Puz Royale aren't open yet — every Play action for
+// those calls this instead of navigating. Pong Solo is untouched and still navigates.
+function notReadyKeydownHandler(e) {
+  if (e.key === 'Escape') closeNotReady();
+}
+function showNotReady() {
+  document.getElementById('notready-backdrop').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  document.addEventListener('keydown', notReadyKeydownHandler);
+}
+function closeNotReady() {
+  document.getElementById('notready-backdrop').classList.remove('open');
+  // Leave scroll locked if the mode-picker modal is still open behind this one.
+  if (!document.getElementById('game-modal-backdrop').classList.contains('open')) {
+    document.body.style.overflow = '';
+  }
+  document.removeEventListener('keydown', notReadyKeydownHandler);
 }
 
 const starsEl = document.getElementById('stars');
