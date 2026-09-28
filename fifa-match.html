@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TENTEN — FIFA 1v1</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;image-rendering:pixelated;}
+:root{
+  --bg:#000;--card:#111;--text:#f0eeff;--muted:rgba(200,195,255,0.5);
+  --border:rgba(255,255,255,0.07);--teal:#00f5d4;--teal2:#00b89a;
+  --purple:#bf5fff;--purple2:#6600bb;--gold:#ffe44d;--gold2:#997700;
+  --red:#ff4757;--red2:#aa0011;--green:#22ff6e;--green2:#00a030;
+}
+html,body{min-height:100vh;background:var(--bg);font-family:'Press Start 2P',monospace;color:var(--text);}
+body{display:flex;flex-direction:column;align-items:center;padding:80px 16px 48px;}
+
+.nav{position:fixed;top:0;left:0;right:0;height:56px;background:rgba(0,0,0,0.98);
+  border-bottom:3px solid rgba(255,255,255,0.08);display:flex;align-items:center;
+  justify-content:space-between;padding:0 24px;z-index:100;}
+.nav-logo{font-size:12px;letter-spacing:2px;color:#fff;text-decoration:none;}
+.nav-r a{font-family:'Press Start 2P',monospace;font-size:12px;color:#020c0a;background:var(--teal);
+  text-decoration:none;padding:14px 24px;border:2px solid var(--teal2);box-shadow:3px 3px 0 var(--teal2);}
+
+.card{
+  width:100%;max-width:520px;
+  background:#0d0d0d;border:3px solid var(--purple);
+  box-shadow:6px 6px 0 var(--purple2);
+  padding:32px 28px;
+}
+
+.title{font-size:14px;letter-spacing:1px;margin-bottom:20px;text-align:center;}
+
+.entry-actions{display:flex;flex-direction:column;gap:14px;}
+.btn{
+  width:100%;font-family:'Press Start 2P',monospace;font-size:9px;
+  padding:14px 18px;cursor:pointer;letter-spacing:1px;
+  border:2px solid;transition:transform .05s;text-align:center;
+}
+.btn:active{transform:translate(2px,2px);box-shadow:none!important;}
+.btn-teal{background:var(--teal);color:#020c0a;border-color:var(--teal2);box-shadow:3px 3px 0 var(--teal2);}
+.btn-teal:hover{background:#5ffce6;}
+.btn-purple{background:var(--purple);color:#0a0012;border-color:var(--purple2);box-shadow:3px 3px 0 var(--purple2);}
+.btn-purple:hover{background:#d38fff;}
+
+.join-row{display:flex;gap:8px;margin-top:6px;}
+.join-row input{
+  flex:1;background:#000;border:2px solid rgba(255,255,255,0.12);
+  color:var(--text);font-family:'Outfit',sans-serif;font-size:14px;font-weight:500;
+  padding:10px 14px;outline:none;
+}
+.join-row input:focus{border-color:var(--purple);}
+.join-row input::placeholder{color:rgba(200,195,255,0.25);}
+
+.divider{display:flex;align-items:center;gap:10px;margin:20px 0;font-size:7px;color:var(--muted);}
+.divider::before,.divider::after{content:'';flex:1;height:2px;background:rgba(255,255,255,0.08);}
+
+/* Match room */
+.status-line{font-size:8px;letter-spacing:1px;color:var(--muted);margin-bottom:14px;text-align:center;}
+.status-line b{color:var(--teal);}
+.match-id{font-size:7px;color:var(--muted);text-align:center;margin-bottom:20px;}
+
+.chat-box{
+  background:#000;border:2px solid rgba(255,255,255,0.1);
+  height:340px;overflow-y:auto;padding:14px;margin-bottom:14px;
+  display:flex;flex-direction:column;gap:10px;
+}
+.msg{font-family:'Outfit',sans-serif;font-size:13px;line-height:1.5;max-width:85%;}
+.msg-mine{align-self:flex-end;text-align:right;}
+.msg-name{font-size:9px;color:var(--muted);margin-bottom:2px;}
+.msg-bubble{
+  background:#1a1a2e;border:2px solid var(--purple2);
+  padding:8px 12px;display:inline-block;color:var(--text);
+}
+.msg-mine .msg-bubble{background:var(--purple);color:#0a0012;border-color:var(--purple2);}
+.msg-system{
+  align-self:center;font-size:10px;color:var(--muted);
+  font-style:italic;text-align:center;max-width:100%;
+}
+
+.chat-input-row{display:flex;gap:8px;}
+.chat-input-row input{
+  flex:1;background:#000;border:2px solid rgba(255,255,255,0.12);
+  color:var(--text);font-family:'Outfit',sans-serif;font-size:14px;font-weight:500;
+  padding:10px 14px;outline:none;
+}
+.chat-input-row input:focus{border-color:var(--teal);}
+.chat-input-row button{
+  font-family:'Press Start 2P',monospace;font-size:9px;padding:0 18px;cursor:pointer;
+  background:var(--teal);color:#020c0a;border:2px solid var(--teal2);box-shadow:3px 3px 0 var(--teal2);
+}
+.chat-input-row button:active{transform:translate(2px,2px);box-shadow:none;}
+
+.error-msg{
+  background:rgba(255,71,87,0.12);border:2px solid var(--red);
+  color:var(--red);font-size:8px;padding:10px 14px;letter-spacing:.5px;
+  margin-bottom:14px;display:none;font-family:'Outfit',sans-serif;
+}
+.error-msg.show{display:block;}
+.hidden{display:none!important;}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="nav-logo" href="/">TENTEN</a>
+  <div class="nav-r"><a href="/">← HOME</a></div>
+</nav>
+
+<div class="card" id="entry-card">
+  <div class="title">⚽ FIFA 1v1</div>
+  <div class="error-msg" id="entry-err"></div>
+  <div class="entry-actions">
+    <button class="btn btn-purple" onclick="createMatch()">+ CREATE MATCH</button>
+  </div>
+  <div class="divider">OR</div>
+  <div>
+    <div class="join-row">
+      <input type="text" id="join-id-input" placeholder="Enter match ID" inputmode="numeric">
+      <button class="btn btn-teal" style="width:auto;" onclick="joinMatch()">JOIN</button>
+    </div>
+  </div>
+</div>
+
+<div class="card hidden" id="room-card">
+  <div class="title">⚽ FIFA 1v1</div>
+  <div class="match-id" id="match-id-line"></div>
+  <div class="status-line" id="status-line"></div>
+  <div class="chat-box" id="chat-box"></div>
+  <div class="chat-input-row">
+    <input type="text" id="chat-input" placeholder="Type a message..." maxlength="500">
+    <button onclick="sendMessage()">SEND</button>
+  </div>
+</div>
+
+<script>
+let matchId = null;
+let myUserId = null;
+let lastMsgId = 0;
+let pollTimer = null;
+
+const params = new URLSearchParams(window.location.search);
+const urlId = params.get('id');
+if (urlId) enterRoom(parseInt(urlId, 10));
+
+async function createMatch() {
+  hideErr();
+  try {
+    const r = await fetch('/api/fifa-create-match', { method: 'POST' });
+    const d = await r.json();
+    if (!r.ok) return showErr(d.error || 'Failed to create match');
+    history.pushState({}, '', '/fifa-match/' + d.id);
+    enterRoom(d.id);
+  } catch (e) {
+    showErr('Network error');
+  }
+}
+
+async function joinMatch() {
+  hideErr();
+  const id = parseInt(document.getElementById('join-id-input').value, 10);
+  if (!id) return showErr('Enter a valid match ID');
+  try {
+    const r = await fetch('/api/fifa-join-match', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ match_id: id })
+    });
+    const d = await r.json();
+    if (!r.ok) return showErr(d.error || 'Failed to join match');
+    history.pushState({}, '', '/fifa-match/' + d.id);
+    enterRoom(d.id);
+  } catch (e) {
+    showErr('Network error');
+  }
+}
+
+async function enterRoom(id) {
+  matchId = id;
+  document.getElementById('entry-card').classList.add('hidden');
+  document.getElementById('room-card').classList.remove('hidden');
+  document.getElementById('match-id-line').textContent = 'MATCH #' + id;
+  await refreshMatchState();
+  await pollMessages();
+  startPolling();
+}
+
+async function refreshMatchState() {
+  try {
+    const r = await fetch('/api/fifa-match?id=' + matchId);
+    if (!r.ok) {
+      if (r.status === 401) { window.location.href = '/login.html'; return; }
+      const d = await r.json().catch(() => ({}));
+      showErr(d.error || 'Could not load match');
+      return;
+    }
+    const m = await r.json();
+    myUserId = m.my_user_id;
+    const opp = m.opponent_name ? m.opponent_name : 'waiting for opponent...';
+    document.getElementById('status-line').innerHTML =
+      '<b>' + m.host_name + '</b> vs <b>' + opp + '</b> — ' + m.status.replace(/_/g, ' ');
+  } catch (e) {}
+}
+
+function startPolling() {
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(() => {
+    if (document.hidden) return;
+    pollMessages();
+  }, 1750);
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && matchId) pollMessages();
+});
+
+async function pollMessages() {
+  if (!matchId) return;
+  try {
+    const r = await fetch('/api/fifa-messages?matchId=' + matchId + '&after=' + lastMsgId);
+    if (!r.ok) return;
+    const msgs = await r.json();
+    if (msgs.length) {
+      const box = document.getElementById('chat-box');
+      const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
+      for (const m of msgs) {
+        appendMessage(m);
+        lastMsgId = m.id;
+      }
+      if (atBottom) box.scrollTop = box.scrollHeight;
+    }
+  } catch (e) {}
+}
+
+function appendMessage(m) {
+  const box = document.getElementById('chat-box');
+  const el = document.createElement('div');
+  if (m.is_system) {
+    el.className = 'msg msg-system';
+    el.textContent = m.text;
+  } else {
+    const mine = m.user_id === myUserId;
+    el.className = 'msg' + (mine ? ' msg-mine' : '');
+    const name = document.createElement('div');
+    name.className = 'msg-name';
+    name.textContent = mine ? 'You' : (m.display_name || 'Player');
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+    bubble.textContent = m.text;
+    el.appendChild(name);
+    el.appendChild(bubble);
+  }
+  box.appendChild(el);
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text || !matchId) return;
+  input.value = '';
+  try {
+    const r = await fetch('/api/fifa-send-message', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ match_id: matchId, text })
+    });
+    if (r.ok) pollMessages();
+  } catch (e) {}
+}
+
+document.getElementById('chat-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') sendMessage();
+});
+
+function showErr(msg) {
+  const el = document.getElementById('entry-err');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+function hideErr() {
+  document.getElementById('entry-err').classList.remove('show');
+}
+</script>
+</body>
+</html>

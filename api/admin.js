@@ -259,6 +259,41 @@ async function migrateBalanceLedger(req, res) {
   res.status(200).json({ ok: true });
 }
 
+async function migrateFifa(req, res) {
+  if (req.method !== 'POST') return res.status(405).end();
+  await sql`
+    CREATE TABLE IF NOT EXISTS fifa_matches (
+      id                     SERIAL PRIMARY KEY,
+      host_user_id           INTEGER NOT NULL REFERENCES users(id),
+      opponent_user_id       INTEGER REFERENCES users(id),
+      status                 TEXT NOT NULL DEFAULT 'awaiting_opponent'
+                               CHECK (status IN ('awaiting_opponent','awaiting_payment','in_progress',
+                                                  'awaiting_reports','disputed','settled','resolved','void')),
+      host_report            TEXT CHECK (host_report IN ('won','lost')),
+      opponent_report        TEXT CHECK (opponent_report IN ('won','lost')),
+      first_report_at        TIMESTAMPTZ,
+      first_reporter_user_id INTEGER REFERENCES users(id),
+      winner_user_id         INTEGER REFERENCES users(id),
+      created_at             TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at             TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS fifa_messages (
+      id          SERIAL PRIMARY KEY,
+      match_id    INTEGER NOT NULL REFERENCES fifa_matches(id),
+      user_id     INTEGER REFERENCES users(id),
+      text        TEXT,
+      image_url   TEXT,
+      is_system   BOOLEAN NOT NULL DEFAULT false,
+      created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS fifa_messages_match_id_idx ON fifa_messages (match_id)`;
+  await sql`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS match_id INTEGER REFERENCES fifa_matches(id)`;
+  res.status(200).json({ ok: true });
+}
+
 // One-off migration: fixes two win-crediting bugs found together in the same 500 —
 // (1) game_wins' composite PK on (player_id, game, match_number) collides once
 // match_number recycles through the 20-position cycle, even for a brand-new payment;
@@ -401,7 +436,7 @@ async function listMatchResults(req, res) {
   res.status(200).json(rows);
 }
 
-const KNOWN_TABLES = ['users', 'sessions', 'game_tokens', 'player_game_state', 'game_wins', 'auth_sessions', 'match_results', 'balance_ledger'];
+const KNOWN_TABLES = ['users', 'sessions', 'game_tokens', 'player_game_state', 'game_wins', 'auth_sessions', 'match_results', 'balance_ledger', 'fifa_matches', 'fifa_messages'];
 async function tableSchema(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
   const { table } = req.query;
@@ -785,6 +820,7 @@ const ACTIONS = {
   'manual-credit-win': manualCreditWin,
   'migrate-match-results': migrateMatchResults,
   'migrate-balance-ledger': migrateBalanceLedger,
+  'migrate-fifa': migrateFifa,
   'user-detail': userDetail,
   'fix-win-crediting-constraints': fixWinCreditingConstraints,
   'list-unclaimed-wins': listUnclaimedWins,
