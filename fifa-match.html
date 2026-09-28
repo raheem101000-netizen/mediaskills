@@ -146,7 +146,7 @@ if (urlId) enterRoom(parseInt(urlId, 10));
 async function createMatch() {
   hideErr();
   try {
-    const r = await fetch('/api/fifa-create-match', { method: 'POST' });
+    const r = await fetch('/api/fifa?action=create-match', { method: 'POST' });
     const d = await r.json();
     if (!r.ok) return showErr(d.error || 'Failed to create match');
     history.pushState({}, '', '/fifa-match/' + d.id);
@@ -161,7 +161,7 @@ async function joinMatch() {
   const id = parseInt(document.getElementById('join-id-input').value, 10);
   if (!id) return showErr('Enter a valid match ID');
   try {
-    const r = await fetch('/api/fifa-join-match', {
+    const r = await fetch('/api/fifa?action=join-match', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ match_id: id })
@@ -187,7 +187,7 @@ async function enterRoom(id) {
 
 async function refreshMatchState() {
   try {
-    const r = await fetch('/api/fifa-match?id=' + matchId);
+    const r = await fetch('/api/fifa?action=match&id=' + matchId);
     if (!r.ok) {
       if (r.status === 401) { window.location.href = '/login.html'; return; }
       const d = await r.json().catch(() => ({}));
@@ -217,7 +217,7 @@ document.addEventListener('visibilitychange', () => {
 async function pollMessages() {
   if (!matchId) return;
   try {
-    const r = await fetch('/api/fifa-messages?matchId=' + matchId + '&after=' + lastMsgId);
+    const r = await fetch('/api/fifa?action=messages&matchId=' + matchId + '&after=' + lastMsgId);
     if (!r.ok) return;
     const msgs = await r.json();
     if (msgs.length) {
@@ -259,7 +259,7 @@ async function sendMessage() {
   if (!text || !matchId) return;
   input.value = '';
   try {
-    const r = await fetch('/api/fifa-send-message', {
+    const r = await fetch('/api/fifa?action=send-message', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ match_id: matchId, text })

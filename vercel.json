@@ -9,6 +9,8 @@
     { "src": "/profile", "dest": "/profile.html" },
     { "src": "/fifa-match/([0-9]+)", "dest": "/fifa-match.html?id=$1" },
     { "src": "/fifa-match", "dest": "/fifa-match.html" },
+    { "src": "/api/logout", "dest": "/api/auth-misc?action=logout" },
+    { "src": "/api/token", "dest": "/api/auth-misc" },
     { "src": "/api/(.*)", "dest": "/api/$1" }
   ]
 }

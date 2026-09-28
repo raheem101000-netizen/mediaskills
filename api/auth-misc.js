@@ -2,6 +2,19 @@ const cookie = require('cookie');
 const { v4: uuidv4 } = require('uuid');
 const sql = require('./_db');
 
+async function logout(req, res) {
+  if (req.method !== 'POST') return res.status(405).end();
+  const cookies = cookie.parse(req.headers.cookie || '');
+  const sid = cookies.session;
+  if (sid) {
+    try { await sql`DELETE FROM auth_sessions WHERE id=${sid}`; } catch (_) {}
+  }
+  res.setHeader('Set-Cookie', cookie.serialize('session', '', {
+    httpOnly: true, path: '/', maxAge: 0, sameSite: 'lax', secure: true
+  }));
+  res.status(200).json({ ok: true });
+}
+
 async function generate(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
   const cookies = cookie.parse(req.headers.cookie || '');
@@ -34,7 +47,7 @@ async function verify(req, res) {
   res.status(200).json({ player_id: rows[0].user_id, display_name: u[0].display_name });
 }
 
-const ACTIONS = { generate, verify };
+const ACTIONS = { logout, generate, verify };
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', 'https://all-solo-ggames.vercel.app');
