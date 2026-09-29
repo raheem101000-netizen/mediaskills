@@ -195,6 +195,7 @@ body::after{
       <div class="hdr-title">TENTEN<span> ADMIN</span></div>
       <div class="hdr-stats">
         <a class="pxbtn" href="/admin-users">▶ USERS</a>
+        <a class="pxbtn" href="/admin-disputes" style="border-color:var(--red2);background:var(--red);color:#fff;box-shadow:3px 3px 0 var(--red2);">⚠ FIFA DISPUTES <b id="nav-disputes-count" style="font-family:'Share Tech Mono',monospace;">0</b></a>
         <div class="stat-chip">NEXT REFRESH <b id="countdown">10s</b></div>
         <div class="stat-chip">LAST REFRESHED <b id="last-refreshed">—</b></div>
       </div>
@@ -473,10 +474,25 @@ async function markPaid(srvKey, id, rowId) {
   }
 }
 
-// Start dashboard and prize claims immediately
+// ── FIFA Disputes nav badge ──
+// The full disputes UI lives on its own page now (/admin-disputes) — this
+// just keeps the nav link's open-count badge current.
+async function loadFifaDisputesCount() {
+  try {
+    const res = await fetch(`/api/admin?action=list-fifa-disputes&key=${KEY}`, { cache: 'no-store' });
+    const disputes = await res.json();
+    document.getElementById('nav-disputes-count').textContent = disputes.length;
+  } catch (e) {
+    // leave the badge as-is on failure
+  }
+}
+
+// Start dashboard, prize claims, and the disputes badge immediately
 startDashboard();
 loadPrizeClaims();
 setInterval(loadPrizeClaims, 30000);
+loadFifaDisputesCount();
+setInterval(loadFifaDisputesCount, 15000);
 </script>
 </body>
 </html>

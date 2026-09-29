@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MediaSkills — FIFA Disputes</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;image-rendering:pixelated;}
+:root{
+  --bg:#000000;
+  --card:#0d0d0d;
+  --text:#f0eeff;
+  --white:#ffffff;
+  --muted:rgba(200,195,255,0.5);
+  --border:rgba(255,255,255,0.07);
+  --teal:#00f5d4;   --teal2:#00b89a;
+  --green:#22ff6e;  --green2:#00a030;
+  --red:#ff4757;    --red2:#aa0011;
+  --grey:#555;      --grey2:#222;
+}
+html,body{background:var(--bg);color:var(--text);font-family:'Press Start 2P',monospace;min-height:100%;overflow-x:hidden;}
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.04) 3px,rgba(0,0,0,0.04) 4px);
+}
+.pxbtn{
+  font-family:'Press Start 2P',monospace;
+  font-size:7px;padding:10px 16px;letter-spacing:1px;
+  border:2px solid var(--teal2);background:var(--teal);color:#020c0a;
+  box-shadow:3px 3px 0 var(--teal2);
+  cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px;
+  transition:transform .05s;
+}
+.pxbtn:hover{background:#1ffcde;}
+.pxbtn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--teal2);}
+
+.wrap{max-width:900px;margin:0 auto;padding:32px 20px 60px;}
+.hdr{margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+.hdr-title{font-size:20px;letter-spacing:3px;color:var(--white);}
+.hdr-title span{color:var(--red);text-shadow:3px 3px 0 var(--red2);}
+.badge{background:var(--red);color:#fff;font-size:7px;padding:3px 8px;font-family:'Press Start 2P',monospace;}
+
+.disputes-empty{
+  background:var(--card);border:3px solid var(--border);box-shadow:4px 4px 0 #000;
+  padding:32px 18px;font-size:8px;color:rgba(200,195,255,.35);letter-spacing:.5px;text-align:center;
+}
+
+.dispute-card{
+  background:var(--card);border:3px solid var(--red);box-shadow:4px 4px 0 var(--red2);
+  margin-bottom:28px;padding:18px;
+}
+.dispute-players{
+  display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;
+  margin-bottom:6px;font-family:'Share Tech Mono',monospace;
+}
+.dispute-player{font-size:12px;color:var(--white);}
+.dispute-report{font-size:8px;margin-top:3px;}
+.dispute-report.won{color:var(--green);}
+.dispute-report.lost{color:var(--red);}
+.dispute-vs{font-size:7px;color:var(--muted);letter-spacing:1px;}
+.dispute-meta{font-size:6px;color:rgba(200,195,255,.35);letter-spacing:.5px;margin:8px 0 14px;}
+.live-dot{color:var(--green);}
+.live-dot.off{color:var(--red);}
+
+.chat-box{
+  background:#000;border:2px solid var(--border);height:280px;overflow-y:auto;
+  padding:10px;margin-bottom:10px;font-family:'Share Tech Mono',monospace;font-size:11px;
+}
+.chat-line{margin-bottom:10px;line-height:1.5;}
+.chat-line b{color:var(--teal);}
+.chat-line.admin b{color:#ffe44d;}
+.chat-img{max-width:170px;max-height:170px;display:block;margin-top:4px;border:1px solid var(--border);border-radius:4px;cursor:pointer;}
+.snapshot-note{
+  background:rgba(255,71,87,0.1);border:1px solid var(--red);color:var(--red);
+  font-size:7px;padding:8px 10px;margin-bottom:10px;letter-spacing:.5px;
+}
+
+.msg-row{display:flex;gap:8px;margin-bottom:14px;align-items:center;}
+.msg-row input[type=text]{
+  flex:1;background:#000;border:1px solid var(--border);color:var(--text);
+  font-family:'Share Tech Mono',monospace;font-size:12px;padding:9px 10px;outline:none;
+}
+.msg-row input[type=text]:focus{border-color:var(--teal);}
+.attach-btn{
+  flex-shrink:0;font-family:'Press Start 2P',monospace;font-size:9px;padding:9px 12px;
+  border:2px solid var(--border);background:#1a1a1a;color:var(--muted);cursor:pointer;
+}
+.send-btn{font-size:6px;padding:9px 12px;}
+.msg-error{font-size:6px;color:var(--red);margin:-8px 0 10px;letter-spacing:.5px;}
+
+.dispute-shots{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+.dispute-shots img{width:70px;height:70px;object-fit:cover;border:2px solid #ffe44d;border-radius:4px;cursor:pointer;}
+.shots-label{font-size:6px;color:var(--muted);letter-spacing:1px;margin-bottom:6px;text-transform:uppercase;}
+
+.dispute-grant-row{display:flex;gap:10px;}
+.pxbtn-grant{
+  flex:1;font-family:'Press Start 2P',monospace;font-size:6px;padding:12px;letter-spacing:.5px;
+  border:2px solid var(--green2);background:var(--green);color:#000;
+  box-shadow:2px 2px 0 var(--green2);cursor:pointer;text-align:center;
+}
+.pxbtn-grant:hover{background:#66ff9e;}
+.pxbtn-grant:active{transform:translate(1px,1px);box-shadow:1px 1px 0 var(--green2);}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="hdr">
+    <div class="hdr-title">FIFA<span> DISPUTES</span></div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <span class="badge" id="disputes-count">0 OPEN</span>
+      <a class="pxbtn" href="/admin">◀ DASHBOARD</a>
+    </div>
+  </div>
+
+  <div id="disputes-list"><div class="disputes-empty">Loading...</div></div>
+</div>
+
+<script>
+const KEY = 'TENTEN2025';
+// Local-testing-only: the admin page (mediaskills, localhost:3100) uploads
+// images and polls live messages directly against the FIFA service, the
+// same way admin.html already calls other game servers' /admin/* endpoints
+// directly. Once the FIFA service has a real deployed URL, this becomes that.
+const FIFA_BASE = 'http://localhost:2601';
+
+const POLL_MS = 1750;
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+
+// disputeId -> { matchId, timer, lastCount, live }
+const tracked = {};
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function loadDisputes() {
+  let disputes;
+  try {
+    const res = await fetch(`/api/admin?action=list-fifa-disputes&key=${KEY}`, { cache: 'no-store' });
+    disputes = await res.json();
+  } catch (e) {
+    document.getElementById('disputes-list').innerHTML = '<div class="disputes-empty">Failed to load disputes.</div>';
+    return;
+  }
+
+  document.getElementById('disputes-count').textContent = disputes.length + ' OPEN';
+  const list = document.getElementById('disputes-list');
+  const seenIds = new Set(disputes.map(d => d.id));
+
+  // Stop polling + drop cards for disputes that are no longer open (resolved).
+  for (const id of Object.keys(tracked)) {
+    if (!seenIds.has(parseInt(id, 10))) {
+      clearInterval(tracked[id].timer);
+      delete tracked[id];
+      const card = document.getElementById('dispute-' + id);
+      if (card) card.remove();
+    }
+  }
+
+  if (disputes.length === 0 && Object.keys(tracked).length === 0) {
+    list.innerHTML = '<div class="disputes-empty">No open disputes — nothing to see.</div>';
+    return;
+  }
+  if (list.querySelector('.disputes-empty')) list.innerHTML = '';
+
+  disputes.forEach(d => {
+    if (tracked[d.id]) return; // already rendered + polling
+    renderNewDisputeCard(d);
+  });
+}
+
+function renderNewDisputeCard(d) {
+  let shots = [];
+  try { shots = typeof d.screenshot_urls === 'string' ? JSON.parse(d.screenshot_urls) : d.screenshot_urls; } catch (e) { shots = []; }
+  const shotsHtml = shots.length
+    ? `<div class="shots-label">Screenshots at dispute time</div><div class="dispute-shots">${shots.map(u => { const src = resolveImageUrl(u); return `<a href="${esc(src)}" target="_blank"><img src="${esc(src)}"></a>`; }).join('')}</div>`
+    : '';
+
+  const card = document.createElement('div');
+  card.className = 'dispute-card';
+  card.id = 'dispute-' + d.id;
+  card.innerHTML = `
+    <div class="dispute-players">
+      <div>
+        <div class="dispute-player">${esc(d.player_a_name)}</div>
+        <div class="dispute-report ${d.player_a_report === 'won' ? 'won' : 'lost'}">claims: ${esc(d.player_a_report).toUpperCase()}</div>
+      </div>
+      <div class="dispute-vs">VS</div>
+      <div style="text-align:right;">
+        <div class="dispute-player">${esc(d.player_b_name)}</div>
+        <div class="dispute-report ${d.player_b_report === 'won' ? 'won' : 'lost'}">claims: ${esc(d.player_b_report).toUpperCase()}</div>
+      </div>
+    </div>
+    <div class="dispute-meta">Match ${esc(d.match_id)} — opened ${new Date(d.created_at).toLocaleString()} — <span class="live-dot" id="live-dot-${d.id}">● LIVE</span></div>
+    ${shotsHtml}
+    <div class="chat-box" id="chat-${d.id}"></div>
+    <div class="msg-error" id="msg-error-${d.id}" style="display:none;"></div>
+    <div class="msg-row">
+      <button class="attach-btn" onclick="document.getElementById('file-${d.id}').click()">📎</button>
+      <input type="file" id="file-${d.id}" accept="image/*" style="display:none;">
+      <input type="text" id="input-${d.id}" placeholder="Message both players...">
+      <button class="pxbtn send-btn" onclick="sendDisputeMessage(${d.id}, '${esc(d.match_id)}')">SEND</button>
+    </div>
+    <div class="dispute-grant-row">
+      <button class="pxbtn-grant" onclick="grantWin(${d.id}, 'A', '${esc(d.player_a_name)}')">Grant win to ${esc(d.player_a_name)}</button>
+      <button class="pxbtn-grant" onclick="grantWin(${d.id}, 'B', '${esc(d.player_b_name)}')">Grant win to ${esc(d.player_b_name)}</button>
+    </div>
+  `;
+  document.getElementById('disputes-list').appendChild(card);
+
+  document.getElementById('input-' + d.id).addEventListener('keydown', e => {
+    if (e.key === 'Enter') sendDisputeMessage(d.id, d.match_id);
+  });
+  document.getElementById('file-' + d.id).addEventListener('change', e => handleImagePick(e, d.id, d.match_id));
+
+  tracked[d.id] = { matchId: d.match_id, lastCount: 0, live: true, snapshot: d.chat_snapshot, timer: null };
+  pollMessages(d.id); // immediate first poll
+  tracked[d.id].timer = setInterval(() => pollMessages(d.id), POLL_MS);
+}
+
+async function pollMessages(disputeId) {
+  const t = tracked[disputeId];
+  if (!t) return;
+  try {
+    const res = await fetch(`/api/admin?action=get-fifa-room-messages&key=${KEY}&matchId=${encodeURIComponent(t.matchId)}`, { cache: 'no-store' });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      if (!t.live) return; // already fell back
+      t.live = false;
+      document.getElementById('live-dot-' + disputeId).textContent = '● OFFLINE';
+      document.getElementById('live-dot-' + disputeId).classList.add('off');
+      renderSnapshotFallback(disputeId, t.snapshot, data.error);
+      return;
+    }
+    const messages = await res.json();
+    if (!Array.isArray(messages)) return;
+    if (messages.length === t.lastCount) return; // nothing new
+    renderChat(disputeId, messages);
+    t.lastCount = messages.length;
+  } catch (e) {
+    // transient network hiccup — leave as-is, next poll tick will retry
+  }
+}
+
+function renderChat(disputeId, messages) {
+  const box = document.getElementById('chat-' + disputeId);
+  const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
+  box.innerHTML = messages.map(m => chatLineHtml(m)).join('');
+  if (atBottom) box.scrollTop = box.scrollHeight;
+}
+
+function renderSnapshotFallback(disputeId, snapshot, errorMsg) {
+  const box = document.getElementById('chat-' + disputeId);
+  let chat = [];
+  try { chat = typeof snapshot === 'string' ? JSON.parse(snapshot) : (snapshot || []); } catch (e) { chat = []; }
+  const note = `<div class="snapshot-note">⚠ ${esc(errorMsg || 'Match room is no longer live')} — showing the chat as it was when the dispute opened. New admin messages can't be delivered.</div>`;
+  box.innerHTML = note + chat.map(m => chatLineHtml(m)).join('');
+  box.scrollTop = box.scrollHeight;
+}
+
+function resolveImageUrl(u) {
+  // Messages store a relative /api/uploads/:id path (so it resolves
+  // correctly on the FIFA service's own origin, for players). This page is
+  // on a different origin, so it needs the FIFA service's base prepended.
+  return u.startsWith('/') ? FIFA_BASE + u : u;
+}
+
+function chatLineHtml(m) {
+  const isAdmin = m.player === 'Admin';
+  if (m.imageUrl) {
+    const src = resolveImageUrl(m.imageUrl);
+    return `<div class="chat-line${isAdmin ? ' admin' : ''}"><b>${esc(m.player)}:</b><br><img class="chat-img" src="${esc(src)}" onclick="window.open('${esc(src)}','_blank')"></div>`;
+  }
+  return `<div class="chat-line${isAdmin ? ' admin' : ''}"><b>${esc(m.player)}:</b> ${esc(m.content || '')}</div>`;
+}
+
+async function sendDisputeMessage(disputeId, matchId) {
+  const input = document.getElementById('input-' + disputeId);
+  const text = input.value.trim();
+  if (!text) return;
+  hideMsgError(disputeId);
+  try {
+    const res = await fetch(`/api/admin?action=post-fifa-dispute-message&key=${KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ matchId, text }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showMsgError(disputeId, data.error || 'Failed to send message'); return; }
+    input.value = '';
+    pollMessages(disputeId); // pull it in immediately instead of waiting for the next tick
+  } catch (e) {
+    showMsgError(disputeId, 'Network error sending message');
+  }
+}
+
+async function handleImagePick(e, disputeId, matchId) {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  hideMsgError(disputeId);
+
+  if (!file.type.startsWith('image/')) { showMsgError(disputeId, 'Please choose an image file'); return; }
+  if (file.size > MAX_IMAGE_BYTES) { showMsgError(disputeId, 'Image is too large (max 5MB)'); return; }
+
+  try {
+    // Same upload endpoint players use — direct to the FIFA service, not
+    // proxied through mediaskills (no multipart handling on that side).
+    const formData = new FormData();
+    formData.append('file', file);
+    const uploadRes = await fetch(`${FIFA_BASE}/api/upload`, { method: 'POST', body: formData });
+    if (!uploadRes.ok) {
+      const body = await uploadRes.json().catch(() => ({}));
+      throw new Error(body.error || 'Upload failed');
+    }
+    const { url } = await uploadRes.json();
+    // Keep it relative (matches chatValidation.ts's expected shape, and
+    // resolves correctly for players who ARE on the FIFA service's origin).
+    // chatLineHtml() below resolves it against FIFA_BASE for OUR rendering.
+    const res = await fetch(`/api/admin?action=post-fifa-dispute-message&key=${KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ matchId, imageUrl: url }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showMsgError(disputeId, data.error || 'Failed to send image'); return; }
+    pollMessages(disputeId);
+  } catch (err) {
+    showMsgError(disputeId, err.message || 'Could not send that image');
+  }
+}
+
+function showMsgError(disputeId, msg) {
+  const el = document.getElementById('msg-error-' + disputeId);
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function hideMsgError(disputeId) {
+  document.getElementById('msg-error-' + disputeId).style.display = 'none';
+}
+
+async function grantWin(disputeId, winner, winnerName) {
+  if (!confirm(`Grant the win to ${winnerName}? This resolves the dispute.`)) return;
+  try {
+    const res = await fetch(`/api/admin?action=resolve-fifa-dispute&key=${KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ disputeId, winner }),
+    });
+    const data = await res.json();
+    if (!res.ok) { alert(data.error || 'Failed to resolve dispute'); return; }
+    if (tracked[disputeId]) { clearInterval(tracked[disputeId].timer); delete tracked[disputeId]; }
+    const card = document.getElementById('dispute-' + disputeId);
+    if (card) card.remove();
+    loadDisputes();
+  } catch (e) {
+    alert('Network error resolving dispute');
+  }
+}
+
+loadDisputes();
+setInterval(loadDisputes, 5000); // picks up newly-opened disputes; per-dispute chat polls independently every 1.75s
+</script>
+</body>
+</html>
