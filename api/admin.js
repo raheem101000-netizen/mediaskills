@@ -5,6 +5,13 @@ const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 const ADMIN_KEY = 'TENTEN2025';
 const PONG_CYCLE_LENGTH = 20;
 const PONG_WIN_PAYOUT = 5.00;
+// The FIFA service (~/fifa-match, standalone Colyseus/Express) shares this
+// same Neon database and exposes a small admin HTTP bridge for the two
+// operations that must reach its LIVE in-memory match room (posting into
+// chat, settling a dispute). Everything else about disputes (listing, chat
+// transcript, screenshots) is a plain read from fifa_disputes below — no
+// need to round-trip through the FIFA service for that.
+const FIFA_SERVICE_URL = process.env.FIFA_SERVICE_URL || 'https://onev1rg.onrender.com';
 
 async function listUsers(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
@@ -294,6 +301,114 @@ async function migrateFifa(req, res) {
   res.status(200).json({ ok: true });
 }
 
+// fifa_disputes belongs to the CURRENT Colyseus-based FIFA architecture (the
+// standalone ~/fifa-match service) — unrelated to fifa_matches/fifa_messages
+// above, which were built for an earlier, abandoned mediaskills-hosted-lobby
+// approach. match_id here is a Colyseus room id (TEXT), not an integer FK
+// into fifa_matches. The FIFA service runs this same migration on its own
+// startup; this copy exists so the admin page never hard-fails on a missing
+// table regardless of which service happened to create it first.
+async function migrateFifaDisputes(req, res) {
+  if (req.method !== 'POST') return res.status(405).end();
+  await sql`
+    CREATE TABLE IF NOT EXISTS fifa_disputes (
+      id               SERIAL PRIMARY KEY,
+      match_id         TEXT NOT NULL,
+      player_a_id      TEXT NOT NULL,
+      player_a_name    TEXT NOT NULL,
+      player_b_id      TEXT NOT NULL,
+      player_b_name    TEXT NOT NULL,
+      player_a_report  TEXT NOT NULL CHECK (player_a_report IN ('won','lost')),
+      player_b_report  TEXT NOT NULL CHECK (player_b_report IN ('won','lost')),
+      chat_snapshot    JSONB NOT NULL,
+      screenshot_urls  JSONB NOT NULL DEFAULT '[]',
+      status           TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','resolved')),
+      winner_user_id   TEXT,
+      created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+      resolved_at      TIMESTAMPTZ
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS fifa_disputes_status_idx ON fifa_disputes (status)`;
+  res.status(200).json({ ok: true });
+}
+
+// Read-only: open disputes only, straight from the shared DB — cheaper than
+// round-tripping through the FIFA service for something that isn't touching
+// its live room state.
+async function listFifaDisputes(req, res) {
+  if (req.method !== 'GET') return res.status(405).end();
+  const rows = await sql`
+    SELECT * FROM fifa_disputes WHERE status = 'open' ORDER BY created_at ASC
+  `.catch(() => null);
+  if (rows === null) return res.status(200).json([]); // table not migrated yet
+  res.status(200).json(rows);
+}
+
+// Read-only proxy: the LIVE message list (not the frozen dispute-time
+// snapshot), so the admin's chat view keeps up with the ongoing conversation
+// exactly as the two players see it. Polled by the admin page every ~1.75s.
+async function getFifaRoomMessages(req, res) {
+  if (req.method !== 'GET') return res.status(405).end();
+  const { matchId } = req.query;
+  if (!matchId) return res.status(400).json({ error: 'Missing matchId' });
+  try {
+    const r = await fetch(`${FIFA_SERVICE_URL}/api/admin/fifa-room/${encodeURIComponent(matchId)}/messages?key=${ADMIN_KEY}`);
+    const data = await r.json().catch(() => ({}));
+    res.status(r.status).json(data);
+  } catch (e) {
+    console.error(e);
+    res.status(502).json({ error: 'Could not reach the FIFA service — is it running?' });
+  }
+}
+
+// Proxies to the FIFA service's live room — this is the only place that
+// holds the actual in-memory Colyseus room, so it's the only place that can
+// deliver a message (text or image) into a live match's chat. Image bytes
+// themselves go straight from the admin's browser to the FIFA service's own
+// /api/upload (same endpoint players use) — this just relays the resulting
+// URL, same as a text message.
+async function postFifaDisputeMessage(req, res) {
+  if (req.method !== 'POST') return res.status(405).end();
+  const { matchId, text, imageUrl } = req.body || {};
+  if (!matchId || (!text && !imageUrl)) return res.status(400).json({ error: 'Missing matchId, or missing both text and imageUrl' });
+  try {
+    const r = await fetch(`${FIFA_SERVICE_URL}/api/admin/fifa-room/${encodeURIComponent(matchId)}/message?key=${ADMIN_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, imageUrl }),
+    });
+    const data = await r.json().catch(() => ({}));
+    res.status(r.status).json(data);
+  } catch (e) {
+    console.error(e);
+    res.status(502).json({ error: 'Could not reach the FIFA service — is it running?' });
+  }
+}
+
+// Proxies to the FIFA service, which both updates fifa_disputes (durable,
+// idempotent) and settles the live match room if it's still up. See
+// adminResolve's comment in FifaRoom.ts for the payout-hook TODO: this only
+// records the winner today, no balance_ledger credit yet.
+async function resolveFifaDispute(req, res) {
+  if (req.method !== 'POST') return res.status(405).end();
+  const { disputeId, winner } = req.body || {};
+  if (!disputeId || (winner !== 'A' && winner !== 'B')) {
+    return res.status(400).json({ error: "Missing disputeId or invalid winner ('A'|'B')" });
+  }
+  try {
+    const r = await fetch(`${FIFA_SERVICE_URL}/api/admin/disputes/${disputeId}/resolve?key=${ADMIN_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ winner }),
+    });
+    const data = await r.json().catch(() => ({}));
+    res.status(r.status).json(data);
+  } catch (e) {
+    console.error(e);
+    res.status(502).json({ error: 'Could not reach the FIFA service — is it running?' });
+  }
+}
+
 // One-off migration: fixes two win-crediting bugs found together in the same 500 —
 // (1) game_wins' composite PK on (player_id, game, match_number) collides once
 // match_number recycles through the 20-position cycle, even for a brand-new payment;
@@ -436,7 +551,7 @@ async function listMatchResults(req, res) {
   res.status(200).json(rows);
 }
 
-const KNOWN_TABLES = ['users', 'sessions', 'game_tokens', 'player_game_state', 'game_wins', 'auth_sessions', 'match_results', 'balance_ledger', 'fifa_matches', 'fifa_messages'];
+const KNOWN_TABLES = ['users', 'sessions', 'game_tokens', 'player_game_state', 'game_wins', 'auth_sessions', 'match_results', 'balance_ledger', 'fifa_matches', 'fifa_messages', 'fifa_disputes'];
 async function tableSchema(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
   const { table } = req.query;
@@ -821,6 +936,11 @@ const ACTIONS = {
   'migrate-match-results': migrateMatchResults,
   'migrate-balance-ledger': migrateBalanceLedger,
   'migrate-fifa': migrateFifa,
+  'migrate-fifa-disputes': migrateFifaDisputes,
+  'list-fifa-disputes': listFifaDisputes,
+  'get-fifa-room-messages': getFifaRoomMessages,
+  'post-fifa-dispute-message': postFifaDisputeMessage,
+  'resolve-fifa-dispute': resolveFifaDispute,
   'user-detail': userDetail,
   'fix-win-crediting-constraints': fixWinCreditingConstraints,
   'list-unclaimed-wins': listUnclaimedWins,
