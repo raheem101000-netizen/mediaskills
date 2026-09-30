@@ -224,7 +224,7 @@ body::after{
       <div id="claims-list"><div class="claims-empty">Loading...</div></div>
     </div>
 
-    <div class="foot-note">Status pulled directly from each game server every 10s. GamaJump has no status endpoint — LIVE/IDLE only reflects whether the site responds, so it never appears in activity or the player total.</div>
+    <div class="foot-note">Status pulled directly from each game server every 10s. GamaJump and FIFA 1v1 have no status endpoint — LIVE/IDLE only reflects whether the site responds, so they never appear in activity or the player total.</div>
   </div>
 </div>
 
@@ -241,9 +241,10 @@ function sendWhatsAppAlert(game, players, rooms, link) {
 function startDashboard() {
   const GAMES = [
     { name: 'GamaJump',   url: 'https://gamajump.online',                          link: 'https://gamajump.online/',                       statusless: true,  accent: '#bf5fff', accent2: '#6600bb' },
-    { name: 'Kurver',     url: 'https://curvytron77.onrender.com/status',          link: 'https://curvytron77.onrender.com/multiplayer#/', statusless: false, accent: '#00f5d4', accent2: '#00b89a' },
-    { name: 'Puz Royale', url: 'https://puz-royale-clause-1.onrender.com/status',  link: 'https://puz-royale-clause-1.onrender.com/',       statusless: false, accent: '#ffb020', accent2: '#996000' },
-    { name: 'Pong',       url: 'https://pong-claus-1.onrender.com/status',         link: 'https://pong-claus-1.onrender.com/',              statusless: false, accent: '#3d9eff', accent2: '#0044bb' },
+    { name: 'Kurver',     url: 'https://kurver-e7ow.onrender.com/status',          link: 'https://kurver-e7ow.onrender.com/multiplayer#/', statusless: false, accent: '#00f5d4', accent2: '#00b89a' },
+    { name: 'Puz Royale', url: 'https://battle-royale-agnc.onrender.com/status',   link: 'https://battle-royale-agnc.onrender.com/',       statusless: false, accent: '#ffb020', accent2: '#996000' },
+    { name: 'Pong',       url: 'https://pong-wju4.onrender.com/status',            link: 'https://pong-wju4.onrender.com/',                statusless: false, accent: '#3d9eff', accent2: '#0044bb' },
+    { name: 'FIFA 1v1',   url: 'https://onev1rg.onrender.com',                     link: 'https://onev1rg.onrender.com/rooms.html',        statusless: true,  accent: '#22ff6e', accent2: '#00a030' },
   ];
 
   const grid = document.getElementById('grid');
@@ -385,9 +386,9 @@ function startDashboard() {
 
 // ── Prize Claims ──
 const GAME_SERVERS = [
-  { key: 'pong',      label: 'Pong',       base: 'https://pong-claus-1.onrender.com',       color: '#3d9eff' },
-  { key: 'kurver',    label: 'Kurver',      base: 'https://curvytron77.onrender.com',         color: '#00f5d4' },
-  { key: 'puzroyale', label: 'Puz Royale',  base: 'https://puz-royale-clause-1.onrender.com', color: '#ffb020' },
+  { key: 'pong',      label: 'Pong',       base: 'https://pong-wju4.onrender.com',          color: '#3d9eff' },
+  { key: 'kurver',    label: 'Kurver',      base: 'https://kurver-e7ow.onrender.com',         color: '#00f5d4' },
+  { key: 'puzroyale', label: 'Puz Royale',  base: 'https://battle-royale-agnc.onrender.com',  color: '#ffb020' },
 ];
 const KEY = 'TENTEN2025';
 
