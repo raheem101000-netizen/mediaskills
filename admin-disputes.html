@@ -119,11 +119,11 @@ body::after{
 
 <script>
 const KEY = 'TENTEN2025';
-// Local-testing-only: the admin page (mediaskills, localhost:3100) uploads
-// images and polls live messages directly against the FIFA service, the
+// The admin page uploads images directly to the live FIFA service, and
+// resolves chat images' relative /api/uploads/:id paths against it, the
 // same way admin.html already calls other game servers' /admin/* endpoints
-// directly. Once the FIFA service has a real deployed URL, this becomes that.
-const FIFA_BASE = 'http://localhost:2601';
+// directly. Matches FIFA_SERVICE_URL's default in api/admin.js.
+const FIFA_BASE = 'https://onev1rg.onrender.com';
 
 const POLL_MS = 1750;
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
@@ -264,7 +264,7 @@ function resolveImageUrl(u) {
   // Messages store a relative /api/uploads/:id path (so it resolves
   // correctly on the FIFA service's own origin, for players). This page is
   // on a different origin, so it needs the FIFA service's base prepended.
-  return u.startsWith('/') ? FIFA_BASE + u : u;
+  return u.startsWith('/') && !u.startsWith('//') ? FIFA_BASE + u : u;
 }
 
 function chatLineHtml(m) {
