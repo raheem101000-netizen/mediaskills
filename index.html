@@ -1107,9 +1107,8 @@ async function goToFifa(e, extraQuery) {
   }
 }
 // Puz Royale pays real prizes too, so it takes the same login handoff as FIFA.
-// NOT WIRED UP YET: Puz stays closed to the public (its PLAY buttons still call
-// showNotReady(), and ?play=puz is disabled below) until entry fees exist. To
-// open it, point the two Puz PLAY buttons at goToPuz(event) and re-enable puz below.
+// Open to play; cash payouts are switched off on the Puz server itself
+// (PUZ_PAYOUTS_ENABLED unset) until entry fees exist.
 const PUZ_LOBBY_URL = 'https://battle-royale-agnc.onrender.com/rooms';
 async function goToPuz(e, extraQuery) {
   if (e) e.preventDefault();
@@ -1129,7 +1128,7 @@ async function goToPuz(e, extraQuery) {
 // tenten.run/?play=fifa|puz[&join=…&pw=…]
 (function () {
   const q = new URLSearchParams(location.search);
-  const go = { fifa: goToFifa /* , puz: goToPuz — closed until entry fees exist */ }[q.get('play')];
+  const go = { fifa: goToFifa, puz: goToPuz }[q.get('play')];
   if (!go) return;
   const fwd = new URLSearchParams();
   if (q.get('join')) fwd.set('join', q.get('join'));
@@ -1269,7 +1268,7 @@ END OLD GAMES HIDDEN -->
         <div class="tier" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.1);">6p <b>$10</b></div><div class="tier" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.1);">8p <b>$14</b></div><div class="tier" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.1);">10p <b>$18</b></div>
       </div>
     </div>
-    <a href="https://battle-royale-agnc.onrender.com/rooms" onclick="event.preventDefault();showNotReady();" class="btn" style="width:100%;justify-content:center;font-size:7px;margin-top:14px;display:block;text-align:center;text-decoration:none;background:var(--pink);color:#fff;border:2px solid #aa0066;box-shadow:3px 3px 0 #aa0066;">▶ PLAY MULTIPLAYER</a>
+    <a href="https://battle-royale-agnc.onrender.com/rooms" onclick="goToPuz(event)" class="btn" style="width:100%;justify-content:center;font-size:7px;margin-top:14px;display:block;text-align:center;text-decoration:none;background:var(--pink);color:#fff;border:2px solid #aa0066;box-shadow:3px 3px 0 #aa0066;">▶ PLAY MULTIPLAYER</a>
   </div>
 
 <!-- OLD GAMES HIDDEN - RESTORE LATER
@@ -1581,7 +1580,7 @@ const GAME_MODES = {
             <div class="tier" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.1);">6p <b>$10</b></div><div class="tier" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.1);">8p <b>$14</b></div><div class="tier" style="border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.1);">10p <b>$18</b></div>
           </div>
         </div>
-        <a href="https://battle-royale-agnc.onrender.com/rooms" onclick="event.preventDefault();showNotReady();" class="btn" style="width:100%;justify-content:center;font-size:7px;margin-top:14px;display:block;text-align:center;text-decoration:none;background:var(--pink);color:#fff;border:2px solid #aa0066;box-shadow:3px 3px 0 #aa0066;">▶ PLAY MULTIPLAYER</a>
+        <a href="https://battle-royale-agnc.onrender.com/rooms" onclick="goToPuz(event)" class="btn" style="width:100%;justify-content:center;font-size:7px;margin-top:14px;display:block;text-align:center;text-decoration:none;background:var(--pink);color:#fff;border:2px solid #aa0066;box-shadow:3px 3px 0 #aa0066;">▶ PLAY MULTIPLAYER</a>
       </div>`,
     ],
   },
