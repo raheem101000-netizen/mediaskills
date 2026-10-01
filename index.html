@@ -1106,14 +1106,35 @@ async function goToFifa(e, extraQuery) {
     window.location.href = '/login';
   }
 }
-// Deep link used by the FIFA lobby's login gate: tenten.run/?play=fifa[&join=…&pw=…]
+// Puz Royale pays real prizes too, so it takes the same login handoff as FIFA.
+// NOT WIRED UP YET: Puz stays closed to the public (its PLAY buttons still call
+// showNotReady(), and ?play=puz is disabled below) until entry fees exist. To
+// open it, point the two Puz PLAY buttons at goToPuz(event) and re-enable puz below.
+const PUZ_LOBBY_URL = 'https://battle-royale-agnc.onrender.com/rooms';
+async function goToPuz(e, extraQuery) {
+  if (e) e.preventDefault();
+  try {
+    const r = await fetch('/api/token?action=generate', { method: 'POST' });
+    if (!r.ok) { window.location.href = '/login'; return; }
+    const data = await r.json();
+    window.location.href = PUZ_LOBBY_URL + (extraQuery ? '?' + extraQuery : '') +
+      '#token=' + encodeURIComponent(data.token) +
+      '&player_id=' + encodeURIComponent(data.player_id) +
+      '&name=' + encodeURIComponent(data.display_name || '');
+  } catch (_) {
+    window.location.href = '/login';
+  }
+}
+// Deep link used by the FIFA / Puz lobbies' login gates:
+// tenten.run/?play=fifa|puz[&join=…&pw=…]
 (function () {
   const q = new URLSearchParams(location.search);
-  if (q.get('play') !== 'fifa') return;
+  const go = { fifa: goToFifa /* , puz: goToPuz — closed until entry fees exist */ }[q.get('play')];
+  if (!go) return;
   const fwd = new URLSearchParams();
   if (q.get('join')) fwd.set('join', q.get('join'));
   if (q.get('pw')) fwd.set('pw', q.get('pw'));
-  goToFifa(null, fwd.toString());
+  go(null, fwd.toString());
 })();
 
 async function goToPong(e) {
