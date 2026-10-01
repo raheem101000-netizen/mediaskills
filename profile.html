@@ -186,9 +186,26 @@ body{display:flex;flex-direction:column;align-items:center;padding:80px 16px 48p
 <script>
 const DEFAULT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Ccircle cx='48' cy='48' r='48' fill='%231a1a2e'/%3E%3Ccircle cx='48' cy='38' r='18' fill='%23bf5fff' opacity='.7'/%3E%3Cellipse cx='48' cy='78' rx='28' ry='18' fill='%23bf5fff' opacity='.5'/%3E%3C/svg%3E";
 
+// Keep the balance live (see index.html's refreshBalance): re-read it when
+// the page is shown again (incl. Back/Forward cache), refocused, or every
+// 30 s while visible. Only the balance is touched, so a half-typed PayPal
+// email is never overwritten.
+async function refreshBalance() {
+  try {
+    const r = await fetch('/api/me', { cache: 'no-store' });
+    if (!r.ok) return;
+    const u = await r.json();
+    document.getElementById('balance-text').textContent = '$' + parseFloat(u.balance).toFixed(2);
+  } catch (_) {}
+}
+window.addEventListener('pageshow', e => { if (e.persisted) refreshBalance(); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refreshBalance(); });
+window.addEventListener('focus', refreshBalance);
+setInterval(() => { if (document.visibilityState === 'visible') refreshBalance(); }, 30000);
+
 async function loadProfile() {
   try {
-    const r = await fetch('/api/me');
+    const r = await fetch('/api/me', { cache: 'no-store' });
     if (!r.ok) { window.location.href = '/login.html'; return; }
     const u = await r.json();
 

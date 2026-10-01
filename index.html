@@ -1061,7 +1061,7 @@ body{
 <script>
 (async function() {
   try {
-    const r = await fetch('/api/me');
+    const r = await fetch('/api/me', { cache: 'no-store' });
     if (!r.ok) { document.getElementById('nav-auth-guest').style.display = 'flex'; return; }
     const u = await r.json();
     document.getElementById('nav-auth-user').style.display = 'flex';
@@ -1086,6 +1086,25 @@ body{
     document.getElementById('nav-auth-guest').style.display = 'flex';
   }
 })();
+
+// Keep the nav balance live. It used to be read once on load, so coming back
+// from a game showed the pre-match balance — especially via the Back button,
+// which restores this page from the browser's back/forward cache without
+// re-running anything. Re-read it whenever the page is shown or refocused,
+// and every 30 s while it's visible.
+async function refreshBalance() {
+  if (document.getElementById('nav-auth-user').style.display !== 'flex') return; // not logged in
+  try {
+    const r = await fetch('/api/me', { cache: 'no-store' });
+    if (!r.ok) return;
+    const u = await r.json();
+    document.getElementById('nav-balance').textContent = '$' + parseFloat(u.balance).toFixed(2);
+  } catch (_) {}
+}
+window.addEventListener('pageshow', e => { if (e.persisted) refreshBalance(); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refreshBalance(); });
+window.addEventListener('focus', refreshBalance);
+setInterval(() => { if (document.visibilityState === 'visible') refreshBalance(); }, 30000);
 
 // FIFA 1v1 is a cash match, so — exactly like goToPong — it needs a logged-in
 // account: issue a game_tokens handoff token and pass it to the FIFA lobby.
