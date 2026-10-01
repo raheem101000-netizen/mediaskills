@@ -3,6 +3,11 @@ const sql = require('./_db');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
+  // Live account data (balance changes the moment a win is credited): never
+  // cache it — not in the browser, not at Vercel's edge.
+  res.setHeader('Cache-Control', 'no-store, private, max-age=0');
+  res.setHeader('CDN-Cache-Control', 'no-store');
+  res.setHeader('Vercel-CDN-Cache-Control', 'no-store');
   const cookies = cookie.parse(req.headers.cookie || '');
   const sid = cookies.session;
   if (!sid) return res.status(401).json({ error: 'Not logged in' });
