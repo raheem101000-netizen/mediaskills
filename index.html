@@ -1143,11 +1143,28 @@ async function goToPuz(e, extraQuery) {
     window.location.href = '/login';
   }
 }
-// Deep link used by the FIFA / Puz lobbies' login gates:
-// tenten.run/?play=fifa|puz[&join=…&pw=…]
+// Kurver pays real prizes too: same login handoff. Its app routes on the URL
+// hash, so the Kurver page reads #token=… and hands the hash back to '#/'.
+const KURVER_LOBBY_URL = 'https://kurver-e7ow.onrender.com/multiplayer';
+async function goToKurver(e) {
+  if (e) e.preventDefault();
+  try {
+    const r = await fetch('/api/token?action=generate', { method: 'POST' });
+    if (!r.ok) { window.location.href = '/login'; return; }
+    const data = await r.json();
+    window.location.href = KURVER_LOBBY_URL +
+      '#token=' + encodeURIComponent(data.token) +
+      '&player_id=' + encodeURIComponent(data.player_id) +
+      '&name=' + encodeURIComponent(data.display_name || '');
+  } catch (_) {
+    window.location.href = '/login';
+  }
+}
+// Deep link used by the FIFA / Puz / Kurver lobbies' login gates:
+// tenten.run/?play=fifa|puz|kurver[&join=…&pw=…]
 (function () {
   const q = new URLSearchParams(location.search);
-  const go = { fifa: goToFifa, puz: goToPuz }[q.get('play')];
+  const go = { fifa: goToFifa, puz: goToPuz, kurver: goToKurver }[q.get('play')];
   if (!go) return;
   const fwd = new URLSearchParams();
   if (q.get('join')) fwd.set('join', q.get('join'));
@@ -1268,7 +1285,7 @@ END OLD GAMES HIDDEN -->
         <div class="tier">6p <b>$10</b></div>
       </div>
     </div>
-    <a href="https://kurver-e7ow.onrender.com/multiplayer#/" class="btn" style="width:100%;justify-content:center;font-size:7px;margin-top:14px;background:var(--green);color:#020a04;border:2px solid var(--green2);box-shadow:3px 3px 0 var(--green2);text-decoration:none;">▶ PLAY MULTIPLAYER</a>
+    <a href="https://kurver-e7ow.onrender.com/multiplayer#/" onclick="goToKurver(event)" class="btn" style="width:100%;justify-content:center;font-size:7px;margin-top:14px;background:var(--green);color:#020a04;border:2px solid var(--green2);box-shadow:3px 3px 0 var(--green2);text-decoration:none;">▶ PLAY MULTIPLAYER</a>
   </div>
 
   <!-- PUZ ROYALE MULTIPLAYER -->
@@ -1580,7 +1597,7 @@ const GAME_MODES = {
             <div class="tier">6p <b>$10</b></div>
           </div>
         </div>
-        <a href="https://kurver-e7ow.onrender.com/multiplayer#/" class="btn" style="width:100%;justify-content:center;font-size:7px;margin-top:14px;background:var(--green);color:#020a04;border:2px solid var(--green2);box-shadow:3px 3px 0 var(--green2);text-decoration:none;">▶ PLAY MULTIPLAYER</a>
+        <a href="https://kurver-e7ow.onrender.com/multiplayer#/" onclick="goToKurver(event)" class="btn" style="width:100%;justify-content:center;font-size:7px;margin-top:14px;background:var(--green);color:#020a04;border:2px solid var(--green2);box-shadow:3px 3px 0 var(--green2);text-decoration:none;">▶ PLAY MULTIPLAYER</a>
       </div>`,
     ],
   },
