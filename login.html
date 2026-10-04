@@ -110,7 +110,10 @@ async function doLogin() {
     });
     const data = await r.json();
     if (!r.ok) { showErr(data.error || 'Login failed'); btn.disabled = false; btn.textContent = '▶ LOG IN'; return; }
-    window.location.href = '/profile.html';
+    // Back to where the login was asked for (e.g. PLAY on Kurver → /?play=kurver),
+    // same-site paths only; otherwise the profile as before.
+    const next = new URLSearchParams(location.search).get('next');
+    window.location.href = (next && next.startsWith('/') && !next.startsWith('//')) ? next : '/profile.html';
   } catch (e) {
     showErr('Network error — please try again');
     btn.disabled = false;
