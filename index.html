@@ -1220,26 +1220,32 @@ async function goToPong(e) {
     <div class="showwin">
       <div class="bar"><span>★ LIVE GAMEPLAY</span><div class="dots"><div class="d" style="background:#ff4757"></div><div class="d" style="background:#ffe600"></div><div class="d" style="background:#22ff6e"></div></div></div>
       <div class="screen">
+        <!-- TENTEN: Puz Royale hero slide removed for launch - restore by re-adding to the slideshow rotation -->
+        <!-- (Kept inside this <template>, which the page never renders and the rotation never counts. To restore:
+             move it back out of the <template>, make it the first slide again ("slide on", data-i="0"), renumber the
+             others, add a third .pd dot below, and re-enable the createGame('hero-puz-canvas', …) line in the script.) -->
+        <template id="hero-puz-slide-removed">
         <!-- SLIDE 1: PUZ ROYALE — same canvas battle-royale-bot preview used on the Puz Royale games-grid card (gc-canvas), same HUD, resized for this slide -->
         <div class="slide on" data-i="0">
           <div class="slide-media" id="slide-puz"><div style="width:100%;height:100%;position:relative;overflow:hidden;background:#111;"><div style="display:flex;justify-content:space-between;padding:3px 6px;background:rgba(0,0,0,0.95);font-family:'Press Start 2P',monospace;font-size:5px;position:absolute;top:0;left:0;right:0;z-index:2;"><span id="hero-puz-hp" style="color:#4CFF6C">HP:100</span><span id="hero-puz-ammo" style="color:#FFD700">30/30</span><span id="hero-puz-alive" style="color:rgba(255,255,255,0.6)">8▶</span><span id="hero-puz-zone" style="color:#FF6B6B">30s</span></div><canvas id="hero-puz-canvas" style="display:block;width:100%;height:100%;position:absolute;top:14px;left:0;"></canvas></div></div>
           <div class="gtag" style="color:#ff4fa0;border-color:#aa0066;background:rgba(255,79,160,.12);">PUZ ROYALE</div>
           <div class="gprize">WIN $18</div>
         </div>
+        </template>
         <!-- SLIDE 2: KURVER — new clip, canvas is driven by the JS block below -->
-        <div class="slide" data-i="1">
+        <div class="slide on" data-i="0">
           <canvas id="kurv" width="640" height="400" style="width:100%;height:100%;display:block;"></canvas>
           <div class="gtag" style="color:#22ff6e;border-color:#00a030;background:rgba(34,255,110,.12);">KURVER</div>
           <div class="gprize">WIN $10</div>
         </div>
         <!-- SLIDE 3: PONG — same canvas AI-pong preview used on the Pong games-grid card (gc-pong-canvas), same HUD, resized for this slide -->
-        <div class="slide" data-i="2">
+        <div class="slide" data-i="1">
           <div class="slide-media" id="slide-pong"><div style="width:100%;height:100%;position:relative;"><div style="display:flex;justify-content:space-between;padding:3px 6px;background:rgba(0,0,0,0.95);font-family:'Press Start 2P',monospace;font-size:5px;position:absolute;top:0;left:0;right:0;z-index:2;"><span id="hero-pong-score" style="color:#3d9eff;">0 — 0</span></div><canvas id="hero-pong-canvas-slide" style="display:block;width:100%;height:100%;position:absolute;top:14px;left:0;"></canvas></div></div>
           <div class="gtag" style="color:#3d9eff;border-color:#0044bb;background:rgba(61,158,255,.12);">PONG</div>
           <div class="gprize">WIN $5</div>
         </div>
       </div>
-      <div class="progress"><div class="pd on"></div><div class="pd"></div><div class="pd"></div></div>
+      <div class="progress"><div class="pd on"></div><div class="pd"></div></div>
     </div>
   </div>
 </div>
@@ -1810,7 +1816,8 @@ createPongPreview('gc-pong-canvas', 200, 253, '#3d9eff', '#bf5fff');
 
 // Hero slideshow previews — same functions/HUD as the games-grid Puz Royale
 // and Pong cards, just instantiated into new canvases sized for the hero slide.
-createGame('hero-puz-canvas', {hp:'hero-puz-hp', ammo:'hero-puz-ammo', alive:'hero-puz-alive', zone:'hero-puz-zone'}, 640, 400, 3);
+// TENTEN: Puz Royale hero slide removed for launch — re-enable this line when restoring it.
+// createGame('hero-puz-canvas', {hp:'hero-puz-hp', ammo:'hero-puz-ammo', alive:'hero-puz-alive', zone:'hero-puz-zone'}, 640, 400, 3);
 createPongPreview('hero-pong-canvas-slide', 640, 400, '#3d9eff', '#bf5fff');
 </script>
 
