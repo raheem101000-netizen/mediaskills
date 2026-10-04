@@ -1742,15 +1742,16 @@ createGame('oc2-canvas',{hp:'oc2-hp',ammo:'oc2-ammo',alive:'oc2-alive',zone:'oc2
 // opts (all optional; defaults = the original small-card behaviour). The hero
 // slide passes a faster "rally" tuning: quicker ball, bigger paddles that aim
 // for where the ball will arrive (so they always return it).
-function createPongPreview(canvasId, W, H, color1, color2) {
+function createPongPreview(canvasId, W, H, color1, color2, opts) {
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
+  const o = Object.assign({ serveX: 3.5, serveY: 2.5, ballR: 5, padW: 6, padH: 40, trackL: 2.4, trackR: 2.8, idle: 1.0, maxSpeed: 7, speedUp: 1.05, predict: false }, opts || {});
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext('2d');
   let ballX = W/2, ballY = H/2;
-  let ballVX = (Math.random()>0.5?1:-1)*3.5;
-  let ballVY = (Math.random()>0.5?1:-1)*2.5;
-  const ballR = 5, padW = 6, padH = 40;
+  let ballVX = (Math.random()>0.5?1:-1)*o.serveX;
+  let ballVY = (Math.random()>0.5?1:-1)*o.serveY;
+  const ballR = o.ballR, padW = o.padW, padH = o.padH;
   let p1Y = H/2-padH/2, p2Y = H/2-padH/2;
   let score1 = 0, score2 = 0;
   const maxScore = 3;
@@ -1759,31 +1760,43 @@ function createPongPreview(canvasId, W, H, color1, color2) {
     ballActive=false;
     ballX=W/2;ballY=H/2;ballVX=0;ballVY=0;
     setTimeout(()=>{
-      ballVX=(Math.random()>0.5?1:-1)*3.5;
-      ballVY=(Math.random()>0.5?1:-1)*2.5;
+      ballVX=(Math.random()>0.5?1:-1)*o.serveX;
+      ballVY=(Math.random()>0.5?1:-1)*o.serveY;
       ballActive=true;
     },1500);
   }
-  function aiMove(padY,targetY,speed){const center=padY+padH/2;if(center<targetY-4)padY=Math.min(H-padH,padY+speed);else if(center>targetY+4)padY=Math.max(0,padY-speed);return padY;}
+  function aiMove(padY,targetY,speed){const center=padY+padH/2;const step=d=>o.predict?Math.min(speed,d):speed;if(center<targetY-4)padY=Math.min(H-padH,padY+step(targetY-center));else if(center>targetY+4)padY=Math.max(0,padY-step(center-targetY));return padY;}
+  // Where the ball will cross paddle-x x (following its wall bounces), plus a
+  // small aim offset per return so the rallies vary.
+  let aimOffset = 0, aimSide = 0;
+  function interceptY(x){
+    if(!ballVX) return H/2;
+    const t=(x-ballX)/ballVX; if(t<0) return H/2;
+    const lo=ballR, span=H-2*ballR; let y=(ballY-lo)+ballVY*t;
+    y=((y%(2*span))+2*span)%(2*span); if(y>span) y=2*span-y;
+    const side=ballVX<0?-1:1; if(side!==aimSide){aimSide=side;aimOffset=(Math.random()-0.5)*padH*0.5;}
+    return lo+y+aimOffset;
+  }
   let lastT=0;
   function loop(t){
     const dt=Math.min((t-lastT)/16,3);lastT=t;
     if(ballActive){
-      if(ballVX < 0) p1Y=aiMove(p1Y,ballY,2.4);
-      else p1Y=aiMove(p1Y,H/2,1.0);
-      if(ballVX > 0) p2Y=aiMove(p2Y,ballY,2.8);
-      else p2Y=aiMove(p2Y,H/2,1.0);
+      const k=o.predict?dt:1;
+      if(ballVX < 0) p1Y=aiMove(p1Y,o.predict?interceptY(14+padW+ballR):ballY,o.trackL*k);
+      else p1Y=aiMove(p1Y,H/2,o.idle*k);
+      if(ballVX > 0) p2Y=aiMove(p2Y,o.predict?interceptY(W-14-padW-ballR):ballY,o.trackR*k);
+      else p2Y=aiMove(p2Y,H/2,o.idle*k);
       ballX+=ballVX*dt;ballY+=ballVY*dt;
       if(ballY-ballR<=0){ballY=ballR;ballVY=Math.abs(ballVY);}
       if(ballY+ballR>=H){ballY=H-ballR;ballVY=-Math.abs(ballVY);}
-      if(ballX-ballR<=14+padW&&ballY>=p1Y&&ballY<=p1Y+padH){ballX=14+padW+ballR;ballVX=Math.abs(ballVX)*1.05;ballVY+=(ballY-(p1Y+padH/2))*0.1;}
-      if(ballX+ballR>=W-14-padW&&ballY>=p2Y&&ballY<=p2Y+padH){ballX=W-14-padW-ballR;ballVX=-Math.abs(ballVX)*1.05;ballVY+=(ballY-(p2Y+padH/2))*0.1;}
-      const speed=Math.hypot(ballVX,ballVY);if(speed>7){ballVX=ballVX/speed*7;ballVY=ballVY/speed*7;}
+      if(ballX-ballR<=14+padW&&ballY>=p1Y&&ballY<=p1Y+padH){ballX=14+padW+ballR;ballVX=Math.abs(ballVX)*o.speedUp;ballVY+=(ballY-(p1Y+padH/2))*0.1;}
+      if(ballX+ballR>=W-14-padW&&ballY>=p2Y&&ballY<=p2Y+padH){ballX=W-14-padW-ballR;ballVX=-Math.abs(ballVX)*o.speedUp;ballVY+=(ballY-(p2Y+padH/2))*0.1;}
+      const speed=Math.hypot(ballVX,ballVY);if(speed>o.maxSpeed){ballVX=ballVX/speed*o.maxSpeed;ballVY=ballVY/speed*o.maxSpeed;}
       if(ballX<0){score2++;resetBall();if(score2>=maxScore){score1=0;score2=0;}}
       if(ballX>W){score1++;resetBall();if(score1>=maxScore){score1=0;score2=0;}}
     } else {
-      p1Y=aiMove(p1Y,H/2,1.0);
-      p2Y=aiMove(p2Y,H/2,1.0);
+      p1Y=aiMove(p1Y,H/2,o.idle);
+      p2Y=aiMove(p2Y,H/2,o.idle);
     }
     ctx.fillStyle='#050a18';ctx.fillRect(0,0,W,H);
     for(let x=0;x<W;x+=16)for(let y=0;y<H;y+=16)if((x/16+y/16)%2===0){ctx.fillStyle='rgba(61,158,255,0.02)';ctx.fillRect(x,y,16,16);}
@@ -1821,9 +1834,8 @@ createPongPreview('gc-pong-canvas', 200, 253, '#3d9eff', '#bf5fff');
 // and Pong cards, just instantiated into new canvases sized for the hero slide.
 // TENTEN: Puz Royale hero slide removed for launch — re-enable this line when restoring it.
 // createGame('hero-puz-canvas', {hp:'hero-puz-hp', ammo:'hero-puz-ammo', alive:'hero-puz-alive', zone:'hero-puz-zone'}, 640, 400, 3);
-// Hero: the same Pong preview as the games-grid card (gc-pong-canvas), drawn at the
-// card's on-screen pixel scale (card 200px wide shown ~2x; hero 320x200 shown ~2x) so it looks identical.
-createPongPreview('hero-pong-canvas-slide', 320, 200, '#3d9eff', '#bf5fff');
+// Hero: a fast, sustained rally (presentation only — not the real game).
+createPongPreview('hero-pong-canvas-slide', 640, 400, '#3d9eff', '#bf5fff', { serveX: 5.75, serveY: 3.5, ballR: 7, padW: 9, padH: 72, trackL: 11, trackR: 11, idle: 3, maxSpeed: 10.5, speedUp: 1.04, predict: true });
 </script>
 
 <script>
