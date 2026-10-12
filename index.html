@@ -863,6 +863,11 @@ body{
 .pz-media img{object-fit:cover;}
 .pz-media img.contain{object-fit:contain;background:#1c1c1c;}
 .pz-live{position:absolute;top:12px;left:12px;background:rgba(0,0,0,.78);border-radius:20px;padding:5px 11px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px;}
+/* 1v1 Arena card: a tint over the (bright, white-paper) sketch so it sits in the
+   dark row — gold at the top fading to dark at the bottom. A CSS layer, not baked
+   into the image: adjust the two rgba() values to make it stronger or lighter. */
+.pz-tint::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg, rgba(242,193,78,0.10), rgba(10,10,15,0.35));pointer-events:none;}
+.pz-tint .pz-live{z-index:1;}
 .pz-live i{width:7px;height:7px;border-radius:50%;background:#35e06f;display:block;}
 .pz-body{padding:18px 18px 20px;}
 .pz-name{font-size:19px;font-weight:600;letter-spacing:.3px;}
@@ -1347,7 +1352,7 @@ END OLD GAMES HIDDEN -->
 
 
   <!-- 1v1 ARENA (any console game; the FIFA lobby service, onev1rg) -->
-  <div class="pz-card"><div class="pz-media"><img src="/assets/fifa-hero.jpg" alt=""><div class="pz-live"><i></i>LIVE</div></div><div class="pz-body"><div class="pz-name">1V1 ARENA</div><div class="pz-dev">ANY CONSOLE GAME</div><div class="pz-big">$5<i></i>$10</div><div class="pz-desc">Pick any console game — play 1v1, winner takes the prize.</div><div class="pz-opts"><div class="pz-opt"><span class="e">ENTRY $2.99</span><span class="w">WIN $5</span></div><div class="pz-opt gold"><span class="e">ENTRY $5.99</span><span class="w">WIN $10</span></div></div><a href="https://onev1rg.onrender.com/rooms.html" onclick="goToFifa(event)" class="pz-btn"><svg viewBox="0 0 11 13" aria-hidden="true"><path d="M0 0l11 6.5L0 13z" fill="currentColor"/></svg>PLAY 1V1 ARENA</a></div></div>
+  <div class="pz-card"><div class="pz-media pz-tint"><img src="/assets/arena-hero.jpg" alt="Sketch of a gamer in a chair holding a controller"><div class="pz-live"><i></i>LIVE</div></div><div class="pz-body"><div class="pz-name">1V1 ARENA</div><div class="pz-dev">ANY CONSOLE GAME</div><div class="pz-big">$5<i></i>$10</div><div class="pz-desc">Pick any console game — play 1v1, winner takes the prize.</div><div class="pz-opts"><div class="pz-opt"><span class="e">ENTRY $2.99</span><span class="w">WIN $5</span></div><div class="pz-opt gold"><span class="e">ENTRY $5.99</span><span class="w">WIN $10</span></div></div><a href="https://onev1rg.onrender.com/rooms.html" onclick="goToFifa(event)" class="pz-btn"><svg viewBox="0 0 11 13" aria-hidden="true"><path d="M0 0l11 6.5L0 13z" fill="currentColor"/></svg>PLAY 1V1 ARENA</a></div></div>
 
   <!-- PONG $5/WIN -->
   <div class="pz-card"><div class="pz-media"><canvas id="pong-solo-canvas"></canvas><div class="pz-live"><i></i>LIVE</div></div><div class="pz-body"><div class="pz-name">PONG</div><div class="pz-dev">BEST ON PHONE · PC ok</div><div class="pz-big">$5<i></i>$10</div><div class="pz-desc">Join a live 1v1 room. Unlimited plays.</div><div class="pz-opts"><div class="pz-opt"><span class="e">ENTRY $2.99</span><span class="w">WIN $5</span></div><div class="pz-opt gold"><span class="e">ENTRY $5.99</span><span class="w">WIN $10</span></div></div><a href="https://pong-wju4.onrender.com/" onclick="goToPongMP(event)" class="pz-btn"><svg viewBox="0 0 11 13" aria-hidden="true"><path d="M0 0l11 6.5L0 13z" fill="currentColor"/></svg>PLAY PONG</a></div></div>
