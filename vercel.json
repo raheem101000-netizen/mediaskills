@@ -8,6 +8,7 @@
     { "src": "/signup", "dest": "/signup.html" },
     { "src": "/login", "dest": "/login.html" },
     { "src": "/profile", "dest": "/profile.html" },
+    { "src": "/creator", "dest": "/creator.html" },
     { "src": "/fifa-match/([0-9]+)", "dest": "/fifa-match.html?id=$1" },
     { "src": "/fifa-match", "dest": "/fifa-match.html" },
     { "src": "/api/logout", "dest": "/api/auth-misc?action=logout" },
