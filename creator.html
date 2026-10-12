@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TENTEN · Creator</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Creator dashboard: read-only. Black and gold, like the homepage prize cards. */
+:root{--bg:#000;--card:#0c0c0c;--line:#2c2c2c;--text:#fff;--muted:#9a9a9a;--gold:#F2C14E;--gold-dim:#6b5720;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;}
+.nav{position:sticky;top:0;height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:rgba(0,0,0,0.96);border-bottom:1px solid rgba(255,255,255,0.07);}
+.nav a{color:#fff;text-decoration:none;}
+.nav-logo{font-family:'Press Start 2P',monospace;font-size:12px;letter-spacing:2px;}
+.nav-back{font-size:14px;color:var(--muted) !important;}
+.wrap{max-width:640px;margin:0 auto;padding:28px 16px 60px;}
+.eyebrow{font-size:12px;letter-spacing:2.5px;color:var(--gold);font-weight:600;margin-bottom:6px;}
+h1{font-size:26px;font-weight:600;line-height:1.25;margin-bottom:18px;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;margin-bottom:14px;}
+.hero{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:center;}
+.hero .n{font-size:30px;font-weight:600;color:var(--gold);line-height:1.1;}
+.hero .l{font-size:13px;color:var(--muted);margin-top:6px;line-height:1.35;}
+.hero .togo .n{color:#fff;}
+.line{font-size:16px;line-height:1.5;color:#e8e8e8;margin-top:16px;padding-top:16px;border-top:1px solid var(--line);text-align:center;}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.pair .card{margin:0;}
+.k{font-size:12px;letter-spacing:1.5px;color:var(--muted);font-weight:600;text-transform:uppercase;}
+.v{font-size:32px;font-weight:600;color:var(--gold);margin-top:8px;}
+.note{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.4;}
+.link-row{display:flex;gap:10px;align-items:center;margin-top:10px;}
+.link{flex:1;min-width:0;font-size:15px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:#000;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.btn{background:var(--gold);color:#111;border:0;border-radius:12px;padding:12px 16px;font:600 14px 'Outfit',sans-serif;cursor:pointer;white-space:nowrap;text-decoration:none;display:inline-block;}
+.btn:hover{filter:brightness(1.05);}
+.state{text-align:center;padding:36px 22px;}
+.state p{color:var(--muted);line-height:1.6;margin:10px 0 20px;}
+.muted{color:var(--muted);}
+[hidden]{display:none !important;}
+@media(max-width:520px){
+  h1{font-size:22px;}
+  .hero{grid-template-columns:1fr;gap:16px;}
+  .hero .n{font-size:28px;}
+  .pair{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<nav class="nav"><a class="nav-logo" href="/">TENTEN</a><a class="nav-back" href="/profile.html">My profile</a></nav>
+<main class="wrap">
+  <div id="loading" class="card state"><p>Loading your creator dashboard…</p></div>
+
+  <div id="logged-out" class="card state" hidden>
+    <h1>Creator dashboard</h1>
+    <p>Log in to see how your community is doing.</p>
+    <a class="btn" href="/login?next=/creator">Log in</a>
+  </div>
+
+  <div id="not-creator" class="card state" hidden>
+    <h1>You're not a creator yet</h1>
+    <p>The creator program is invite-only for now. If you'd like to join, get in touch with the TENTEN team.</p>
+    <a class="btn" href="/">Back to TENTEN</a>
+  </div>
+
+  <div id="error" class="card state" hidden>
+    <h1>Couldn't load your dashboard</h1>
+    <p>Please try again in a moment.</p>
+    <a class="btn" href="/creator">Try again</a>
+  </div>
+
+  <div id="dash" hidden>
+    <div class="eyebrow">CREATOR DASHBOARD</div>
+    <h1>Your community, your money back</h1>
+
+    <div class="card">
+      <div class="hero">
+        <div><div class="n" id="spent">$0.00</div><div class="l">You've spent</div></div>
+        <div><div class="n" id="recovered">$0.00</div><div class="l">We've recovered for you</div></div>
+        <div class="togo"><div class="n" id="gap">$0.00</div><div class="l">To go</div></div>
+      </div>
+      <div class="line" id="line"></div>
+    </div>
+
+    <div class="pair">
+      <div class="card">
+        <div class="k">Cashable now</div>
+        <div class="v" id="reimbursable">$0.00</div>
+        <div class="note">Money back you can cash out.</div>
+      </div>
+      <div class="card">
+        <div class="k">Commission earned</div>
+        <div class="v" id="commission">$0.00</div>
+        <div class="note">20% from your community's matches · before fees</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px;">
+      <div class="k">Your link</div>
+      <div class="link-row">
+        <div class="link" id="ref-link"></div>
+        <button class="btn" id="copy-btn" type="button">Copy</button>
+      </div>
+      <div class="note" id="referred"></div>
+    </div>
+  </div>
+</main>
+<script>
+(function () {
+  function show(id) { ['loading', 'logged-out', 'not-creator', 'error', 'dash'].forEach(function (x) { document.getElementById(x).hidden = x !== id; }); }
+  function money(v) { var n = Number(v); return '$' + (isFinite(n) && n > 0 ? n : 0).toFixed(2); }
+  function count(v) { var n = parseInt(v, 10); return isFinite(n) && n > 0 ? n : 0; }
+
+  fetch('/api/creator', { credentials: 'same-origin', cache: 'no-store' })
+    .then(function (r) {
+      if (r.status === 401) { show('logged-out'); return null; }
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function (d) {
+      if (!d) return;
+      if (!d.creator) { show('not-creator'); return; }
+      document.getElementById('spent').textContent = money(d.spent);
+      document.getElementById('recovered').textContent = money(d.recovered);
+      document.getElementById('gap').textContent = money(d.gap);
+      document.getElementById('reimbursable').textContent = money(d.reimbursable);
+      document.getElementById('commission').textContent = money(d.commission);
+
+      var toGo = count(d.matches_to_go), line;
+      if (!d.charged_activity) line = 'No paid matches yet. Share your link — every match your community plays counts toward your total.';
+      else if (toGo > 0) line = 'Get your community playing more — about ' + toGo + ' more ' + (toGo === 1 ? 'match closes' : 'matches close') + ' it.';
+      else if (Number(d.spent) > 0) line = "You're all caught up — everything you've spent has been recovered.";
+      else line = 'Your community is playing. Keep sharing your link!';
+      document.getElementById('line').textContent = line;
+
+      document.getElementById('ref-link').textContent = d.referral_link || '';
+      var n = count(d.referred_players);
+      document.getElementById('referred').textContent = n === 0 ? 'No one has joined with your link yet.' : n + (n === 1 ? ' player has' : ' players have') + ' joined with your link.';
+      show('dash');
+    })
+    .catch(function () { show('error'); });
+
+  document.getElementById('copy-btn').addEventListener('click', function () {
+    var btn = this, text = document.getElementById('ref-link').textContent;
+    function done() { btn.textContent = 'Copied!'; setTimeout(function () { btn.textContent = 'Copy'; }, 1600); }
+    if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text).then(done, fallback); } else { fallback(); }
+    function fallback() { var t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); done(); } catch (e) {} document.body.removeChild(t); }
+  });
+})();
+</script>
+</body>
+</html>
