@@ -3,6 +3,10 @@
 // from /api/push-subscribe and saves the subscription there. "Turn off"
 // unsubscribes this browser and deletes the saved subscription.
 //
+// "Turn off" also leaves a per-device flag (localStorage OFF_KEY): while it's
+// set the page never re-saves a subscription the browser still has — it
+// shows off and tries again to remove it. Turning alerts back on clears it.
+//
 // iPhone/iPad: web push only works for TENTEN added to the Home Screen and
 // opened from that icon, so Safari tabs get instructions instead of a button.
 (function () {
@@ -15,6 +19,10 @@
   var standalone = window.navigator.standalone === true ||
     (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
   var supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+
+  var OFF_KEY = 'tenten_alerts_off';
+  function setOff(v) { try { if (v) localStorage.setItem(OFF_KEY, '1'); else localStorage.removeItem(OFF_KEY); } catch (e) {} }
+  function isOff() { try { return localStorage.getItem(OFF_KEY) === '1'; } catch (e) { return false; } }
 
   function show(html) { box.innerHTML = html; box.hidden = false; }
   function note(text, cls) { show('<span class="po-note ' + (cls || '') + '"></span>'); box.firstChild.textContent = text; }
@@ -61,7 +69,7 @@
         return reg.pushManager.getSubscription().then(function (existing) {
           return existing || reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(key) });
         });
-      }).then(function (sub) { return save(sub); }).then(on);
+      }).then(function (sub) { return save(sub); }).then(function () { setOff(false); on(); });
     }).catch(function (e) {
       button((e && e.message && /set up yet/.test(e.message)) ? e.message : 'Couldn’t turn match alerts on — please try again.');
     });
@@ -70,19 +78,24 @@
   // Off: the browser stops receiving (unsubscribe) and the server forgets the
   // subscription (DELETE). Either can fail on its own; the player still ends up
   // off — a leftover row just gets one failed push, and is removed then (410).
+  function forget(sub) {
+    var del = fetch('/api/push-subscribe', { method: 'DELETE', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: sub.endpoint }) })
+      .catch(function () {});
+    var stop = sub.unsubscribe().catch(function () {});
+    return Promise.all([del, stop]);
+  }
+  function currentSub() {
+    return navigator.serviceWorker.getRegistration('/').then(function (reg) {
+      return reg ? reg.pushManager.getSubscription() : null;
+    });
+  }
   function disable() {
+    setOff(true);   // first, so off sticks even if the steps below fail
     var btn = document.getElementById('push-optin-off');
     if (btn) { btn.disabled = true; btn.textContent = 'Turning off…'; }
-    navigator.serviceWorker.getRegistration('/').then(function (reg) {
-      return reg ? reg.pushManager.getSubscription() : null;
-    }).then(function (sub) {
-      if (!sub) return;
-      var forget = fetch('/api/push-subscribe', { method: 'DELETE', credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: sub.endpoint }) })
-        .catch(function () {});
-      var stop = sub.unsubscribe().catch(function () {});
-      return Promise.all([forget, stop]);
-    }).catch(function () {}).then(function () { button(); });
+    currentSub().then(function (sub) { return sub && forget(sub); })
+      .catch(function () {}).then(function () { button(); });
   }
 
   if (isIOS && !standalone) {
@@ -93,12 +106,14 @@
   if (Notification.permission === 'denied') { note('Match alerts are blocked — allow notifications for tenten.run in your settings to turn them on.', 'po-err'); return; }
 
   // Already on? (permission granted and this browser still has its subscription.)
-  // Re-saved quietly, so a subscription the server dropped comes back.
+  // Re-saved quietly, so a subscription the server dropped comes back —
+  // unless the player turned alerts off here: then it's off, and a
+  // subscription the browser kept anyway is removed again.
   if (Notification.permission === 'granted') {
-    navigator.serviceWorker.getRegistration('/').then(function (reg) {
-      return reg ? reg.pushManager.getSubscription() : null;
-    }).then(function (sub) {
-      if (sub) { on(); save(sub).catch(function () {}); } else button();
+    currentSub().then(function (sub) {
+      if (isOff()) { button(); if (sub) forget(sub); }
+      else if (sub) { on(); save(sub).catch(function () {}); }
+      else button();
     }).catch(function () { button(); });
     return;
   }
