@@ -1338,8 +1338,8 @@ END OLD GAMES HIDDEN -->
   <div class="pz-card"><div class="pz-media"><canvas id="pong-solo-canvas"></canvas><div class="pz-live"><i></i>LIVE</div></div><div class="pz-body"><div class="pz-name">PONG</div><div class="pz-dev">BEST ON PHONE · PC ok</div><div class="pz-big">$5<i></i>$10</div><div class="pz-desc">Join a live 1v1 room. Unlimited plays.</div><div class="pz-opts"><div class="pz-opt"><span class="e">ENTRY $2.99</span><span class="w">WIN $5</span></div><div class="pz-opt gold"><span class="e">ENTRY $5.99</span><span class="w">WIN $10</span></div></div><a href="https://pong-wju4.onrender.com/" onclick="goToPongMP(event)" class="pz-btn"><svg viewBox="0 0 11 13" aria-hidden="true"><path d="M0 0l11 6.5L0 13z" fill="currentColor"/></svg>PLAY PONG</a></div></div>
 
 
-  <!-- KURVER 1V1 -->
-  <div class="pz-card"><div class="pz-media"><img class="contain" src="https://kurver-e7ow.onrender.com/images/tuto/death.gif" alt="Kurver gameplay"><div class="pz-live"><i></i>LIVE</div></div><div class="pz-body"><div class="pz-name">KURVER 1V1</div><div class="pz-dev">BEST ON PC · phone ok</div><div class="pz-big">$5<i></i>$10</div><div class="pz-desc">Last line alive wins. Best of 5.</div><div class="pz-opts"><div class="pz-opt"><span class="e">ENTRY $2.99</span><span class="w">WIN $5</span></div><div class="pz-opt gold"><span class="e">ENTRY $5.99</span><span class="w">WIN $10</span></div></div><a href="https://kurver-e7ow.onrender.com/multiplayer#/" onclick="goToKurver(event)" class="pz-btn"><svg viewBox="0 0 11 13" aria-hidden="true"><path d="M0 0l11 6.5L0 13z" fill="currentColor"/></svg>PLAY KURVER</a></div></div>
+  <!-- KURVER MULTIPLAYER: $2 entry, prize grows with the players -->
+  <div class="pz-card"><div class="pz-media"><img class="contain" src="https://kurver-e7ow.onrender.com/images/tuto/death.gif" alt="Kurver gameplay"><div class="pz-live"><i></i>LIVE</div></div><div class="pz-body"><div class="pz-name">KURVER</div><div class="pz-dev">BEST ON PC · phone ok</div><div class="pz-big">$2 ENTRY</div><div class="pz-desc">Prize grows with every player.</div><div class="pz-opts"><div class="pz-opt"><span class="e">3 PLAYERS</span><span class="w">WIN $5</span></div><div class="pz-opt gold"><span class="e">6 PLAYERS</span><span class="w">WIN $10</span></div></div><a href="https://kurver-e7ow.onrender.com/multiplayer#/" onclick="goToKurver(event)" class="pz-btn"><svg viewBox="0 0 11 13" aria-hidden="true"><path d="M0 0l11 6.5L0 13z" fill="currentColor"/></svg>PLAY KURVER</a></div></div>
 
   <!-- PUZ ROYALE MULTIPLAYER -->
   <!-- TENTEN: Puz Royale hidden for launch (sharper product) - remove display:none to bring back -->
@@ -1467,14 +1467,14 @@ END OLD GAMES HIDDEN -->
               <div class="gc-fade"></div>
               <div class="gc-ov"><div class="gc-play-px">▶ PLAY</div></div>
               <div class="gc-badge b-live">LIVE</div>
-              <div class="gc-prize-tag">$10/WIN</div>
+              <div class="gc-prize-tag">$2 ENTRY</div>
             </div>
             <div class="gc-info">
               <div class="plat pc">🖥️ BEST ON PC <span class="sub">· phone ok</span></div>
               <div class="gc-name">Kurver</div>
-              <div class="gc-desc">Win a multiplayer match and earn $10 per win — unlimited.</div>
+              <div class="gc-desc">Last line alive wins. $2 to play — the prize grows with every player.</div>
               <div class="gc-row">
-                <span class="gc-prize-txt">$10/Win</span>
+                <span class="gc-prize-txt">$2 entry · prize grows</span>
                 <span class="gc-players">812 playing</span>
               </div>
             </div>
@@ -1638,12 +1638,18 @@ const GAME_MODES = {
     title: 'KURVER',
     cards: [
       `<div class="offer-card" style="--oc:var(--green);--os:var(--green2);">
-        <div style="background:var(--teal);color:#000;font-family:'Press Start 2P',monospace;font-size:11px;letter-spacing:1.5px;text-align:center;padding:10px 0;margin:-18px -18px 16px;">★ 1V1</div>
+        <div style="background:var(--teal);color:#000;font-family:'Press Start 2P',monospace;font-size:11px;letter-spacing:1.5px;text-align:center;padding:10px 0;margin:-18px -18px 16px;">★ MULTIPLAYER</div>
         <div class="offer-game-tag" style="color:var(--green);border-color:var(--green2);background:rgba(34,255,110,.08);">KURVER</div>
-        <div class="offer-type">1V1 · PICK YOUR PRIZE</div>
-        <div class="offer-amount two" style="color:var(--green);text-shadow:2px 2px 0 var(--green2);">$5<span class="or">OR</span>$10</div>
-        <div class="offer-desc">Last line alive wins. Best of 5. Winner takes it.</div>
-        <div class="prize-opts"><div class="po"><div class="po-l">ENTRY $2.99</div><div class="po-w">WIN $5</div></div><div class="po gold"><div class="po-l">ENTRY $5.99</div><div class="po-w">WIN $10</div></div></div>
+        <div class="offer-type">MULTIPLAYER</div>
+        <div class="offer-desc">Last line alive wins. Winner takes the prize.</div>
+        <div class="scale-bar">
+          <div class="entry-banner"><span class="amt">$2</span><span class="lbl">TO&nbsp;PLAY</span></div>
+          <div class="st">MORE PLAYERS = <b>BIGGER PRIZE</b></div>
+          <div class="tiers">
+            <div class="tier" style="border-color:rgba(34,255,110,0.3);background:rgba(34,255,110,0.08);">3p <b>$5</b></div><div class="tier" style="border-color:rgba(34,255,110,0.3);background:rgba(34,255,110,0.08);">4p <b>$6</b></div><div class="tier" style="border-color:rgba(34,255,110,0.3);background:rgba(34,255,110,0.08);">5p <b>$8</b></div>
+            <div class="tier" style="border-color:rgba(34,255,110,0.3);background:rgba(34,255,110,0.08);">6p <b>$10</b></div><div class="tier" style="border-color:rgba(34,255,110,0.3);background:rgba(34,255,110,0.08);">8p <b>$14</b></div><div class="tier" style="border-color:rgba(34,255,110,0.3);background:rgba(34,255,110,0.08);">10p <b>$18</b></div>
+          </div>
+        </div>
         <a href="https://kurver-e7ow.onrender.com/multiplayer#/" onclick="goToKurver(event)" class="btn" style="width:100%;justify-content:center;font-size:7px;margin-top:14px;background:var(--green);color:#020a04;border:2px solid var(--green2);box-shadow:3px 3px 0 var(--green2);text-decoration:none;">▶ PLAY KURVER</a>
       </div>`,
     ],
