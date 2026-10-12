@@ -11,6 +11,9 @@ const sql = require('./_db');
 //                           game servers that send)
 //   POST  { endpoint, keys: { p256dh, auth } }  → saved (upsert on endpoint),
 //         tied to the logged-in account when there is one, else anonymous.
+//   DELETE { endpoint }  → that subscription removed (the profile's "Turn
+//         off"; the browser unsubscribes itself too). The endpoint is the
+//         device's own secret push URL, so knowing it is the permission.
 //
 // The game servers (1v1 Arena now; Pong and Kurver later) read this table and
 // send the "new room open" pushes; they delete subscriptions that are gone.
@@ -42,6 +45,13 @@ module.exports = async function pushSubscribe(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method === 'GET') {
     return res.status(200).json({ publicKey: process.env.VAPID_PUBLIC_KEY || null });
+  }
+  if (req.method === 'DELETE') {
+    const endpoint = str((req.body || {}).endpoint, 2000);
+    if (!endpoint) return res.status(400).json({ error: 'Not a push subscription' });
+    await ensureTable();
+    await sql`DELETE FROM push_subscriptions WHERE endpoint = ${endpoint}`;
+    return res.status(200).json({ ok: true });
   }
   if (req.method !== 'POST') return res.status(405).end();
 
