@@ -1,4 +1,4 @@
-// TENTEN service worker (site root, scope "/"): shows "new room open" push
+// TENTEN service worker (site root, scope "/"): shows "opponent waiting" push
 // alerts and opens TENTEN when one is tapped. Pushes are sent by the game
 // servers to the subscriptions saved via /api/push-subscribe.
 self.addEventListener('install', () => self.skipWaiting());
@@ -8,7 +8,7 @@ self.addEventListener('push', event => {
   let data = {};
   try { data = event.data ? event.data.json() : {}; } catch (e) { data = { body: event.data && event.data.text() }; }
   event.waitUntil(self.registration.showNotification(data.title || 'TENTEN', {
-    body: data.body || 'A new room is open — tap to join',
+    body: data.body || 'An opponent is waiting — tap to play',
     icon: '/icons/icon-192.png',
     badge: '/icons/icon-192.png',
     tag: data.tag || 'tenten',
@@ -17,7 +17,7 @@ self.addEventListener('push', event => {
   }));
 });
 
-// Tap: bring an open TENTEN tab to the front (and take it to the room), or
+// Tap: bring an open TENTEN tab to the front (and take it to the match), or
 // open TENTEN at the alert's link.
 self.addEventListener('notificationclick', event => {
   event.notification.close();
