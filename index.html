@@ -620,6 +620,15 @@ body{
 .tier{background:rgba(45,212,191,0.1);border:1px solid rgba(45,212,191,0.3);border-radius:4px;padding:6px 9px;font-size:10px;}
 .br .tier{background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);}
 .tier b{color:#FFD700;}
+/* Kurver's prize card: the per-player breakdown without the box, larger */
+.pz-card .kv-scale{padding:0;background:none;border:0;border-radius:0;margin:18px 0 0;}
+.kv-scale .entry-banner{padding:0 0 14px;margin-bottom:14px;}
+.kv-scale .entry-banner .amt{font-size:38px;}
+.kv-scale .entry-banner .lbl{font-size:12px;}
+.kv-scale .st{font-size:10px;margin-bottom:14px;}
+.kv-scale .tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.kv-scale .tier{font-size:15px;padding:9px 0;text-align:center;border-radius:8px;}
+@media(max-width:480px){.pz-card .kv-scale{margin-top:20px;}.kv-scale .st{font-size:9px;}}
 .offer-amount.two{font-size:34px;display:flex;align-items:baseline;gap:10px;white-space:nowrap;}
 .offer-amount.two .or{font-size:9px;letter-spacing:1px;color:rgba(200,195,255,.45);text-shadow:none;}
 .prize-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;}
@@ -1339,7 +1348,7 @@ END OLD GAMES HIDDEN -->
 
 
   <!-- KURVER MULTIPLAYER: $2 entry, prize grows with the players -->
-  <div class="pz-card"><div class="pz-media"><img class="contain" src="https://kurver-e7ow.onrender.com/images/tuto/death.gif" alt="Kurver gameplay"><div class="pz-live"><i></i>LIVE</div></div><div class="pz-body"><div class="pz-name">KURVER</div><div class="pz-dev">BEST ON PC · phone ok</div><div class="scale-bar" style="margin:14px 0 31px;"><div class="entry-banner"><span class="amt">$2</span><span class="lbl">TO&nbsp;PLAY</span></div><div class="st">MORE PLAYERS = <b>BIGGER PRIZE</b></div><div class="tiers"><div class="tier" style="border-color:rgba(242,193,78,0.35);background:rgba(242,193,78,0.08);">3p <b>$5</b></div><div class="tier" style="border-color:rgba(242,193,78,0.35);background:rgba(242,193,78,0.08);">4p <b>$6</b></div><div class="tier" style="border-color:rgba(242,193,78,0.35);background:rgba(242,193,78,0.08);">5p <b>$8</b></div><div class="tier" style="border-color:rgba(242,193,78,0.35);background:rgba(242,193,78,0.08);">6p <b>$10</b></div><div class="tier" style="border-color:rgba(242,193,78,0.35);background:rgba(242,193,78,0.08);">8p <b>$14</b></div><div class="tier" style="border-color:rgba(242,193,78,0.35);background:rgba(242,193,78,0.08);">10p <b>$18</b></div></div></div><a href="https://kurver-e7ow.onrender.com/multiplayer#/" onclick="goToKurver(event)" class="pz-btn"><svg viewBox="0 0 11 13" aria-hidden="true"><path d="M0 0l11 6.5L0 13z" fill="currentColor"/></svg>PLAY KURVER</a></div></div>
+  <div class="pz-card"><div class="pz-media"><img class="contain" src="https://kurver-e7ow.onrender.com/images/tuto/death.gif" alt="Kurver gameplay"><div class="pz-live"><i></i>LIVE</div></div><div class="pz-body"><div class="pz-name">KURVER</div><div class="pz-dev">BEST ON PC · phone ok</div><div class="scale-bar kv-scale"><div class="entry-banner"><span class="amt">$2</span><span class="lbl">TO&nbsp;PLAY</span></div><div class="st">MORE PLAYERS = <b>BIGGER PRIZE</b></div><div class="tiers"><div class="tier" style="border-color:rgba(242,193,78,0.35);background:rgba(242,193,78,0.08);">3p <b>$5</b></div><div class="tier" style="border-color:rgba(242,193,78,0.35);background:rgba(242,193,78,0.08);">4p <b>$6</b></div><div class="tier" style="border-color:rgba(242,193,78,0.35);background:rgba(242,193,78,0.08);">5p <b>$8</b></div><div class="tier" style="border-color:rgba(242,193,78,0.35);background:rgba(242,193,78,0.08);">6p <b>$10</b></div><div class="tier" style="border-color:rgba(242,193,78,0.35);background:rgba(242,193,78,0.08);">8p <b>$14</b></div><div class="tier" style="border-color:rgba(242,193,78,0.35);background:rgba(242,193,78,0.08);">10p <b>$18</b></div></div></div><a href="https://kurver-e7ow.onrender.com/multiplayer#/" onclick="goToKurver(event)" class="pz-btn"><svg viewBox="0 0 11 13" aria-hidden="true"><path d="M0 0l11 6.5L0 13z" fill="currentColor"/></svg>PLAY KURVER</a></div></div>
 
   <!-- PUZ ROYALE MULTIPLAYER -->
   <!-- TENTEN: Puz Royale hidden for launch (sharper product) - remove display:none to bring back -->
