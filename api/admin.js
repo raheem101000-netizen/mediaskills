@@ -1,4 +1,5 @@
 const sql = require('./_db');
+const { generateReferralCode } = require('./_referral');
 const Stripe = require('stripe');
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -551,7 +552,69 @@ async function listMatchResults(req, res) {
   res.status(200).json(rows);
 }
 
-const KNOWN_TABLES = ['users', 'sessions', 'game_tokens', 'player_game_state', 'game_wins', 'auth_sessions', 'match_results', 'balance_ledger', 'fifa_matches', 'fifa_messages', 'fifa_disputes'];
+// One-off, idempotent migration: creator referral attribution. A user is a
+// creator by having a creators row (with their referral code). A new user who
+// signed up through a creator's ?ref link gets referred_by_creator_id and
+// referred_at (the anchor for the creator program's 90-day window), set once
+// at signup and never changed. Both columns are nullable: existing users stay
+// unattributed — there's no data to attribute them retroactively.
+async function migrateCreators(req, res) {
+  if (req.method !== 'POST') return res.status(405).end();
+  await sql`
+    CREATE TABLE IF NOT EXISTS creators (
+      id             SERIAL PRIMARY KEY,
+      user_id        INTEGER NOT NULL UNIQUE REFERENCES users(id),
+      referral_code  TEXT NOT NULL UNIQUE CHECK (referral_code ~ '^[A-Z0-9]{6}$'),
+      created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+      active         BOOLEAN NOT NULL DEFAULT true
+    )
+  `;
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by_creator_id INTEGER REFERENCES creators(id)`;
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_at TIMESTAMPTZ`;
+  await sql`CREATE INDEX IF NOT EXISTS users_referred_by_creator_idx ON users (referred_by_creator_id) WHERE referred_by_creator_id IS NOT NULL`;
+  res.status(200).json({ ok: true });
+}
+
+// Make a user a creator (POST, user_id or email in the body or query) and give
+// them a unique referral code. Already a creator → returns their existing row.
+async function createCreator(req, res) {
+  if (req.method !== 'POST') return res.status(405).end();
+  const input = Object.assign({}, req.query, req.body || {});
+  const userId = parseInt(input.user_id, 10);
+  const email = typeof input.email === 'string' ? input.email.toLowerCase().trim() : '';
+  const users = userId
+    ? await sql`SELECT id, email, display_name FROM users WHERE id = ${userId}`
+    : email ? await sql`SELECT id, email, display_name FROM users WHERE email = ${email}` : [];
+  if (!users.length) return res.status(404).json({ error: 'User not found (pass user_id or email)' });
+  const user = users[0];
+  const existing = await sql`SELECT * FROM creators WHERE user_id = ${user.id}`;
+  if (existing.length) return res.status(200).json({ created: false, creator: existing[0], user });
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const code = generateReferralCode();
+    const rows = await sql`
+      INSERT INTO creators (user_id, referral_code) VALUES (${user.id}, ${code})
+      ON CONFLICT DO NOTHING RETURNING *
+    `;
+    if (rows.length) return res.status(200).json({ created: true, creator: rows[0], user, link: 'https://tenten.run/?ref=' + code });
+    // A conflict on user_id means another request just made them a creator.
+    const now = await sql`SELECT * FROM creators WHERE user_id = ${user.id}`;
+    if (now.length) return res.status(200).json({ created: false, creator: now[0], user });
+  }
+  res.status(500).json({ error: 'Could not generate a unique referral code' });
+}
+
+// Creators with their code and how many players signed up through them.
+async function listCreators(req, res) {
+  const rows = await sql`
+    SELECT c.id, c.user_id, u.display_name, u.email, c.referral_code, c.active, c.created_at,
+           (SELECT COUNT(*) FROM users r WHERE r.referred_by_creator_id = c.id)::int AS referred_users
+      FROM creators c JOIN users u ON u.id = c.user_id
+     ORDER BY c.created_at ASC
+  `;
+  res.status(200).json({ creators: rows });
+}
+
+const KNOWN_TABLES = ['users', 'sessions', 'game_tokens', 'player_game_state', 'game_wins', 'auth_sessions', 'match_results', 'balance_ledger', 'fifa_matches', 'fifa_messages', 'fifa_disputes', 'creators'];
 async function tableSchema(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
   const { table } = req.query;
@@ -949,6 +1012,9 @@ const ACTIONS = {
   'table-constraints': tableConstraints,
   'payout-requests': payoutRequests,
   'mark-paid': markPayoutPaid,
+  'migrate-creators': migrateCreators,
+  'create-creator': createCreator,
+  'list-creators': listCreators,
 };
 
 module.exports = async function handler(req, res) {
