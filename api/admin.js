@@ -575,6 +575,41 @@ async function migrateCreators(req, res) {
   res.status(200).json({ ok: true });
 }
 
+// One-off, idempotent migration: the creator reimbursement ledger — one row per
+// reimbursement a creator asks for, then marked paid. Nothing here pays anyone;
+// a future cash-out step writes these rows, the creator dashboard reads them.
+// Mirrors winnings payouts: requested → paid (users.payout_requested_at →
+// last_payout_at), paid manually by PayPal to the creator's users.paypal_email,
+// and — unlike winnings — the PayPal transaction id is kept (payment_reference).
+// At most one open request per creator (like the single payout_requested_at
+// marker). "Already reimbursed" for REIMBURSABLE = SUM(amount) over requested +
+// paid rows, so an open request can't be asked for twice. Runs in one
+// transaction behind the same advisory lock as the settled-match tables.
+async function migrateCreatorReimbursements(req, res) {
+  if (req.method !== 'POST') return res.status(405).end();
+  const creators = await sql`SELECT to_regclass('public.creators') AS t`;
+  if (!creators[0].t) return res.status(409).json({ error: 'Run migrate-creators first (creator_reimbursements references creators)' });
+  await sql.transaction([
+    sql`SELECT pg_advisory_xact_lock(727274)`,
+    sql`
+      CREATE TABLE IF NOT EXISTS creator_reimbursements (
+        id                 SERIAL PRIMARY KEY,
+        creator_id         INTEGER NOT NULL REFERENCES creators(id),
+        amount             NUMERIC(10,2) NOT NULL CHECK (amount > 0),
+        status             TEXT NOT NULL DEFAULT 'requested' CHECK (status IN ('requested', 'paid')),
+        requested_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+        paid_at            TIMESTAMPTZ,
+        payment_reference  TEXT,
+        note               TEXT,
+        CHECK ((status = 'paid') = (paid_at IS NOT NULL))
+      )
+    `,
+    sql`CREATE INDEX IF NOT EXISTS creator_reimbursements_creator_idx ON creator_reimbursements (creator_id)`,
+    sql`CREATE UNIQUE INDEX IF NOT EXISTS creator_reimbursements_one_open_request ON creator_reimbursements (creator_id) WHERE status = 'requested'`,
+  ]);
+  res.status(200).json({ ok: true });
+}
+
 // Make a user a creator (POST, user_id or email in the body or query) and give
 // them a unique referral code. Already a creator → returns their existing row.
 async function createCreator(req, res) {
@@ -614,7 +649,7 @@ async function listCreators(req, res) {
   res.status(200).json({ creators: rows });
 }
 
-const KNOWN_TABLES = ['users', 'sessions', 'game_tokens', 'player_game_state', 'game_wins', 'auth_sessions', 'match_results', 'balance_ledger', 'fifa_matches', 'fifa_messages', 'fifa_disputes', 'creators'];
+const KNOWN_TABLES = ['users', 'sessions', 'game_tokens', 'player_game_state', 'game_wins', 'auth_sessions', 'match_results', 'balance_ledger', 'fifa_matches', 'fifa_messages', 'fifa_disputes', 'creators', 'creator_reimbursements'];
 async function tableSchema(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
   const { table } = req.query;
@@ -1013,6 +1048,7 @@ const ACTIONS = {
   'payout-requests': payoutRequests,
   'mark-paid': markPayoutPaid,
   'migrate-creators': migrateCreators,
+  'migrate-creator-reimbursements': migrateCreatorReimbursements,
   'create-creator': createCreator,
   'list-creators': listCreators,
 };
