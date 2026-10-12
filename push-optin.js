@@ -1,4 +1,4 @@
-// "🔔 Get notified when rooms open" on the homepage. Registers /sw.js (scope
+// "🔔 Alert me when matches open" (Match alerts, on the profile page). Registers /sw.js (scope
 // "/"), asks for notification permission, subscribes with the VAPID public key
 // from /api/push-subscribe and saves the subscription there.
 //
@@ -6,7 +6,8 @@
 // opened from that icon, so Safari tabs get instructions instead of a button.
 (function () {
   var box = document.getElementById('push-optin');
-  if (!box) return;
+  if (!box || box.getAttribute('data-ready')) return;   // draw once, even if the script is loaded twice
+  box.setAttribute('data-ready', '1');
 
   var ua = navigator.userAgent || '';
   var isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -16,9 +17,9 @@
 
   function show(html) { box.innerHTML = html; box.hidden = false; }
   function note(text, cls) { show('<span class="po-note ' + (cls || '') + '"></span>'); box.firstChild.textContent = text; }
-  function on() { show('<span class="po-on">✓ Alerts on</span><span class="po-sub">We’ll buzz you when a room opens.</span>'); }
+  function on() { show('<span class="po-on">✓ Match alerts on</span>'); }
   function button(err) {
-    show('<button type="button" class="po-btn" id="push-optin-btn">🔔 Get notified when rooms open</button>' + (err ? '<span class="po-note po-err"></span>' : ''));
+    show('<button type="button" class="po-btn" id="push-optin-btn">🔔 Alert me when matches open</button>' + (err ? '<span class="po-note po-err"></span>' : ''));
     if (err) box.lastChild.textContent = err;
     document.getElementById('push-optin-btn').addEventListener('click', enable);
   }
@@ -43,7 +44,7 @@
     var asked = Notification.requestPermission();
     Promise.resolve(asked).then(function (permission) {
       if (permission !== 'granted') {
-        if (permission === 'denied') note('Alerts are blocked — allow notifications for tenten.run in your settings to turn them on.', 'po-err');
+        if (permission === 'denied') note('Match alerts are blocked — allow notifications for tenten.run in your settings to turn them on.', 'po-err');
         else button();
         return null;
       }
@@ -52,22 +53,22 @@
         fetch('/api/push-subscribe', { cache: 'no-store' }).then(function (r) { return r.json(); }),
       ]).then(function (parts) {
         var reg = parts[0], key = parts[1] && parts[1].publicKey;
-        if (!key) throw new Error('Alerts aren’t set up yet — try again later.');
+        if (!key) throw new Error('Match alerts aren’t set up yet — try again later.');
         return reg.pushManager.getSubscription().then(function (existing) {
           return existing || reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(key) });
         });
       }).then(function (sub) { return save(sub); }).then(on);
     }).catch(function (e) {
-      button((e && e.message && /set up yet/.test(e.message)) ? e.message : 'Couldn’t turn alerts on — please try again.');
+      button((e && e.message && /set up yet/.test(e.message)) ? e.message : 'Couldn’t turn match alerts on — please try again.');
     });
   }
 
   if (isIOS && !standalone) {
-    note('On iPhone? Tap the Share button, then ‘Add to Home Screen’ — then open TENTEN from that icon to turn on alerts.');
+    note('On iPhone? Tap the Share button, then ‘Add to Home Screen’ — then open TENTEN from that icon to get match alerts.');
     return;
   }
-  if (!supported) { note('Room alerts aren’t supported in this browser.'); return; }
-  if (Notification.permission === 'denied') { note('Alerts are blocked — allow notifications for tenten.run in your settings to turn them on.', 'po-err'); return; }
+  if (!supported) { note('Match alerts aren’t supported in this browser.'); return; }
+  if (Notification.permission === 'denied') { note('Match alerts are blocked — allow notifications for tenten.run in your settings to turn them on.', 'po-err'); return; }
 
   // Already on? (permission granted and this browser still has its subscription.)
   // Re-saved quietly, so a subscription the server dropped comes back.
