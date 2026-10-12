@@ -1,6 +1,7 @@
 // "🔔 Alert me when matches open" (Match alerts, on the profile page). Registers /sw.js (scope
 // "/"), asks for notification permission, subscribes with the VAPID public key
-// from /api/push-subscribe and saves the subscription there.
+// from /api/push-subscribe and saves the subscription there. "Turn off"
+// unsubscribes this browser and deletes the saved subscription.
 //
 // iPhone/iPad: web push only works for TENTEN added to the Home Screen and
 // opened from that icon, so Safari tabs get instructions instead of a button.
@@ -17,7 +18,10 @@
 
   function show(html) { box.innerHTML = html; box.hidden = false; }
   function note(text, cls) { show('<span class="po-note ' + (cls || '') + '"></span>'); box.firstChild.textContent = text; }
-  function on() { show('<span class="po-on">✓ Match alerts on</span>'); }
+  function on() {
+    show('<div class="po-onrow"><span class="po-on">✓ Match alerts on</span><button type="button" class="po-off" id="push-optin-off">Turn off</button></div>');
+    document.getElementById('push-optin-off').addEventListener('click', disable);
+  }
   function button(err) {
     show('<button type="button" class="po-btn" id="push-optin-btn">🔔 Alert me when matches open</button>' + (err ? '<span class="po-note po-err"></span>' : ''));
     if (err) box.lastChild.textContent = err;
@@ -61,6 +65,24 @@
     }).catch(function (e) {
       button((e && e.message && /set up yet/.test(e.message)) ? e.message : 'Couldn’t turn match alerts on — please try again.');
     });
+  }
+
+  // Off: the browser stops receiving (unsubscribe) and the server forgets the
+  // subscription (DELETE). Either can fail on its own; the player still ends up
+  // off — a leftover row just gets one failed push, and is removed then (410).
+  function disable() {
+    var btn = document.getElementById('push-optin-off');
+    if (btn) { btn.disabled = true; btn.textContent = 'Turning off…'; }
+    navigator.serviceWorker.getRegistration('/').then(function (reg) {
+      return reg ? reg.pushManager.getSubscription() : null;
+    }).then(function (sub) {
+      if (!sub) return;
+      var forget = fetch('/api/push-subscribe', { method: 'DELETE', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: sub.endpoint }) })
+        .catch(function () {});
+      var stop = sub.unsubscribe().catch(function () {});
+      return Promise.all([forget, stop]);
+    }).catch(function () {}).then(function () { button(); });
   }
 
   if (isIOS && !standalone) {
