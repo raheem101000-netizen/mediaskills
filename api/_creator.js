@@ -1,8 +1,11 @@
 const cookie = require('cookie');
 const sql = require('./_db');
 
-// Creator dashboard figures (read-only: nothing here charges, pays or moves
-// money). The creator is derived ONLY from the session cookie — no creator_id
+// Creator dashboard figures, served as GET /api/creator (vercel.json routes it
+// to auth-misc?action=creator: Vercel's Hobby plan allows 12 functions and
+// this would be the 13th, so it rides on an existing one, like logout/token).
+// Read-only: nothing here charges, pays or moves
+// money. The creator is derived ONLY from the session cookie — no creator_id
 // or user_id is ever read from the request, so nobody can read another
 // creator's numbers by changing a parameter.
 //

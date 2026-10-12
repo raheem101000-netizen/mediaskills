@@ -47,7 +47,8 @@ async function verify(req, res) {
   res.status(200).json({ player_id: rows[0].user_id, display_name: u[0].display_name });
 }
 
-const ACTIONS = { logout, generate, verify };
+// creator: the creator dashboard's figures (api/_creator.js; GET /api/creator).
+const ACTIONS = { logout, generate, verify, creator: require('./_creator') };
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', 'https://all-solo-ggames.vercel.app');
