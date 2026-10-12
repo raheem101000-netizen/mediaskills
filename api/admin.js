@@ -610,6 +610,109 @@ async function migrateCreatorReimbursements(req, res) {
   res.status(200).json({ ok: true });
 }
 
+// ── TEST SCAFFOLDING — creator dashboard testing without real entry charging ──
+// Remove (or replace) all of this when real entry-fee charging (brick 4) is
+// built. Lets an admin mark settled matches as charged, or seed a charged test
+// match, so /creator shows real numbers end to end. Double-gated: the admin key
+// AND the environment variable TENTEN_TEST_MARK_CHARGED=true (unset/anything
+// else = every test action refuses with 403). Nothing in any game, and nothing
+// in gameplay or "Ready", reaches these — they are admin calls only. Seeded
+// rows use the "test:" key prefix and touch no balances, credits or ledgers.
+function testToolsEnabled() {
+  return process.env.TENTEN_TEST_MARK_CHARGED === 'true';
+}
+function refuseTestTools(res) {
+  return res.status(403).json({ error: 'Test tools are off (set TENTEN_TEST_MARK_CHARGED=true to use them; test scaffolding only)' });
+}
+// Listed entry per player and prize, as the games record them.
+function testEntryFor(game, prize) {
+  if (game === 'kurver') return '2.00';
+  return Number(prize) === 10 ? '5.99' : '2.99';
+}
+
+// TEST ONLY: mark one settled match as charged (paying_players optional,
+// default = the players recorded); entry_total and margin follow.
+async function testMarkMatchCharged(req, res) {
+  if (!testToolsEnabled()) return refuseTestTools(res);
+  if (req.method !== 'POST') return res.status(405).end();
+  const input = Object.assign({}, req.query, req.body || {});
+  const matchKey = typeof input.match_key === 'string' ? input.match_key.trim() : '';
+  if (!matchKey) return res.status(400).json({ error: 'Missing match_key' });
+  const override = input.paying_players !== undefined ? parseInt(input.paying_players, 10) : null;
+  if (override !== null && !(override >= 1)) return res.status(400).json({ error: 'paying_players must be a positive number' });
+  const rows = await sql`
+    UPDATE settled_matches
+       SET entries_charged = true,
+           paying_players = COALESCE(${override}::int, paying_players),
+           entry_total = entry_price * COALESCE(${override}::int, paying_players),
+           margin = entry_price * COALESCE(${override}::int, paying_players) - prize
+     WHERE match_key = ${matchKey}
+     RETURNING *
+  `;
+  if (!rows.length) return res.status(404).json({ error: 'No settled match with that match_key' });
+  res.status(200).json({ ok: true, test_only: true, match: rows[0] });
+}
+
+// TEST ONLY: seed a charged settled match ("test:" key) between existing
+// accounts — no balance, game_wins, ledger or match_results rows.
+async function testSeedSettledMatch(req, res) {
+  if (!testToolsEnabled()) return refuseTestTools(res);
+  if (req.method !== 'POST') return res.status(405).end();
+  const input = Object.assign({}, req.query, req.body || {});
+  const game = input.game;
+  if (!['fifa', 'pong', 'kurver'].includes(game)) return res.status(400).json({ error: "game must be 'fifa', 'pong' or 'kurver'" });
+  const players = (Array.isArray(input.player_ids) ? input.player_ids : String(input.player_ids || '').split(','))
+    .map(v => parseInt(v, 10)).filter(v => v > 0);
+  const unique = [...new Set(players)];
+  const winner = parseInt(input.winner_id, 10) || unique[0];
+  if (unique.length < 2 || unique.length !== players.length) return res.status(400).json({ error: 'player_ids: at least two different user ids' });
+  if (!unique.includes(winner)) return res.status(400).json({ error: 'winner_id must be one of player_ids' });
+  if (game !== 'kurver' && unique.length !== 2) return res.status(400).json({ error: 'fifa / pong matches have exactly two players' });
+  const prize = game === 'kurver'
+    ? (unique.length === 3 ? 5 : Math.max(0, 2 * (unique.length - 1)))     // kurver-money.js prize(n)
+    : (Number(input.prize) === 10 ? 10 : 5);
+  const found = await sql`SELECT id FROM users WHERE id = ANY(${unique})`;
+  if (found.length !== unique.length) return res.status(404).json({ error: 'Some player_ids are not users' });
+  const key = 'test:' + game + ':' + require('crypto').randomUUID();
+  const entry = testEntryFor(game, prize);
+  const queries = [
+    sql`INSERT INTO settled_matches (match_key, game, winner_user_id, prize, entry_price, paying_players, entry_total, margin, entries_charged)
+        VALUES (${key}, ${game}, ${winner}, ${prize}::numeric, ${entry}::numeric, ${unique.length}::int,
+                ${entry}::numeric * ${unique.length}::int, ${entry}::numeric * ${unique.length}::int - ${prize}::numeric, true)`,
+  ];
+  for (const id of unique) {
+    queries.push(sql`INSERT INTO settled_match_players (match_key, user_id, outcome) VALUES (${key}, ${id}, ${id === winner ? 'won' : 'lost'})`);
+  }
+  await sql.transaction(queries);
+  const rows = await sql`SELECT * FROM settled_matches WHERE match_key = ${key}`;
+  res.status(200).json({ ok: true, test_only: true, match: rows[0], players: unique, winner });
+}
+
+// TEST ONLY: the latest settled matches (to find a match_key to mark).
+async function testListSettledMatches(req, res) {
+  if (!testToolsEnabled()) return refuseTestTools(res);
+  const rows = await sql`
+    SELECT sm.match_key, sm.game, sm.settled_at, sm.prize, sm.entry_price, sm.paying_players, sm.margin, sm.entries_charged,
+           ARRAY(SELECT p.user_id || ':' || p.outcome FROM settled_match_players p WHERE p.match_key = sm.match_key ORDER BY p.user_id) AS players
+      FROM settled_matches sm ORDER BY sm.settled_at DESC LIMIT 50
+  `;
+  res.status(200).json({ test_only: true, matches: rows });
+}
+
+// TEST ONLY: undo all of it — delete "test:" matches and set every match back
+// to uncharged (with no real charging yet, any charged row is a test mark).
+async function testReset(req, res) {
+  if (!testToolsEnabled()) return refuseTestTools(res);
+  if (req.method !== 'POST') return res.status(405).end();
+  const [players, matches, unmarked] = await sql.transaction([
+    sql`DELETE FROM settled_match_players WHERE match_key LIKE 'test:%' RETURNING match_key`,
+    sql`DELETE FROM settled_matches WHERE match_key LIKE 'test:%' RETURNING match_key`,
+    sql`UPDATE settled_matches SET entries_charged = false WHERE entries_charged RETURNING match_key`,
+  ]);
+  res.status(200).json({ ok: true, test_only: true, deleted_test_matches: matches.length, unmarked_matches: unmarked.length });
+}
+// ── END TEST SCAFFOLDING ──────────────────────────────────────────────────────
+
 // Make a user a creator (POST, user_id or email in the body or query) and give
 // them a unique referral code. Already a creator → returns their existing row.
 async function createCreator(req, res) {
@@ -1051,6 +1154,11 @@ const ACTIONS = {
   'migrate-creator-reimbursements': migrateCreatorReimbursements,
   'create-creator': createCreator,
   'list-creators': listCreators,
+  // TEST SCAFFOLDING (off unless TENTEN_TEST_MARK_CHARGED=true) — remove with brick 4
+  'test-mark-match-charged': testMarkMatchCharged,
+  'test-seed-settled-match': testSeedSettledMatch,
+  'test-list-settled-matches': testListSettledMatches,
+  'test-reset': testReset,
 };
 
 module.exports = async function handler(req, res) {
