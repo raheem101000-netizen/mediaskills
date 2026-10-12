@@ -845,7 +845,7 @@ body{
 .offers-wrap{display:flex;flex-direction:row;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;padding:0 24px 28px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
 .offers-wrap::-webkit-scrollbar{display:none;}
 
-/* Prize cards (gold design): FIFA / Pong / Kurver 1v1 + Pong Solo */
+/* Prize cards (gold design): 1v1 Arena / Pong / Kurver + Pong Solo */
 .pz-head{padding:30px 24px 0;font-family:'Outfit',sans-serif;}
 .pz-eyebrow{font-size:12px;letter-spacing:4px;color:#F2C14E;}
 .pz-title{font-size:26px;font-weight:600;letter-spacing:.5px;color:#fff;margin-top:4px;}
@@ -877,6 +877,11 @@ body{
 .pz-opt.gold{border-color:#F2C14E;background:rgba(242,193,78,.07);}
 .pz-opt.gold .w{color:#F2C14E;}
 .pz-btn{margin-top:16px;background:#F2C14E;color:#171100;border-radius:12px;padding:14px;font-size:15px;font-weight:600;letter-spacing:.5px;display:flex;align-items:center;justify-content:center;gap:9px;text-decoration:none;}
+/* Each card's PLAY button sits at the bottom, so the buttons line up whatever the text length */
+.pz-card{display:flex;flex-direction:column;}
+.pz-body{flex:1;display:flex;flex-direction:column;}
+.pz-body > .pz-btn{margin-top:auto;}
+.pz-body > :nth-last-child(2){margin-bottom:16px;}
 .pz-btn:hover{background:#ffd163;}
 .pz-btn svg{width:11px;height:13px;}
 .pz-soon{border-style:dashed;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;color:#9a9a9a;font-size:14px;min-height:260px;}
@@ -1341,8 +1346,8 @@ END OLD GAMES HIDDEN -->
 
 
 
-  <!-- FIFA 1v1 -->
-  <div class="pz-card"><div class="pz-media"><img src="/assets/fifa-hero.jpg" alt=""><div class="pz-live"><i></i>LIVE</div></div><div class="pz-body"><div class="pz-name">FIFA 1V1</div><div class="pz-dev">ANY CONSOLE · EA SPORTS FC</div><div class="pz-big">$5<i></i>$10</div><div class="pz-desc">Play on your own console. Winner takes it.</div><div class="pz-opts"><div class="pz-opt"><span class="e">ENTRY $2.99</span><span class="w">WIN $5</span></div><div class="pz-opt gold"><span class="e">ENTRY $5.99</span><span class="w">WIN $10</span></div></div><a href="https://onev1rg.onrender.com/rooms.html" onclick="goToFifa(event)" class="pz-btn"><svg viewBox="0 0 11 13" aria-hidden="true"><path d="M0 0l11 6.5L0 13z" fill="currentColor"/></svg>PLAY FIFA</a></div></div>
+  <!-- 1v1 ARENA (any console game; the FIFA lobby service, onev1rg) -->
+  <div class="pz-card"><div class="pz-media"><img src="/assets/fifa-hero.jpg" alt=""><div class="pz-live"><i></i>LIVE</div></div><div class="pz-body"><div class="pz-name">1V1 ARENA</div><div class="pz-dev">ANY CONSOLE GAME</div><div class="pz-big">$5<i></i>$10</div><div class="pz-desc">Pick any console game — play 1v1, winner takes the prize.</div><div class="pz-opts"><div class="pz-opt"><span class="e">ENTRY $2.99</span><span class="w">WIN $5</span></div><div class="pz-opt gold"><span class="e">ENTRY $5.99</span><span class="w">WIN $10</span></div></div><a href="https://onev1rg.onrender.com/rooms.html" onclick="goToFifa(event)" class="pz-btn"><svg viewBox="0 0 11 13" aria-hidden="true"><path d="M0 0l11 6.5L0 13z" fill="currentColor"/></svg>PLAY 1V1 ARENA</a></div></div>
 
   <!-- PONG $5/WIN -->
   <div class="pz-card"><div class="pz-media"><canvas id="pong-solo-canvas"></canvas><div class="pz-live"><i></i>LIVE</div></div><div class="pz-body"><div class="pz-name">PONG</div><div class="pz-dev">BEST ON PHONE · PC ok</div><div class="pz-big">$5<i></i>$10</div><div class="pz-desc">Join a live 1v1 room. Unlimited plays.</div><div class="pz-opts"><div class="pz-opt"><span class="e">ENTRY $2.99</span><span class="w">WIN $5</span></div><div class="pz-opt gold"><span class="e">ENTRY $5.99</span><span class="w">WIN $10</span></div></div><a href="https://pong-wju4.onrender.com/" onclick="goToPongMP(event)" class="pz-btn"><svg viewBox="0 0 11 13" aria-hidden="true"><path d="M0 0l11 6.5L0 13z" fill="currentColor"/></svg>PLAY PONG</a></div></div>
