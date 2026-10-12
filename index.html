@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TENTEN</title>
+<!-- Installable (Add to Home Screen) — on iPhone, web push only works from the Home Screen app -->
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="TENTEN">
+<meta name="theme-color" content="#000000">
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Outfit:wght@400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;image-rendering:pixelated;}
@@ -849,6 +856,14 @@ body{
 .pz-head{padding:30px 24px 0;font-family:'Outfit',sans-serif;}
 .pz-eyebrow{font-size:12px;letter-spacing:4px;color:#F2C14E;}
 .pz-title{font-size:26px;font-weight:600;letter-spacing:.5px;color:#fff;margin-top:4px;}
+/* Room alerts opt-in, under the heading */
+.push-optin{margin-top:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.push-optin .po-btn{background:transparent;color:#F2C14E;border:1px solid #F2C14E;border-radius:12px;padding:10px 16px;font:600 14px 'Outfit',sans-serif;cursor:pointer;}
+.push-optin .po-btn:hover{background:rgba(242,193,78,.08);}
+.push-optin .po-btn[disabled]{opacity:.6;cursor:default;}
+.push-optin .po-on{color:#F2C14E;font:600 14px 'Outfit',sans-serif;border:1px solid #6b5720;border-radius:12px;padding:9px 14px;}
+.push-optin .po-sub,.push-optin .po-note{color:#9a9a9a;font:400 13px/1.45 'Outfit',sans-serif;max-width:520px;}
+.push-optin .po-err{color:#ff8a8a;}
 .pz-subrow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 24px 18px;font-family:'Outfit',sans-serif;scroll-margin-top:80px;}
 .pz-subrow.solo{padding-top:26px;}
 .pz-sub{font-size:14px;color:#9a9a9a;}
@@ -1326,6 +1341,8 @@ async function goToPong(e) {
 <div class="pz-head">
   <div class="pz-eyebrow">PRIZE OFFERS</div>
   <div class="pz-title">ALL ACTIVE PRIZES</div>
+  <!-- Room alerts (push-optin.js): button, "✓ Alerts on", or iPhone Home Screen instructions -->
+  <div class="push-optin" id="push-optin" hidden></div>
 </div>
 
 <!-- MULTIPLAYER ROW (anchor: games' ← TENTEN buttons land here) -->
@@ -1957,5 +1974,6 @@ const kurvOfferEl=document.getElementById('kurv-offer');
 if(kurvOfferEl) initKurverClip(kurvOfferEl, 4, 60000, 90, 0.6, 1);   // prize card: same as the games-grid card
 </script>
 
+<script src="/push-optin.js"></script>
 </body>
 </html>

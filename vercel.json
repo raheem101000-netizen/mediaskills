@@ -14,6 +14,7 @@
     { "src": "/api/logout", "dest": "/api/auth-misc?action=logout" },
     { "src": "/api/token", "dest": "/api/auth-misc" },
     { "src": "/api/creator", "dest": "/api/auth-misc?action=creator" },
+    { "src": "/api/push-subscribe", "dest": "/api/auth-misc?action=push-subscribe" },
     { "src": "/api/(.*)", "dest": "/api/$1" }
   ]
 }
