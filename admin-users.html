@@ -108,6 +108,21 @@ td.paypal{color:#ffe44d;font-family:'Share Tech Mono',monospace;font-size:8px;}
 td.signup{color:rgba(200,195,255,.35);font-family:'Share Tech Mono',monospace;font-size:7px;}
 .empty-note{padding:24px 18px;font-size:7px;color:rgba(200,195,255,.25);letter-spacing:.5px;}
 
+/* Support messages (profile "Contact support") */
+.stat-chip.support-chip{text-decoration:none;}
+.stat-chip.support-chip.has-new{border-color:var(--red);color:var(--red);}
+.stat-chip.support-chip.has-new b{color:var(--red);}
+.total-box.support-new{border-color:var(--red);box-shadow:5px 5px 0 var(--red2);}
+.total-box.support-new .total-num{color:var(--red);text-shadow:3px 3px 0 var(--red2);}
+td.msg{white-space:pre-wrap;word-break:break-word;min-width:280px;max-width:460px;font-family:'Share Tech Mono',monospace;font-size:11px;line-height:1.5;color:var(--text);}
+td.status-new{color:var(--red);}
+td.status-read{color:rgba(200,195,255,.35);}
+tr.support-read td.msg{color:var(--muted);}
+td.when{color:rgba(200,195,255,.5);font-family:'Share Tech Mono',monospace;font-size:9px;}
+td.who{color:var(--white);}
+td.who small{display:block;margin-top:4px;color:rgba(200,195,255,.35);font-family:'Share Tech Mono',monospace;font-size:8px;}
+#support-table td{vertical-align:top;}
+
 .pxbtn-gold{
   font-family:'Press Start 2P',monospace;font-size:6px;padding:6px 10px;letter-spacing:1px;
   border:2px solid #aa9000;background:#ffe44d;color:#000;
@@ -125,9 +140,39 @@ td.signup{color:rgba(200,195,255,.35);font-family:'Share Tech Mono',monospace;fo
       <div class="hdr-title">TENTEN<span> USERS</span></div>
       <div class="hdr-stats">
         <a class="pxbtn" href="/admin">◀ DASHBOARD</a>
+        <a class="stat-chip support-chip" id="support-chip" href="#support">SUPPORT <b id="support-chip-count">0</b> NEW</a>
         <div class="stat-chip">NEXT REFRESH <b id="countdown">30s</b></div>
         <div class="stat-chip">LAST REFRESHED <b id="last-refreshed">—</b></div>
       </div>
+    </div>
+
+    <div class="section-label" id="support">Support <span>Messages</span></div>
+    <div class="totals-row">
+      <div class="total-box" id="support-unread-box">
+        <div class="total-label">New (unread)</div>
+        <div class="total-num" id="support-unread">0</div>
+      </div>
+      <div class="total-box">
+        <div class="total-label">All Messages</div>
+        <div class="total-num" id="support-total">0</div>
+      </div>
+    </div>
+
+    <div class="table-box" style="margin-bottom:32px;">
+      <table id="support-table">
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>From</th>
+            <th>Reply To</th>
+            <th>Sent</th>
+            <th>Message</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="support-rows"></tbody>
+      </table>
+      <div class="empty-note" id="support-empty-note" style="display:none;">No support messages yet.</div>
     </div>
 
     <div class="section-label">Sales <span>&amp; Revenue</span></div>
@@ -337,9 +382,68 @@ async function markPayoutPaid(userId) {
   }
 }
 
+function renderSupport(data) {
+  const msgs = data.messages || [];
+  const unread = data.unread || 0;
+  document.getElementById('support-unread').textContent = unread;
+  document.getElementById('support-total').textContent = msgs.length;
+  document.getElementById('support-chip-count').textContent = unread;
+  document.getElementById('support-chip').classList.toggle('has-new', unread > 0);
+  document.getElementById('support-unread-box').classList.toggle('support-new', unread > 0);
+
+  const rows = document.getElementById('support-rows');
+  const emptyNote = document.getElementById('support-empty-note');
+  if (!msgs.length) {
+    rows.innerHTML = '';
+    emptyNote.style.display = 'block';
+    return;
+  }
+  emptyNote.style.display = 'none';
+  rows.innerHTML = msgs.map(m => {
+    const isNew = m.status === 'new';
+    const who = m.user_id
+      ? `${esc(m.display_name || 'User')}<small><a href="/admin-users/${esc(m.user_id)}" style="color:inherit;">user #${esc(m.user_id)}</a></small>`
+      : `Not logged in<small>no account</small>`;
+    return `
+    <tr class="${isNew ? 'support-new' : 'support-read'}">
+      <td class="${isNew ? 'status-new' : 'status-read'}">${isNew ? '● NEW' : 'READ'}</td>
+      <td class="who">${who}</td>
+      <td class="email"><a href="mailto:${esc(m.email || '')}" style="color:inherit;">${esc(m.email || '—')}</a></td>
+      <td class="when">${esc(new Date(m.created_at).toLocaleString())}</td>
+      <td class="msg">${esc(m.message)}</td>
+      <td>${isNew ? `<button class="pxbtn-gold" onclick="markSupportRead(${m.id}, this)">MARK READ</button>` : ''}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function loadSupport() {
+  try {
+    const res = await fetch(`/api/admin?action=list-support&key=${encodeURIComponent(adminKey)}`, { cache: 'no-store' });
+    if (!res.ok) throw new Error('bad response');
+    renderSupport(await res.json());
+  } catch (e) {}
+}
+
+async function markSupportRead(id, btn) {
+  if (btn) btn.disabled = true;
+  try {
+    const res = await fetch(`/api/admin?action=mark-support-read&key=${encodeURIComponent(adminKey)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id })
+    });
+    if (!res.ok) throw new Error('bad response');
+    loadSupport();
+  } catch (e) {
+    if (btn) btn.disabled = false;
+    alert('Error marking message as read');
+  }
+}
+
 async function loadAll(isFirstLoad) {
   const ok = await loadUsers(isFirstLoad);
   if (ok) {
+    loadSupport();
     loadSalesStats();
     loadPayoutRequests();
     document.getElementById('last-refreshed').textContent = new Date().toLocaleTimeString();
