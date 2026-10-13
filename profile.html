@@ -38,6 +38,15 @@ body{display:flex;flex-direction:column;align-items:center;padding:80px 16px 48p
   gap:0;
 }
 
+/* Layout: the account card on its own, then separate cards (same card style)
+   for match alerts + creator (side by side on desktop) and contact support. */
+.profile-stack{width:100%;max-width:760px;display:flex;flex-direction:column;align-items:center;gap:20px;}
+.profile-stack[hidden]{display:none;}
+.card-row{width:100%;display:flex;flex-wrap:wrap;gap:20px;}
+.card-row > .profile-card{flex:1 1 300px;}
+.profile-card.side-card{max-width:none;align-items:stretch;}
+.profile-card[hidden]{display:none;}
+
 .avatar-wrap{position:relative;margin-bottom:20px;}
 .avatar{
   width:96px;height:96px;border-radius:50%;
@@ -83,7 +92,6 @@ body{display:flex;flex-direction:column;align-items:center;padding:80px 16px 48p
 
 /* Match alerts (push-optin.js fills #push-optin — button, "✓ Match alerts on",
    iPhone Home Screen instructions, or blocked / not set up) */
-.notif-section{width:100%;border:2px solid #2a2a2a;padding:16px 16px 14px;margin-bottom:20px;}
 .notif-label{font-size:8px;letter-spacing:2px;color:var(--gold);margin-bottom:6px;}
 .notif-desc{font-family:'Outfit',sans-serif;font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.4;}
 .push-optin{display:flex;flex-direction:column;align-items:stretch;gap:8px;}
@@ -189,7 +197,8 @@ textarea.sp-input{resize:vertical;min-height:96px;line-height:1.45;}
   </div>
 </nav>
 
-<div class="profile-card" id="profile-card" style="display:none;">
+<div class="profile-stack" id="profile-stack" hidden>
+<div class="profile-card" id="profile-card">
   <div class="avatar-wrap">
     <img class="avatar" id="avatar-display" src="" alt="avatar">
     <div class="avatar-change" title="Change avatar" onclick="document.getElementById('avatar-file').click()">✏</div>
@@ -204,31 +213,38 @@ textarea.sp-input{resize:vertical;min-height:96px;line-height:1.45;}
     <div class="balance-amount" id="balance-text">$0.00</div>
   </div>
 
-  <div class="notif-section">
+  <div class="actions">
+    <button class="btn-action btn-payout" onclick="openPayoutModal()">💸 REQUEST PAYOUT</button>
+    <button class="btn-action btn-signout" onclick="doSignout()">✕ SIGN OUT</button>
+  </div>
+</div>
+
+<div class="card-row">
+  <div class="profile-card side-card" id="alerts-card">
     <div class="notif-label">🔔 MATCH ALERTS</div>
     <div class="notif-desc">Get a buzz the moment an opponent is waiting — jump in, win real cash.</div>
     <div class="push-optin" id="push-optin" hidden></div>
   </div>
 
-  <div class="notif-section">
-    <div class="notif-label">✉ CONTACT SUPPORT</div>
-    <div class="notif-desc">Problem with a match, a payout or your account? Send us a message and we’ll get back to you.</div>
-    <div class="sp-done" id="support-done" hidden>Thanks — we got your message, we’ll get back to you.</div>
-    <form id="support-form" novalidate>
-      <div class="sp-from" id="support-from" hidden>We’ll reply to <b id="support-from-email"></b></div>
-      <input type="email" class="sp-input" id="support-email" placeholder="Your email (so we can reply)" maxlength="254" autocomplete="email" hidden>
-      <textarea class="sp-input" id="support-msg" rows="4" maxlength="2000" placeholder="What’s going on?"></textarea>
-      <div class="sp-count" id="support-count">0 / 2000</div>
-      <div class="sp-err" id="support-err" hidden></div>
-      <button type="submit" class="btn-action sp-send" id="support-send">✉ SEND MESSAGE</button>
-    </form>
+  <div class="profile-card side-card" id="creator-card" hidden>
+    <div class="notif-label">★ CREATOR</div>
+    <a class="btn-action btn-creator" id="creator-link" href="/creator">★ CREATOR DASHBOARD</a>
   </div>
+</div>
 
-  <div class="actions">
-    <button class="btn-action btn-payout" onclick="openPayoutModal()">💸 REQUEST PAYOUT</button>
-    <a class="btn-action btn-creator" id="creator-link" href="/creator" hidden>★ CREATOR DASHBOARD</a>
-    <button class="btn-action btn-signout" onclick="doSignout()">✕ SIGN OUT</button>
-  </div>
+<div class="profile-card side-card" id="support-card">
+  <div class="notif-label">✉ CONTACT SUPPORT</div>
+  <div class="notif-desc">Problem with a match, a payout or your account? Send us a message and we’ll get back to you.</div>
+  <div class="sp-done" id="support-done" hidden>Thanks — we got your message, we’ll get back to you.</div>
+  <form id="support-form" novalidate>
+    <div class="sp-from" id="support-from" hidden>We’ll reply to <b id="support-from-email"></b></div>
+    <input type="email" class="sp-input" id="support-email" placeholder="Your email (so we can reply)" maxlength="254" autocomplete="email" hidden>
+    <textarea class="sp-input" id="support-msg" rows="4" maxlength="2000" placeholder="What’s going on?"></textarea>
+    <div class="sp-count" id="support-count">0 / 2000</div>
+    <div class="sp-err" id="support-err" hidden></div>
+    <button type="submit" class="btn-action sp-send" id="support-send">✉ SEND MESSAGE</button>
+  </form>
+</div>
 </div>
 
 <!-- Payout modal -->
@@ -285,7 +301,7 @@ async function loadProfile() {
     avatarEl.onerror = () => { avatarEl.src = DEFAULT_AVATAR; };
 
     if (u.paypal_email) document.getElementById('paypal-input').value = u.paypal_email;
-    document.getElementById('profile-card').style.display = 'flex';
+    document.getElementById('profile-stack').hidden = false;
     setupSupport(u.email);
     showCreatorLink();
   } catch (e) {
@@ -293,15 +309,15 @@ async function loadProfile() {
   }
 }
 
-// The Creator Dashboard link, for creator accounts only: /api/creator answers
-// {creator:true, …} for the logged-in creator (from the session). Anything
-// else — not a creator, logged out, an error — leaves the link hidden.
+// The Creator card (Dashboard link), for creator accounts only: /api/creator
+// answers {creator:true, …} for the logged-in creator (from the session).
+// Anything else — not a creator, logged out, an error — leaves it hidden.
 async function showCreatorLink() {
   try {
     const r = await fetch('/api/creator', { cache: 'no-store' });
     if (!r.ok) return;
     const c = await r.json();
-    if (c && c.creator === true) document.getElementById('creator-link').hidden = false;
+    if (c && c.creator === true) document.getElementById('creator-card').hidden = false;
   } catch (_) {}
 }
 
