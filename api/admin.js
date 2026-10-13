@@ -1,5 +1,6 @@
 const sql = require('./_db');
 const { generateReferralCode } = require('./_referral');
+const { ensureTable: ensureSupportTable } = require('./_support');
 const Stripe = require('stripe');
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -1077,6 +1078,29 @@ async function userDetail(req, res) {
   });
 }
 
+// Support messages from the profile page's "Contact support" (api/_support.js
+// saves them), newest first, with the sender's account when there is one.
+async function listSupport(req, res) {
+  if (req.method !== 'GET') return res.status(405).end();
+  await ensureSupportTable();
+  const rows = await sql`
+    SELECT m.id, m.user_id, u.display_name, m.email, m.message, m.status, m.created_at
+    FROM support_messages m LEFT JOIN users u ON u.id = m.user_id
+    ORDER BY m.created_at DESC, m.id DESC
+  `;
+  res.status(200).json({ unread: rows.filter(r => r.status === 'new').length, messages: rows });
+}
+
+async function markSupportRead(req, res) {
+  if (req.method !== 'POST') return res.status(405).end();
+  const id = parseInt(req.body && req.body.id, 10);
+  if (!id) return res.status(400).json({ error: 'Missing id' });
+  await ensureSupportTable();
+  const rows = await sql`UPDATE support_messages SET status = 'read' WHERE id = ${id} RETURNING id, status`;
+  if (!rows.length) return res.status(404).json({ error: 'Message not found' });
+  res.status(200).json({ ok: true, id: rows[0].id, status: rows[0].status });
+}
+
 async function playerReport(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
   const playerId = parseInt(req.query.player_id, 10);
@@ -1154,6 +1178,8 @@ const ACTIONS = {
   'migrate-creator-reimbursements': migrateCreatorReimbursements,
   'create-creator': createCreator,
   'list-creators': listCreators,
+  'list-support': listSupport,
+  'mark-support-read': markSupportRead,
   // TEST SCAFFOLDING (off unless TENTEN_TEST_MARK_CHARGED=true) — remove with brick 4
   'test-mark-match-charged': testMarkMatchCharged,
   'test-seed-settled-match': testSeedSettledMatch,
