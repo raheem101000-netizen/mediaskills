@@ -20,10 +20,21 @@ async function listUsers(req, res) {
   // purchases/total_spent are windowed to "since last_payout_at" (or lifetime, if the user
   // has never been paid out) so they cover the same period as balance, which resets to 0
   // on payout. See markPayoutPaid.
+  // last_active_at: the latest login (auth_sessions, written at login/signup —
+  // logging out deletes the row) or PLAY press (game_tokens, never deleted),
+  // whichever is later. Both are UTC `timestamp without time zone`, so they're
+  // returned as timestamptz. referred_by: the creator whose link they signed up through.
   const rows = await sql`
     SELECT u.id, u.display_name, u.email, u.balance, u.paypal_email, u.created_at, u.last_payout_at,
            COUNT(s.id) FILTER (WHERE u.last_payout_at IS NULL OR s.created_at > u.last_payout_at) AS purchases,
-           COALESCE(SUM(s.amount) FILTER (WHERE u.last_payout_at IS NULL OR s.created_at > u.last_payout_at), 0) AS total_spent
+           COALESCE(SUM(s.amount) FILTER (WHERE u.last_payout_at IS NULL OR s.created_at > u.last_payout_at), 0) AS total_spent,
+           GREATEST(
+             (SELECT MAX(a.created_at) FROM auth_sessions a WHERE a.user_id = u.id),
+             (SELECT MAX(t.created_at) FROM game_tokens t WHERE t.user_id = u.id)
+           ) AT TIME ZONE 'UTC' AS last_active_at,
+           (SELECT c.referral_code || ' · ' || cu.display_name
+              FROM creators c JOIN users cu ON cu.id = c.user_id
+             WHERE c.id = u.referred_by_creator_id) AS referred_by
     FROM users u
     LEFT JOIN sessions s ON s.user_id = u.id
     GROUP BY u.id
@@ -32,7 +43,8 @@ async function listUsers(req, res) {
   res.status(200).json(rows.map(r => ({
     id: r.id, display_name: r.display_name, email: r.email, balance: r.balance,
     paypal_email: r.paypal_email, created_at: r.created_at, last_payout_at: r.last_payout_at,
-    purchases: parseInt(r.purchases, 10), total_spent: parseFloat(r.total_spent)
+    purchases: parseInt(r.purchases, 10), total_spent: parseFloat(r.total_spent),
+    last_active_at: r.last_active_at, referred_by: r.referred_by
   })));
 }
 
