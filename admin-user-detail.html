@@ -214,8 +214,13 @@ function modeLabel(mode) {
 }
 
 function renderSummary(s, user) {
+  // Country (2-letter codes from Vercel): signup, plus last seen when it differs.
+  const cname = c => { if (!c) return null; try { return new Intl.DisplayNames(['en'], { type: 'region' }).of(c) || c; } catch (e) { return c; } };
+  const country = user.signup_country
+    ? cname(user.signup_country) + (user.last_seen_country && user.last_seen_country !== user.signup_country ? ` (last seen ${cname(user.last_seen_country)})` : '')
+    : (user.last_seen_country ? `last seen ${cname(user.last_seen_country)}` : 'country unknown');
   document.getElementById('hdr-sub').textContent =
-    `${user.display_name} (${user.email}) — ID ${user.id} — Balance ${money(user.balance)}`;
+    `${user.display_name} (${user.email}) — ID ${user.id} — Balance ${money(user.balance)} — ${country}`;
   const netClass = s.net_position_recorded_only > 0 ? 'pos' : (s.net_position_recorded_only < 0 ? 'neg' : '');
   document.getElementById('summary-grid').innerHTML = `
     <div class="stat-box neutral"><div class="stat-label">Current Balance</div><div class="stat-num">${money(user.balance)}</div></div>

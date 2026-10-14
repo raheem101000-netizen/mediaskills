@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 const cookie = require('cookie');
 const sql = require('./_db');
+const { recordCountry } = require('./_country');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
@@ -15,6 +16,8 @@ module.exports = async function handler(req, res) {
     if (!ok) return res.status(401).json({ error: 'Invalid email or password' });
     const sid = uuidv4();
     await sql`INSERT INTO auth_sessions (id, user_id) VALUES (${sid}, ${user.id})`;
+    // Last-seen country from Vercel's header; best-effort, never blocks.
+    await recordCountry(req, user.id);
     res.setHeader('Set-Cookie', cookie.serialize('session', sid, {
       httpOnly: true, path: '/', maxAge: 30 * 24 * 60 * 60, sameSite: 'lax', secure: true
     }));
