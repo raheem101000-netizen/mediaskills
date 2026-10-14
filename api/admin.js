@@ -945,6 +945,25 @@ async function userDetail(req, res) {
     };
   }
 
+  // ── Which game / format / player count, from what each row already stores —
+  // nothing guessed; null when the data can't say:
+  //   game key: fifa = 1v1 Arena, pongmp = Pong multiplayer, kurver, puz = Puz
+  //     Royale, pong = Pong SOLO (only solo Pong's api/pong-game.js writes 'pong').
+  //   tier '1V1' (Arena, Pong multiplayer) → 1v1, 2 players.
+  //   tier 'nP' (Kurver, Puz: the players in the match when it started) → n
+  //     players; 2 = 1v1, 3+ = open multiplayer.
+  //   solo (game 'pong', or an entry session with mode 'solo') → solo vs the
+  //     computer; its tier is the difficulty (EASY / SUPER …).
+  const GAME_LABELS = { fifa: '1v1 Arena', pongmp: 'Pong', pong: 'Pong', kurver: 'Kurver', puz: 'Puz Royale' };
+  function describeMatch(game, tier, mode) {
+    const label = GAME_LABELS[game] || game;
+    if (game === 'pong' || mode === 'solo') return { game_label: label, format: 'solo', players: null };
+    if (tier === '1V1') return { game_label: label, format: '1v1', players: 2 };
+    const n = /^(\d+)P$/.exec(tier || '');
+    if (n) { const players = parseInt(n[1], 10); return { game_label: label, format: players === 2 ? '1v1' : 'multiplayer', players }; }
+    return { game_label: label, format: null, players: null };
+  }
+
   // ── Game log: match_results rows (modern, has tier + win/loss) + legacy game_wins-only
   // rows (pre-audit, win-only, no tier) — merged and sorted newest first.
   const gameLog = [];
@@ -958,6 +977,7 @@ async function userDetail(req, res) {
       game: m.game,
       mode: entrySession ? entrySession.mode : null, // derived via sessions join; null = mode unknown, never guessed
       tier: m.tier,
+      ...describeMatch(m.game, m.tier, entrySession ? entrySession.mode : null),
       outcome: m.outcome,
       match_number: m.match_number,
       stripe_payment_id: m.stripe_payment_id,
@@ -980,6 +1000,7 @@ async function userDetail(req, res) {
       game: w.game,
       mode: legacySession ? legacySession.mode : null, // most legacy rows have no stripe_payment_id at all -> null
       tier: null,
+      ...describeMatch(w.game, null, legacySession ? legacySession.mode : null),
       outcome: 'win',
       match_number: w.match_number,
       stripe_payment_id: w.stripe_payment_id,

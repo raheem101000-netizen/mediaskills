@@ -81,6 +81,13 @@ tbody tr:hover{background:rgba(255,255,255,0.02);}
 td.mono{font-family:'Share Tech Mono',monospace;}
 td.win{color:var(--green);}
 td.loss{color:var(--red);}
+td.game{color:var(--white);}
+td.game small{display:block;margin-top:4px;color:rgba(200,195,255,.3);font-family:'Share Tech Mono',monospace;font-size:7px;}
+td.fmt-solo{color:var(--amber);}
+td.fmt-1v1{color:var(--teal);}
+td.fmt-multi{color:#bf5fff;}
+td.fmt-unknown{color:rgba(200,195,255,.3);}
+td.players{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text);}
 td.tier{color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:8px;}
 td.credited-yes{color:var(--green);font-family:'Share Tech Mono',monospace;font-size:8px;}
 td.credited-warn{color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:8px;}
@@ -136,7 +143,8 @@ td.pi{color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:7px;}
           <tr>
             <th>Date / Time</th>
             <th>Game</th>
-            <th>Mode</th>
+            <th>Format</th>
+            <th>Players</th>
             <th>Tier</th>
             <th>Result</th>
             <th>Entry Fee</th>
@@ -286,6 +294,15 @@ function renderPreLoggingNote(p) {
   `);
 }
 
+// Format + player count, as the server derived them from the stored row
+// (describeMatch in api/admin.js) — "—" when the data can't say.
+function formatCells(r) {
+  if (r.format === 'solo') return '<td class="fmt-solo">SOLO</td><td class="players" style="color:rgba(200,195,255,.4);">vs computer</td>';
+  if (r.format === '1v1') return `<td class="fmt-1v1">1V1</td><td class="players">${r.players || 2}</td>`;
+  if (r.format === 'multiplayer') return `<td class="fmt-multi">MULTIPLAYER</td><td class="players">${r.players}</td>`;
+  return '<td class="fmt-unknown">UNKNOWN</td><td class="players" style="color:rgba(200,195,255,.3);">—</td>';
+}
+
 function renderGameLog(rows) {
   document.getElementById('game-log-count').textContent = `(${rows.length})`;
   const tbody = document.getElementById('game-log-rows');
@@ -311,8 +328,8 @@ function renderGameLog(rows) {
     return `
       <tr>
         <td class="mono">${fmtTs(r.timestamp)}</td>
-        <td>${esc(r.game)}</td>
-        <td class="mono">${modeLabel(r.mode)}</td>
+        <td class="game">${esc(r.game_label || r.game)}<small>${esc(r.game)}</small></td>
+        ${formatCells(r)}
         <td class="tier">${esc(r.tier || '—')}</td>
         <td class="${r.outcome === 'win' ? 'win' : 'loss'}">${r.outcome.toUpperCase()}</td>
         <td class="mono">${money(r.entry_fee)}</td>
@@ -352,9 +369,9 @@ function exportCsv() {
   if (!detail) return;
   const lines = [];
   lines.push('=== GAME LOG ===');
-  lines.push(['timestamp','game','mode','tier','result','entry_fee','credit_state','credit_label','payout_amount','balance_before','balance_after','match_number','stripe_payment_id','source'].join(','));
+  lines.push(['timestamp','game','game_label','format','players','mode','tier','result','entry_fee','credit_state','credit_label','payout_amount','balance_before','balance_after','match_number','stripe_payment_id','source'].join(','));
   detail.game_log.forEach(r => {
-    lines.push([r.timestamp, r.game, r.mode || 'unknown', r.tier, r.outcome, r.entry_fee, r.credit_state || '', r.credit_label || '', r.payout_amount, r.balance_before, r.balance_after, r.match_number, r.stripe_payment_id, r.source].map(toCsvValue).join(','));
+    lines.push([r.timestamp, r.game, r.game_label, r.format || 'unknown', r.players ?? '', r.mode || 'unknown', r.tier, r.outcome, r.entry_fee, r.credit_state || '', r.credit_label || '', r.payout_amount, r.balance_before, r.balance_after, r.match_number, r.stripe_payment_id, r.source].map(toCsvValue).join(','));
   });
   lines.push('');
   lines.push('=== PAYOUTS ===');
