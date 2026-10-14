@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const cookie = require('cookie');
 const sql = require('./_db');
 const { normalizeRefCode } = require('./_referral');
+const { recordCountry } = require('./_country');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -47,6 +48,8 @@ module.exports = async (req, res) => {
         console.error('[referral] could not attribute user', userId, 'to code', refCode, e.message);
       }
     }
+    // Country from Vercel's header (signup + last seen); best-effort, never blocks.
+    await recordCountry(req, userId, { signup: true });
     const sid = randomUUID();
     await sql`INSERT INTO auth_sessions (id, user_id) VALUES (${sid}, ${userId})`;
     res.setHeader('Set-Cookie', [

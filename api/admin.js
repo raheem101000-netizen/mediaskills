@@ -1,6 +1,7 @@
 const sql = require('./_db');
 const { generateReferralCode } = require('./_referral');
 const { ensureTable: ensureSupportTable } = require('./_support');
+const { ensureCountryColumns } = require('./_country');
 const Stripe = require('stripe');
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -24,8 +25,11 @@ async function listUsers(req, res) {
   // logging out deletes the row) or PLAY press (game_tokens, never deleted),
   // whichever is later. Both are UTC `timestamp without time zone`, so they're
   // returned as timestamptz. referred_by: the creator whose link they signed up through.
+  // signup_country / last_seen_country: 2-letter codes from Vercel (api/_country.js).
+  await ensureCountryColumns();
   const rows = await sql`
     SELECT u.id, u.display_name, u.email, u.balance, u.paypal_email, u.created_at, u.last_payout_at,
+           u.signup_country, u.last_seen_country,
            COUNT(s.id) FILTER (WHERE u.last_payout_at IS NULL OR s.created_at > u.last_payout_at) AS purchases,
            COALESCE(SUM(s.amount) FILTER (WHERE u.last_payout_at IS NULL OR s.created_at > u.last_payout_at), 0) AS total_spent,
            GREATEST(
@@ -44,7 +48,8 @@ async function listUsers(req, res) {
     id: r.id, display_name: r.display_name, email: r.email, balance: r.balance,
     paypal_email: r.paypal_email, created_at: r.created_at, last_payout_at: r.last_payout_at,
     purchases: parseInt(r.purchases, 10), total_spent: parseFloat(r.total_spent),
-    last_active_at: r.last_active_at, referred_by: r.referred_by
+    last_active_at: r.last_active_at, referred_by: r.referred_by,
+    signup_country: r.signup_country, last_seen_country: r.last_seen_country
   })));
 }
 
@@ -847,8 +852,10 @@ async function userDetail(req, res) {
   const userId = parseInt(req.query.id, 10);
   if (!userId) return res.status(400).json({ error: 'Missing id' });
 
+  await ensureCountryColumns();
   const userRows = await sql`
-    SELECT id, email, display_name, balance, paypal_email, created_at, last_payout_at, payout_requested_at
+    SELECT id, email, display_name, balance, paypal_email, created_at, last_payout_at, payout_requested_at,
+           signup_country, last_seen_country
     FROM users WHERE id = ${userId}
   `;
   if (!userRows.length) return res.status(404).json({ error: 'User not found' });
@@ -1058,6 +1065,7 @@ async function userDetail(req, res) {
       id: user.id, email: user.email, display_name: user.display_name,
       balance: parseFloat(user.balance), paypal_email: user.paypal_email,
       created_at: user.created_at,
+      signup_country: user.signup_country, last_seen_country: user.last_seen_country,
     },
     summary: {
       games_played: gamesPlayed, wins, losses,
