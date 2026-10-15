@@ -23,7 +23,12 @@ module.exports = async function handler(req, res) {
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  if (event.type === 'checkout.session.completed') {
+  // Stripe sends every event of the account to every endpoint, including the
+  // game servers' match entry fees (metadata.game = pong / fifa / kurver) —
+  // those are logged by the game servers. Only solo Pong purchases
+  // (create-pong-checkout.js: game 'Pong', mode 'solo') are logged here.
+  const isSoloPong = s => s && s.metadata && s.metadata.game === 'Pong' && s.metadata.mode === 'solo';
+  if (event.type === 'checkout.session.completed' && isSoloPong(event.data.object)) {
     const session = event.data.object;
     try {
       // player_id is only present in metadata for logged-in players (create-pong-checkout.js
