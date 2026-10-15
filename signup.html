@@ -173,6 +173,7 @@ async function doSignup() {
     });
     const data = await r.json();
     if (!r.ok) { showErr(data.error || 'Signup failed'); btn.disabled = false; btn.textContent = '▶ CREATE ACCOUNT'; return; }
+    if (window.tentenRefClear) window.tentenRefClear();
     window.location.href = '/profile.html';
   } catch (e) {
     showErr('Network error — please try again');
