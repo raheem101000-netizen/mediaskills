@@ -89,6 +89,11 @@ body{display:flex;flex-direction:column;align-items:center;padding:80px 16px 48p
 }
 
 .actions{width:100%;display:flex;flex-direction:column;gap:10px;}
+/* Play Credit: a separate, non-cashable balance for game entries only */
+.credit-block{width:100%;border:2px solid rgba(0,245,212,0.45);padding:12px 16px;margin:-12px 0 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.credit-label{font-size:6px;letter-spacing:2px;color:var(--teal);text-transform:uppercase;margin-bottom:6px;}
+.credit-note{font-family:'Outfit',sans-serif;font-size:12px;color:var(--muted);line-height:1.35;}
+.credit-amount{font-size:16px;color:var(--teal);white-space:nowrap;}
 
 /* Match alerts (push-optin.js fills #push-optin — button, "✓ Match alerts on",
    iPhone Home Screen instructions, or blocked / not set up) */
@@ -214,6 +219,14 @@ textarea.sp-input{resize:vertical;min-height:96px;line-height:1.45;}
     <div class="balance-amount" id="balance-text">$0.00</div>
   </div>
 
+  <div class="credit-block" id="credit-block">
+    <div>
+      <div class="credit-label">◆ PLAY CREDIT</div>
+      <div class="credit-note">Use this to enter games · not cashable</div>
+    </div>
+    <div class="credit-amount" id="credit-text">$0.00</div>
+  </div>
+
   <div class="actions">
     <button class="btn-action btn-payout" onclick="openPayoutModal()">💸 REQUEST PAYOUT</button>
     <button class="btn-action btn-signout" onclick="doSignout()">✕ SIGN OUT</button>
@@ -280,6 +293,7 @@ async function refreshBalance() {
     if (!r.ok) return;
     const u = await r.json();
     document.getElementById('balance-text').textContent = '$' + parseFloat(u.balance).toFixed(2);
+    document.getElementById('credit-text').textContent = '$' + parseFloat(u.play_credit || 0).toFixed(2);
   } catch (_) {}
 }
 window.addEventListener('pageshow', e => { if (e.persisted) refreshBalance(); });
@@ -296,6 +310,7 @@ async function loadProfile() {
     document.getElementById('display-name-text').textContent = u.display_name;
     document.getElementById('email-text').textContent = u.email;
     document.getElementById('balance-text').textContent = '$' + parseFloat(u.balance).toFixed(2);
+    document.getElementById('credit-text').textContent = '$' + parseFloat(u.play_credit || 0).toFixed(2);
 
     const avatarEl = document.getElementById('avatar-display');
     avatarEl.src = u.avatar_url || DEFAULT_AVATAR;
