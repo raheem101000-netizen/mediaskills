@@ -1,5 +1,5 @@
 const sql = require('./_db');
-const { generateReferralCode } = require('./_referral');
+const { generateReferralCode, normalizeRefCode } = require('./_referral');
 const { ensureTable: ensureSupportTable } = require('./_support');
 const { ensureCountryColumns } = require('./_country');
 const Stripe = require('stripe');
@@ -745,6 +745,20 @@ async function createCreator(req, res) {
   const user = users[0];
   const existing = await sql`SELECT * FROM creators WHERE user_id = ${user.id}`;
   if (existing.length) return res.status(200).json({ created: false, creator: existing[0], user });
+  // Optional chosen code (e.g. DRAQ44): 6 letters/digits, stored upper-case;
+  // otherwise one is generated.
+  if (typeof input.code === 'string' && input.code.trim()) {
+    const code = normalizeRefCode(input.code);
+    if (!code) return res.status(400).json({ error: 'A code is 6 letters or digits (e.g. DRAQ44)' });
+    const rows = await sql`
+      INSERT INTO creators (user_id, referral_code) VALUES (${user.id}, ${code})
+      ON CONFLICT DO NOTHING RETURNING *
+    `;
+    if (rows.length) return res.status(200).json({ created: true, creator: rows[0], user, link: 'https://tenten.run/?ref=' + code });
+    const now = await sql`SELECT * FROM creators WHERE user_id = ${user.id}`;
+    if (now.length) return res.status(200).json({ created: false, creator: now[0], user });
+    return res.status(409).json({ error: 'That code is already taken' });
+  }
   for (let attempt = 0; attempt < 8; attempt++) {
     const code = generateReferralCode();
     const rows = await sql`
@@ -759,15 +773,34 @@ async function createCreator(req, res) {
   res.status(500).json({ error: 'Could not generate a unique referral code' });
 }
 
-// Creators with their code and how many players signed up through them.
+// Creators with their code, and for the players who signed up with it: how
+// many, the matches they've played (each player's own match_results rows —
+// wins and losses, every game incl. solo Pong) and the entry fees they've paid
+// (sessions: real Stripe charges; multiplayer entries aren't charged yet).
 async function listCreators(req, res) {
   const rows = await sql`
     SELECT c.id, c.user_id, u.display_name, u.email, c.referral_code, c.active, c.created_at,
-           (SELECT COUNT(*) FROM users r WHERE r.referred_by_creator_id = c.id)::int AS referred_users
+           (SELECT COUNT(*) FROM users r WHERE r.referred_by_creator_id = c.id)::int AS referred_users,
+           (SELECT COUNT(*) FROM match_results m JOIN users r ON r.id = m.player_id
+             WHERE r.referred_by_creator_id = c.id)::int AS matches_played,
+           (SELECT COALESCE(SUM(s.amount), 0) FROM sessions s JOIN users r ON r.id = s.user_id
+             WHERE r.referred_by_creator_id = c.id) AS entry_fees
       FROM creators c JOIN users u ON u.id = c.user_id
      ORDER BY c.created_at ASC
   `;
-  res.status(200).json({ creators: rows });
+  res.status(200).json({ creators: rows.map(r => ({ ...r, entry_fees: parseFloat(r.entry_fees) })) });
+}
+
+// Deactivate / reactivate a creator's code. An inactive code can't be used to
+// sign up; players who already signed up with it keep their creator.
+async function setCreatorActive(req, res) {
+  if (req.method !== 'POST') return res.status(405).end();
+  const id = parseInt(req.body && req.body.creator_id, 10);
+  const active = req.body && req.body.active;
+  if (!id || typeof active !== 'boolean') return res.status(400).json({ error: 'Pass creator_id and active (true/false)' });
+  const rows = await sql`UPDATE creators SET active = ${active} WHERE id = ${id} RETURNING id, referral_code, active`;
+  if (!rows.length) return res.status(404).json({ error: 'Creator not found' });
+  res.status(200).json({ ok: true, creator: rows[0] });
 }
 
 const KNOWN_TABLES = ['users', 'sessions', 'game_tokens', 'player_game_state', 'game_wins', 'auth_sessions', 'match_results', 'balance_ledger', 'fifa_matches', 'fifa_messages', 'fifa_disputes', 'creators', 'creator_reimbursements'];
@@ -1219,6 +1252,7 @@ const ACTIONS = {
   'migrate-creator-reimbursements': migrateCreatorReimbursements,
   'create-creator': createCreator,
   'list-creators': listCreators,
+  'set-creator-active': setCreatorActive,
   'list-support': listSupport,
   'mark-support-read': markSupportRead,
   // TEST SCAFFOLDING (off unless TENTEN_TEST_MARK_CHARGED=true) — remove with brick 4
