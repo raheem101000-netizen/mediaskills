@@ -1,5 +1,6 @@
 const cookie = require('cookie');
 const sql = require('./_db');
+const { ensurePlayCredit } = require('./_playCredit');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
@@ -12,8 +13,9 @@ module.exports = async function handler(req, res) {
   const sid = cookies.session;
   if (!sid) return res.status(401).json({ error: 'Not logged in' });
   try {
+    await ensurePlayCredit();
     const rows = await sql`
-      SELECT u.id, u.email, u.display_name, u.avatar_url, u.balance, u.paypal_email
+      SELECT u.id, u.email, u.display_name, u.avatar_url, u.balance, u.paypal_email, u.play_credit
       FROM auth_sessions s JOIN users u ON u.id = s.user_id
       WHERE s.id=${sid} AND s.expires_at > NOW()
     `;
@@ -24,7 +26,8 @@ module.exports = async function handler(req, res) {
       email: u.email,
       display_name: u.display_name,
       avatar_url: u.avatar_url,
-      balance: Math.max(0, parseFloat(u.balance || 0)).toFixed(2),
+      balance: Math.max(0, parseFloat(u.balance || 0)).toFixed(2),          // winnings — cashable
+      play_credit: Math.max(0, parseFloat(u.play_credit || 0)).toFixed(2),  // entries only — never cashable
       paypal_email: u.paypal_email
     });
   } catch (e) {

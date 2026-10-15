@@ -251,6 +251,7 @@ function renderSummary(s, user) {
   const netClass = s.net_position_recorded_only > 0 ? 'pos' : (s.net_position_recorded_only < 0 ? 'neg' : '');
   document.getElementById('summary-grid').innerHTML = `
     <div class="stat-box neutral"><div class="stat-label">Current Balance</div><div class="stat-num">${money(user.balance)}</div></div>
+    <div class="stat-box neutral" title="Entries only — never paid out"><div class="stat-label">Play Credit (not cashable)</div><div class="stat-num">${money(user.play_credit || 0)}</div></div>
     <div class="stat-box neutral"><div class="stat-label">Games Played</div><div class="stat-num">${s.games_played}</div></div>
     <div class="stat-box neutral"><div class="stat-label">Wins / Losses</div><div class="stat-num">${s.wins} / ${s.losses}</div></div>
     <div class="stat-box neutral"><div class="stat-label">Win Rate</div><div class="stat-num">${s.win_rate === null ? '—' : (s.win_rate * 100).toFixed(1) + '%'}</div></div>
@@ -363,14 +364,15 @@ function renderGameLog(rows) {
 
 // Multiplayer entry fees (match_payments): every attempt, so a refund or an
 // unpaid Checkout is visible next to the paid entries.
+// Why an entry became Play Credit (no-fault: the match couldn't happen).
 const ENTRY_REASONS = {
-  payment_timeout: 'Refunded — the other player didn’t pay in time',
-  left_before_start: 'Refunded — a player left before the match started',
-  attempt_gone: 'Refunded — paid after the payment window had closed',
-  match_start_failed: 'Refunded — the match couldn’t be started',
-  no_match_recovery: 'Refunded — money taken with no match (recovery)',
-  system_error: 'Refunded — payment system error',
-  lobby_closed: 'Refunded — the match lobby closed',
+  payment_timeout: 'the other player didn’t pay in time',
+  left_before_start: 'a player left before the match started',
+  attempt_gone: 'paid after the payment window had closed',
+  match_start_failed: 'the match couldn’t be started',
+  no_match_recovery: 'money taken with no match (recovery)',
+  system_error: 'payment system error',
+  lobby_closed: 'the match lobby closed',
 };
 function renderEntryPayments(rows) {
   rows = rows || [];
@@ -381,18 +383,22 @@ function renderEntryPayments(rows) {
   empty.style.display = 'none';
   const label = { pong: 'Pong', fifa: '1v1 Arena', kurver: 'Kurver' };
   tbody.innerHTML = rows.map(p => {
-    const badge = p.status === 'paid' ? 'paid' : (p.status === 'pending' ? 'pending' : 'legacy');
-    const note = p.status === 'refunded' ? (ENTRY_REASONS[p.refund_reason] || 'Refunded — ' + (p.refund_reason || '')) :
+    const badge = p.status === 'paid' ? 'paid' : (p.status === 'pending' || p.status === 'credited' ? 'pending' : 'legacy');
+    const statusLabel = p.status === 'credited' ? 'PLAY CREDIT' : p.status.toUpperCase();
+    const viaCredit = p.paid_with === 'credit';
+    const note = p.status === 'credited' ? 'Added as Play Credit — ' + (ENTRY_REASONS[p.credit_reason] || p.credit_reason || '') + (viaCredit ? ' (this entry had been paid with Play Credit)' : ' (card charge kept)') :
+      p.status === 'refunded' ? 'Refunded to card (old system) — ' + (ENTRY_REASONS[p.refund_reason] || p.refund_reason || '') :
       p.status === 'expired' ? 'Not paid — Checkout closed, nothing charged' :
-      p.status === 'pending' ? 'Checkout open' : (p.match_key ? 'Entry for this match (final)' : '');
+      p.status === 'pending' ? 'Checkout open' :
+      (viaCredit ? 'Paid with Play Credit' : 'Paid by card') + (p.match_key ? ' — entry for this match (final)' : '');
     return `
     <tr>
       <td class="mono">${fmtTs(p.paid_at || p.created_at)}</td>
       <td>${esc(label[p.game] || p.game)}</td>
       <td class="mono">${money(p.amount)}</td>
-      <td><span class="badge badge-${badge}">${esc(p.status.toUpperCase())}</span></td>
+      <td><span class="badge badge-${badge}">${esc(statusLabel)}</span></td>
       <td class="pi" title="${esc(p.match_key || '')}">${esc(p.match_key || '—')}</td>
-      <td class="pi" title="${esc(p.stripe_payment_intent_id || '')}">${shortPi(p.stripe_payment_intent_id)}</td>
+      <td class="pi" title="${esc(p.stripe_payment_intent_id || '')}">${viaCredit ? 'Play Credit' : shortPi(p.stripe_payment_intent_id)}</td>
       <td class="muted">${esc(note)}</td>
     </tr>`;
   }).join('');

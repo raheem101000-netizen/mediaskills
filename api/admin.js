@@ -2,6 +2,7 @@ const sql = require('./_db');
 const { generateReferralCode, normalizeRefCode } = require('./_referral');
 const { ensureTable: ensureSupportTable } = require('./_support');
 const { ensureCountryColumns } = require('./_country');
+const { ensurePlayCredit } = require('./_playCredit');
 const Stripe = require('stripe');
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -27,9 +28,10 @@ async function listUsers(req, res) {
   // returned as timestamptz. referred_by: the creator whose link they signed up through.
   // signup_country / last_seen_country: 2-letter codes from Vercel (api/_country.js).
   await ensureCountryColumns();
+  await ensurePlayCredit();
   const rows = await sql`
     SELECT u.id, u.display_name, u.email, u.balance, u.paypal_email, u.created_at, u.last_payout_at,
-           u.signup_country, u.last_seen_country,
+           u.signup_country, u.last_seen_country, u.play_credit,
            COUNT(s.id) FILTER (WHERE u.last_payout_at IS NULL OR s.created_at > u.last_payout_at) AS purchases,
            COALESCE(SUM(s.amount) FILTER (WHERE u.last_payout_at IS NULL OR s.created_at > u.last_payout_at), 0) AS total_spent,
            GREATEST(
@@ -49,7 +51,8 @@ async function listUsers(req, res) {
     paypal_email: r.paypal_email, created_at: r.created_at, last_payout_at: r.last_payout_at,
     purchases: parseInt(r.purchases, 10), total_spent: parseFloat(r.total_spent),
     last_active_at: r.last_active_at, referred_by: r.referred_by,
-    signup_country: r.signup_country, last_seen_country: r.last_seen_country
+    signup_country: r.signup_country, last_seen_country: r.last_seen_country,
+    play_credit: parseFloat(r.play_credit || 0)   // entries only — never paid out
   })));
 }
 
@@ -886,9 +889,10 @@ async function userDetail(req, res) {
   if (!userId) return res.status(400).json({ error: 'Missing id' });
 
   await ensureCountryColumns();
+  await ensurePlayCredit();
   const userRows = await sql`
     SELECT id, email, display_name, balance, paypal_email, created_at, last_payout_at, payout_requested_at,
-           signup_country, last_seen_country
+           signup_country, last_seen_country, play_credit
     FROM users WHERE id = ${userId}
   `;
   if (!userRows.length) return res.status(404).json({ error: 'User not found' });
@@ -946,8 +950,13 @@ async function userDetail(req, res) {
   // match_results rows start with, so each match finds this player's entry.
   const hasMatchPayments = (await sql`SELECT to_regclass('public.match_payments') AS t`)[0].t;
   const entryPayments = hasMatchPayments ? await sql`
-    SELECT id, game, attempt_id, match_key, amount_cents, status, stripe_payment_intent_id, refund_reason, created_at, paid_at, refunded_at
+    SELECT *
       FROM match_payments WHERE user_id = ${userId} ORDER BY created_at DESC
+  ` : [];
+  const hasCreditLedger = (await sql`SELECT to_regclass('public.play_credit_ledger') AS t`)[0].t;
+  const creditLedger = hasCreditLedger ? await sql`
+    SELECT kind, delta, balance_after, reason, game, match_payment_id, created_at
+      FROM play_credit_ledger WHERE user_id = ${userId} ORDER BY created_at DESC
   ` : [];
   const entryByMatchKey = new Map(entryPayments.filter(p => p.match_key).map(p => [p.match_key, p]));
   const matchEntryIntents = new Set(entryPayments.filter(p => p.match_key && p.stripe_payment_intent_id).map(p => p.stripe_payment_intent_id));
@@ -1137,6 +1146,7 @@ async function userDetail(req, res) {
       balance: parseFloat(user.balance), paypal_email: user.paypal_email,
       created_at: user.created_at,
       signup_country: user.signup_country, last_seen_country: user.last_seen_country,
+      play_credit: parseFloat(user.play_credit || 0),   // entries only — never paid out
     },
     summary: {
       games_played: gamesPlayed, wins, losses,
@@ -1166,9 +1176,11 @@ async function userDetail(req, res) {
     game_log: gameLog,
     entry_payments: entryPayments.map(p => ({
       id: p.id, game: p.game, attempt_id: p.attempt_id, match_key: p.match_key, amount: p.amount_cents / 100,
-      status: p.status, stripe_payment_intent_id: p.stripe_payment_intent_id, refund_reason: p.refund_reason,
-      created_at: p.created_at, paid_at: p.paid_at, refunded_at: p.refunded_at,
+      status: p.status, paid_with: p.paid_with || 'card', stripe_payment_intent_id: p.stripe_payment_intent_id,
+      credit_reason: p.credit_reason || null, refund_reason: p.refund_reason,
+      created_at: p.created_at, paid_at: p.paid_at, credited_at: p.credited_at || null, refunded_at: p.refunded_at,
     })),
+    play_credit_ledger: creditLedger.map(l => ({ ...l, delta: parseFloat(l.delta), balance_after: parseFloat(l.balance_after) })),
     payouts,
     ledger_available: ledgerAvailable,
   });

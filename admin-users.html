@@ -295,6 +295,7 @@ tr.creator-off td:last-child{opacity:1;}
             <th>Signed Up</th>
             <th>Last Active</th>
             <th>Country</th>
+            <th>Play Credit</th>
             <th>Referred By</th>
             <th>Purchases</th>
             <th>Total Spent</th>
@@ -345,6 +346,7 @@ function renderUsers() {
       <td class="signup">${new Date(u.created_at).toLocaleDateString()}</td>
       <td class="active" title="${u.last_active_at ? esc(new Date(u.last_active_at).toLocaleString()) : ''}">${timeAgo(u.last_active_at)}</td>
       <td class="country">${countryCell(u.signup_country, u.last_seen_country)}</td>
+      <td class="spent" title="Entries only — never paid out">${u.play_credit ? '$' + u.play_credit.toFixed(2) : '—'}</td>
       <td class="ref">${esc(u.referred_by || '—')}</td>
       <td class="purchases">${u.purchases || 0}</td>
       <td class="spent">$${parseFloat(u.total_spent || 0).toFixed(2)}</td>
