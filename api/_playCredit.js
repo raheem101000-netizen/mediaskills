@@ -1,6 +1,6 @@
 const sql = require('./_db');
 
-// Play Credit: a second, NON-cashable balance (users.play_credit). The game
+// Refund Balance: a second, NON-cashable balance (users.play_credit). The game
 // servers add to it when an entry was paid for a match that couldn't happen
 // through no fault of the player, and spend it on a whole entry; payouts only
 // ever touch the winnings balance (users.balance). This just makes sure the
