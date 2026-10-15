@@ -13,41 +13,32 @@ module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   try {
     const { display_name, email, password, avatar_url, ref } = req.body || {};
-    const cookies = cookie.parse(req.headers.cookie || '');
-    // Creator referral captured on tenten.run (?ref=CODE, ref.js): sent by the page, or the cookie.
-    const refCode = normalizeRefCode(ref) || normalizeRefCode(cookies.tenten_ref);
     if (!display_name || !email || !password) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
     if (password.length < 6) {
       return res.status(400).json({ error: 'Password must be at least 6 characters' });
     }
+    // A creator's referral code is required (the signup form's field, pre-filled
+    // from a ?ref= link). Case-insensitive; only an ACTIVE creator's code counts.
+    if (typeof ref !== 'string' || !ref.trim()) {
+      return res.status(400).json({ error: 'Enter a referral code' });
+    }
+    const refCode = normalizeRefCode(ref);
+    if (!refCode) return res.status(400).json({ error: 'That referral code doesn’t exist.' });
     const hash = await bcrypt.hash(password, 10);
+    // The creator is set here, once, in the same statement that creates the
+    // account — so no account exists without one, and nothing changes it later.
+    // No row back = the code isn't an active creator's.
     const inserted = await sql`
-      INSERT INTO users (email, password_hash, display_name, avatar_url)
-      VALUES (${email.toLowerCase().trim()}, ${hash}, ${display_name.trim()}, ${avatar_url || null})
+      INSERT INTO users (email, password_hash, display_name, avatar_url, referred_by_creator_id, referred_at)
+      SELECT ${email.toLowerCase().trim()}, ${hash}, ${display_name.trim()}, ${avatar_url || null}, c.id, now()
+        FROM creators c
+       WHERE c.referral_code = ${refCode} AND c.active
       RETURNING id
     `;
+    if (!inserted.length) return res.status(400).json({ error: 'That referral code doesn’t exist.' });
     const userId = inserted[0].id;
-    // Attribution happens here, once, at signup: only an active creator's code,
-    // never the creator's own account, never over an existing attribution.
-    // A failure here (bad code, migration not run yet) never blocks the signup.
-    if (refCode) {
-      try {
-        await sql`
-          UPDATE users u
-             SET referred_by_creator_id = c.id, referred_at = now()
-            FROM creators c
-           WHERE u.id = ${userId}
-             AND u.referred_by_creator_id IS NULL
-             AND c.referral_code = ${refCode}
-             AND c.active
-             AND c.user_id <> u.id
-        `;
-      } catch (e) {
-        console.error('[referral] could not attribute user', userId, 'to code', refCode, e.message);
-      }
-    }
     // Country from Vercel's header (signup + last seen); best-effort, never blocks.
     await recordCountry(req, userId, { signup: true });
     const sid = randomUUID();

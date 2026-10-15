@@ -135,6 +135,24 @@ td.who{color:var(--white);}
 td.who small{display:block;margin-top:4px;color:rgba(200,195,255,.35);font-family:'Share Tech Mono',monospace;font-size:8px;}
 #support-table td{vertical-align:top;}
 
+/* Creators (referral codes) */
+.creator-form{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:14px 18px;border-bottom:1px solid var(--border);}
+.creator-form input{background:#000;border:2px solid rgba(255,255,255,0.12);color:var(--text);font-family:'Share Tech Mono',monospace;font-size:12px;padding:8px 10px;outline:none;}
+.creator-form input:focus{border-color:var(--teal);}
+.creator-form #creator-email{flex:1;min-width:200px;}
+.creator-form #creator-code{width:120px;text-transform:uppercase;}
+.creator-msg{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);}
+.creator-msg.err{color:var(--red);}
+.creator-msg.ok{color:var(--green);}
+td.code{color:#ffe44d;font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:1px;}
+td.c-active{color:var(--green);}
+td.c-inactive{color:var(--red);}
+td.num{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text);}
+td.link{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);user-select:all;}
+tr.creator-off td{opacity:.55;}
+tr.creator-off td:last-child{opacity:1;}
+.pxbtn-red{font-family:'Press Start 2P',monospace;font-size:6px;padding:6px 10px;letter-spacing:1px;border:2px solid var(--red2);background:transparent;color:var(--red);box-shadow:2px 2px 0 var(--red2);cursor:pointer;white-space:nowrap;}
+
 .pxbtn-gold{
   font-family:'Press Start 2P',monospace;font-size:6px;padding:6px 10px;letter-spacing:1px;
   border:2px solid #aa9000;background:#ffe44d;color:#000;
@@ -227,6 +245,32 @@ td.who small{display:block;margin-top:4px;color:rgba(200,195,255,.35);font-famil
         <tbody id="payout-rows"></tbody>
       </table>
       <div class="empty-note" id="payout-empty-note" style="display:none;">No pending payout requests.</div>
+    </div>
+
+    <div class="section-label" id="creators">Creators <span>&amp; Referral Codes</span></div>
+    <div class="table-box" style="margin-bottom:32px;">
+      <form class="creator-form" id="creator-form" onsubmit="createCreator(event)">
+        <input type="text" id="creator-email" placeholder="Creator's TENTEN account email (or user id)" autocomplete="off">
+        <input type="text" id="creator-code" placeholder="Code (optional)" maxlength="6" autocomplete="off">
+        <button class="pxbtn-gold" type="submit">+ CREATE CODE</button>
+        <span class="creator-msg" id="creator-msg">Every sign-up needs an active code.</span>
+      </form>
+      <table>
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Creator</th>
+            <th>Status</th>
+            <th>Sign-ups</th>
+            <th>Matches Played</th>
+            <th>Entry Fees Paid</th>
+            <th>Referral Link</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="creator-rows"></tbody>
+      </table>
+      <div class="empty-note" id="creator-empty-note" style="display:none;">No creators yet — nobody can sign up until there is an active code.</div>
     </div>
 
     <div class="section-label" id="users">User <span>Accounts</span></div>
@@ -486,10 +530,75 @@ async function markSupportRead(id, btn) {
   }
 }
 
+// Creators: code, who, active/inactive, and their referred players' sign-ups,
+// matches played and entry fees paid.
+function renderCreators(list) {
+  const rows = document.getElementById('creator-rows');
+  document.getElementById('creator-empty-note').style.display = list.length ? 'none' : 'block';
+  rows.innerHTML = list.map(c => `
+    <tr class="${c.active ? '' : 'creator-off'}">
+      <td class="code">${esc(c.referral_code)}</td>
+      <td class="user"><div class="u-name">${esc(c.display_name)}</div><div class="u-email">${esc(c.email)}</div></td>
+      <td class="${c.active ? 'c-active' : 'c-inactive'}">${c.active ? 'ACTIVE' : 'INACTIVE'}</td>
+      <td class="num">${c.referred_users}</td>
+      <td class="num">${c.matches_played}</td>
+      <td class="balance">$${(c.entry_fees || 0).toFixed(2)}</td>
+      <td class="link">https://tenten.run/?ref=${esc(c.referral_code)}</td>
+      <td>${c.active
+        ? `<button class="pxbtn-red" onclick="setCreatorActive(${c.id}, false, '${esc(c.referral_code)}')">DEACTIVATE</button>`
+        : `<button class="pxbtn-gold" onclick="setCreatorActive(${c.id}, true, '${esc(c.referral_code)}')">REACTIVATE</button>`}</td>
+    </tr>`).join('');
+}
+
+async function loadCreators() {
+  try {
+    const res = await fetch(`/api/admin?action=list-creators&key=${encodeURIComponent(adminKey)}`, { cache: 'no-store' });
+    if (!res.ok) throw new Error('bad response');
+    renderCreators((await res.json()).creators || []);
+  } catch (e) {}
+}
+
+function creatorMsg(text, cls) {
+  const el = document.getElementById('creator-msg');
+  el.textContent = text; el.className = 'creator-msg' + (cls ? ' ' + cls : '');
+}
+
+async function createCreator(e) {
+  e.preventDefault();
+  const who = document.getElementById('creator-email').value.trim();
+  const code = document.getElementById('creator-code').value.trim().toUpperCase();
+  if (!who) return creatorMsg('Enter the creator’s account email or user id', 'err');
+  const body = /^\d+$/.test(who) ? { user_id: Number(who) } : { email: who };
+  if (code) body.code = code;
+  try {
+    const res = await fetch(`/api/admin?action=create-creator&key=${encodeURIComponent(adminKey)}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+    });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) return creatorMsg(d.error || 'Could not create the code', 'err');
+    if (!d.created) creatorMsg(`${d.user.display_name} is already a creator — code ${d.creator.referral_code}`, 'err');
+    else { creatorMsg(`Created ${d.creator.referral_code} for ${d.user.display_name}`, 'ok'); document.getElementById('creator-form').reset(); }
+    loadCreators();
+  } catch (err) { creatorMsg('Network error', 'err'); }
+}
+
+async function setCreatorActive(id, active, code) {
+  if (!active && !confirm(`Deactivate ${code}? New players can no longer sign up with it (existing players keep their creator).`)) return;
+  try {
+    const res = await fetch(`/api/admin?action=set-creator-active&key=${encodeURIComponent(adminKey)}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ creator_id: id, active })
+    });
+    if (!res.ok) throw new Error('bad response');
+    creatorMsg(`${code} ${active ? 'reactivated' : 'deactivated'}`, 'ok');
+    loadCreators();
+  } catch (e) { alert('Error updating the creator'); }
+}
+
 async function loadAll(isFirstLoad) {
   const ok = await loadUsers(isFirstLoad);
   if (ok) {
     loadSupport();
+    loadCreators();
     loadSalesStats();
     loadPayoutRequests();
     document.getElementById('last-refreshed').textContent = new Date().toLocaleTimeString();

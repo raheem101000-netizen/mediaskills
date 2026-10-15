@@ -103,6 +103,11 @@ body{display:flex;flex-direction:column;align-items:center;justify-content:cente
     </div>
 
     <div class="field">
+      <label>Referral Code</label>
+      <input type="text" id="ref_code" placeholder="e.g. DRAQ44" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" style="text-transform:uppercase;">
+    </div>
+
+    <div class="field">
       <label>Avatar <span style="color:rgba(200,195,255,0.3)">(optional)</span></label>
       <div class="avatar-preview" id="avatar-preview" onclick="document.getElementById('avatar-input').click()">
         <span id="avatar-emoji">👤</span>
@@ -135,6 +140,14 @@ document.getElementById('avatar-input').addEventListener('change', function(e) {
   reader.readAsDataURL(file);
 });
 
+// Referral code: pre-filled from this page's ?ref= or the code captured on an
+// earlier ?ref= visit (ref.js). The server checks it.
+(function () {
+  const fromUrl = (new URLSearchParams(location.search).get('ref') || '').trim().toUpperCase();
+  const code = /^[A-Z0-9]{6}$/.test(fromUrl) ? fromUrl : (window.tentenRefCode ? window.tentenRefCode() : null);
+  if (code) document.getElementById('ref_code').value = code;
+})();
+
 function showErr(msg) {
   const el = document.getElementById('err');
   el.textContent = msg;
@@ -146,8 +159,9 @@ async function doSignup() {
   const display_name = document.getElementById('display_name').value.trim();
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
+  const ref = document.getElementById('ref_code').value.trim().toUpperCase();
   document.getElementById('err').classList.remove('show');
-  if (!display_name || !email || !password) return showErr('All fields except avatar are required');
+  if (!display_name || !email || !password || !ref) return showErr('All fields except avatar are required');
   if (password.length < 6) return showErr('Password must be at least 6 characters');
   btn.disabled = true;
   btn.textContent = 'CREATING...';
@@ -155,7 +169,7 @@ async function doSignup() {
     const r = await fetch('/api/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ display_name, email, password, avatar_url: avatarDataUrl, ref: window.tentenRefCode ? window.tentenRefCode() : null })
+      body: JSON.stringify({ display_name, email, password, avatar_url: avatarDataUrl, ref })
     });
     const data = await r.json();
     if (!r.ok) { showErr(data.error || 'Signup failed'); btn.disabled = false; btn.textContent = '▶ CREATE ACCOUNT'; return; }
