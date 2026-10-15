@@ -159,6 +159,25 @@ td.pi{color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:7px;}
       <div class="empty-note" id="game-log-empty" style="display:none;">No games on record.</div>
     </div>
 
+    <div class="section-label">Entry <span>Payments</span> <span id="entry-pay-count"></span></div>
+    <div class="table-box">
+      <table>
+        <thead>
+          <tr>
+            <th>Date / Time</th>
+            <th>Game</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Match</th>
+            <th>Stripe Payment</th>
+            <th>Note</th>
+          </tr>
+        </thead>
+        <tbody id="entry-pay-rows"></tbody>
+      </table>
+      <div class="empty-note" id="entry-pay-empty" style="display:none;">No multiplayer entry payments on record.</div>
+    </div>
+
     <div class="section-label">Payouts</div>
     <div class="table-box">
       <table>
@@ -332,13 +351,50 @@ function renderGameLog(rows) {
         ${formatCells(r)}
         <td class="tier">${esc(r.tier || '—')}</td>
         <td class="${r.outcome === 'win' ? 'win' : 'loss'}">${r.outcome.toUpperCase()}</td>
-        <td class="mono">${money(r.entry_fee)}</td>
+        <td class="mono" title="${esc(r.entry_payment_id || '')}">${money(r.entry_fee)}</td>
         ${creditedCell}
         <td class="muted">${balCell}</td>
         <td class="mono">${r.match_number ?? '—'}</td>
         <td class="pi" title="${esc(r.stripe_payment_id || '')}">${shortPi(r.stripe_payment_id)}${r.source === 'legacy_game_wins' ? ' <span class="badge badge-legacy">legacy</span>' : ''}</td>
       </tr>
     `;
+  }).join('');
+}
+
+// Multiplayer entry fees (match_payments): every attempt, so a refund or an
+// unpaid Checkout is visible next to the paid entries.
+const ENTRY_REASONS = {
+  payment_timeout: 'Refunded — the other player didn’t pay in time',
+  left_before_start: 'Refunded — a player left before the match started',
+  attempt_gone: 'Refunded — paid after the payment window had closed',
+  match_start_failed: 'Refunded — the match couldn’t be started',
+  no_match_recovery: 'Refunded — money taken with no match (recovery)',
+  system_error: 'Refunded — payment system error',
+  lobby_closed: 'Refunded — the match lobby closed',
+};
+function renderEntryPayments(rows) {
+  rows = rows || [];
+  document.getElementById('entry-pay-count').textContent = `(${rows.length})`;
+  const tbody = document.getElementById('entry-pay-rows');
+  const empty = document.getElementById('entry-pay-empty');
+  if (!rows.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  const label = { pong: 'Pong', fifa: '1v1 Arena', kurver: 'Kurver' };
+  tbody.innerHTML = rows.map(p => {
+    const badge = p.status === 'paid' ? 'paid' : (p.status === 'pending' ? 'pending' : 'legacy');
+    const note = p.status === 'refunded' ? (ENTRY_REASONS[p.refund_reason] || 'Refunded — ' + (p.refund_reason || '')) :
+      p.status === 'expired' ? 'Not paid — Checkout closed, nothing charged' :
+      p.status === 'pending' ? 'Checkout open' : (p.match_key ? 'Entry for this match (final)' : '');
+    return `
+    <tr>
+      <td class="mono">${fmtTs(p.paid_at || p.created_at)}</td>
+      <td>${esc(label[p.game] || p.game)}</td>
+      <td class="mono">${money(p.amount)}</td>
+      <td><span class="badge badge-${badge}">${esc(p.status.toUpperCase())}</span></td>
+      <td class="pi" title="${esc(p.match_key || '')}">${esc(p.match_key || '—')}</td>
+      <td class="pi" title="${esc(p.stripe_payment_intent_id || '')}">${shortPi(p.stripe_payment_intent_id)}</td>
+      <td class="muted">${esc(note)}</td>
+    </tr>`;
   }).join('');
 }
 
@@ -424,6 +480,7 @@ async function load() {
     renderAttention(detail.needs_attention);
     renderPreLoggingNote(detail.entries_predating_outcome_logging);
     renderGameLog(detail.game_log);
+    renderEntryPayments(detail.entry_payments);
     renderPayouts(detail.payouts);
   } catch (e) {
     clearTimeout(timeoutId);

@@ -940,6 +940,19 @@ async function userDetail(req, res) {
   const ledgerByPaymentId = new Map(ledger.filter(l => l.stripe_payment_id).map(l => [l.stripe_payment_id, l]));
   const sessionByPaymentId = new Map(sessions.filter(s => s.stripe_payment_id).map(s => [s.stripe_payment_id, s]));
 
+  // Multiplayer entry fees (Pong / 1v1 Arena / Kurver): one match_payments row
+  // per player per payment attempt, written by the game servers. A paid entry's
+  // match_key ('pongmp:<id>' / 'fifa:<id>' / 'kurver:<key>') is the same key its
+  // match_results rows start with, so each match finds this player's entry.
+  const hasMatchPayments = (await sql`SELECT to_regclass('public.match_payments') AS t`)[0].t;
+  const entryPayments = hasMatchPayments ? await sql`
+    SELECT id, game, attempt_id, match_key, amount_cents, status, stripe_payment_intent_id, refund_reason, created_at, paid_at, refunded_at
+      FROM match_payments WHERE user_id = ${userId} ORDER BY created_at DESC
+  ` : [];
+  const entryByMatchKey = new Map(entryPayments.filter(p => p.match_key).map(p => [p.match_key, p]));
+  const matchEntryIntents = new Set(entryPayments.filter(p => p.match_key && p.stripe_payment_intent_id).map(p => p.stripe_payment_intent_id));
+  const matchKeyOf = id => { const k = /^(fifa|pongmp|kurver):([^:]+)/.exec(id || ''); return k ? k[1] + ':' + k[2] : null; };
+
   // ── Credit verification: three states, in strict priority order, never assumed.
   // 1. VERIFIED     - a balance_ledger row (win_credit/manual_credit) exists for this
   //                    payment: real balance_before/balance_after, an observed mutation.
@@ -1002,6 +1015,7 @@ async function userDetail(req, res) {
   const gameLog = [];
   for (const m of matchResults) {
     const entrySession = m.stripe_payment_id ? sessionByPaymentId.get(m.stripe_payment_id) : null;
+    const entryPayment = entryByMatchKey.get(matchKeyOf(m.stripe_payment_id)) || null;
     const ledgerRow = m.stripe_payment_id ? ledgerByPaymentId.get(m.stripe_payment_id) : null;
     const credit = m.outcome === 'win' ? deriveCreditState('match_results', m.credited, ledgerRow) : null;
     gameLog.push({
@@ -1014,7 +1028,8 @@ async function userDetail(req, res) {
       outcome: m.outcome,
       match_number: m.match_number,
       stripe_payment_id: m.stripe_payment_id,
-      entry_fee: entrySession ? parseFloat(entrySession.amount) : null,
+      entry_fee: entrySession ? parseFloat(entrySession.amount) : (entryPayment ? entryPayment.amount_cents / 100 : null),
+      entry_payment_id: entryPayment ? entryPayment.stripe_payment_intent_id : null,
       credit_state: credit ? credit.state : null,
       credit_label: credit ? credit.label : null,
       ledger_available: !!ledgerRow,
@@ -1103,7 +1118,9 @@ async function userDetail(req, res) {
   // completed - OR it could just predate outcome logging entirely (match_results didn't
   // exist yet, and game_wins never logged losses, ever). Only the former is a real red
   // flag; the latter is a known, honest gap, not evidence of a broken charge.
-  const sessionsWithNoOutcome = sessions.filter(s => s.stripe_payment_id && !matchResultPaymentIds.has(s.stripe_payment_id) && !legacyWins.some(w => w.stripe_payment_id === s.stripe_payment_id));
+  // (A multiplayer entry is linked to its match through match_payments, not by
+  // payment id — it's not a "no outcome" entry.)
+  const sessionsWithNoOutcome = sessions.filter(s => s.stripe_payment_id && !matchResultPaymentIds.has(s.stripe_payment_id) && !matchEntryIntents.has(s.stripe_payment_id) && !legacyWins.some(w => w.stripe_payment_id === s.stripe_payment_id));
   const entriesNeverCompleted = sessionsWithNoOutcome.filter(s => outcomeLoggingStartedAt && new Date(s.created_at) >= new Date(outcomeLoggingStartedAt));
   const entriesPreOutcomeLogging = sessionsWithNoOutcome.filter(s => !outcomeLoggingStartedAt || new Date(s.created_at) < new Date(outcomeLoggingStartedAt));
 
@@ -1147,6 +1164,11 @@ async function userDetail(req, res) {
       entries: entriesPreOutcomeLogging.map(s => ({ id: s.id, amount: parseFloat(s.amount), mode: s.mode, stripe_payment_id: s.stripe_payment_id, created_at: s.created_at })),
     },
     game_log: gameLog,
+    entry_payments: entryPayments.map(p => ({
+      id: p.id, game: p.game, attempt_id: p.attempt_id, match_key: p.match_key, amount: p.amount_cents / 100,
+      status: p.status, stripe_payment_intent_id: p.stripe_payment_intent_id, refund_reason: p.refund_reason,
+      created_at: p.created_at, paid_at: p.paid_at, refunded_at: p.refunded_at,
+    })),
     payouts,
     ledger_available: ledgerAvailable,
   });
