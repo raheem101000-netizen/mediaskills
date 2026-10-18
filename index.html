@@ -1279,6 +1279,10 @@ async function goToFootyMP(e) {
   const q = new URLSearchParams(location.search);
   const go = { fifa: goToFifa, puz: goToPuz, kurver: goToKurver, pongmp: goToPongMP, footymp: goToFootyMP }[q.get('play')];
   if (!go) return;
+  // Reached with the browser's Back/Forward: the player is leaving the game,
+  // so don't launch them back into it (a fresh load or a reload still does).
+  const nav = (performance.getEntriesByType && performance.getEntriesByType('navigation')[0]) || {};
+  if (nav.type === 'back_forward' || (performance.navigation && performance.navigation.type === 2)) return;
   const fwd = new URLSearchParams();
   if (q.get('join')) fwd.set('join', q.get('join'));
   if (q.get('pw')) fwd.set('pw', q.get('pw'));
