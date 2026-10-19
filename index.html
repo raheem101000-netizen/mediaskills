@@ -1655,6 +1655,10 @@ END OLD GAMES HIDDEN -->
 // Shared template for the Pong Solo/Multiplayer cards, so they render from one
 // definition and can't drift apart — the only inputs are the mode label and the
 // destination (href/onclick); every other element, color, and size is identical.
+// PRIZE PARTS HIDDEN: the prize amount, prize line and entry/win boxes on both
+// Pong cards are kept in the markup but hidden. Set true to show them again.
+// (Display only — prizes, entry fees and payouts are unchanged.)
+const PONG_CARD_SHOW_PRIZE = false;
 function pongPrizeCard(mode, href, onclickAttr) {
   const solo = mode === 'SOLO';
   const barColor = solo ? 'var(--amber)' : 'var(--teal)';
@@ -1670,9 +1674,11 @@ function pongPrizeCard(mode, href, onclickAttr) {
         <div style="background:${barColor};color:#000;font-family:'Press Start 2P',monospace;font-size:11px;letter-spacing:1.5px;text-align:center;padding:10px 0;margin:-18px -18px 16px;">★ ${mode}</div>
         <div class="offer-game-tag" style="color:var(--blue);border-color:var(--blue2);background:rgba(61,158,255,.08);">PONG</div>
         <div class="offer-type">${mode}</div>
+        <div class="pong-prize-parts"${PONG_CARD_SHOW_PRIZE ? '' : ' hidden'}>
         ${amountHtml}
         <div class="offer-desc">${descHtml}</div>
         ${feesHtml}
+        </div>
         <a href="${href}" ${onclickAttr || ''} class="btn" style="width:100%;justify-content:center;font-size:7px;margin-top:14px;display:block;text-align:center;text-decoration:none;background:var(--blue);color:#fff;border:2px solid var(--blue2);box-shadow:3px 3px 0 var(--blue2);">▶ PLAY ${mode}</a>
       </div>`;
 }
