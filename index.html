@@ -1553,7 +1553,7 @@ END OLD GAMES HIDDEN -->
           </div>
         </div>
 
-        <div class="gc" style="--border-c:var(--teal);--shadow:var(--teal2);" onclick="openGameModal('kurver')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openGameModal('kurver');}">
+        <div class="gc" style="--border-c:var(--teal);--shadow:var(--teal2);" onclick="openKurver(event)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openKurver(event);}">
           <div class="gc-wrap">
             <div class="gc-art">
               <div class="gc-art-inner a-kurver">
@@ -1779,6 +1779,15 @@ const GAME_MODES = {
 
 function gameModalKeydownHandler(e) {
   if (e.key === 'Escape') closeGameModal();
+}
+// Kurver has one mode (multiplayer), so its games-grid card skips the mode
+// picker and launches straight away through goToKurver — the same login/token
+// handoff as the picker's ▶ PLAY KURVER button. The picker (GAME_MODES.kurver)
+// is kept: set KURVER_MODE_PICKER = true to show it again.
+const KURVER_MODE_PICKER = false;
+function openKurver(e) {
+  if (KURVER_MODE_PICKER) return openGameModal('kurver');
+  goToKurver(e);
 }
 function openGameModal(gameKey) {
   const g = GAME_MODES[gameKey];
