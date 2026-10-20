@@ -648,6 +648,9 @@ body{
 /* art backgrounds */
 .a-gama{background:radial-gradient(ellipse at 50% 30%,#1a0644 0%,#06011a 60%,#000000 100%);}
 .a-kurver{background:radial-gradient(ellipse at 40% 50%,#002018 0%,#000e0c 60%,#000000 100%);}
+/* HEDDY games-grid card: clip letterboxed in the 3:4 box, the same way Kurver's canvas sits there */
+.a-heddy{background:radial-gradient(ellipse at 50% 45%,#1a1405 0%,#0b0902 60%,#000000 100%);}
+.gc-art-inner video.heddy-clip{width:100%;height:100%;object-fit:contain;display:block;}
 .a-pong{background:radial-gradient(ellipse at 60% 40%,#031028 0%,#010814 60%,#000000 100%);}
 
 /* ═══════════════════════════════
@@ -869,6 +872,8 @@ body{
 .pz-media img,.pz-media canvas{width:100%;height:100%;display:block;}
 .pz-media img{object-fit:cover;}
 .pz-media svg.footy-art{width:100%;height:100%;display:block;}
+/* HEDDY clip on its prize card: fills the 320x190 box (slight crop, no bars) */
+.pz-media video.heddy-clip{width:100%;height:100%;object-fit:cover;display:block;}
 .pz-media img.contain{object-fit:contain;background:#1c1c1c;}
 .pz-live{position:absolute;top:12px;left:12px;background:rgba(0,0,0,.78);border-radius:20px;padding:5px 11px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px;}
 /* 1v1 Arena card: a tint over the (bright, white-paper) sketch so it sits in the
@@ -1066,6 +1071,8 @@ body{
 .showwin .slide.on{opacity:1;}
 .showwin .slide .slide-media{width:100%;height:100%;}
 .showwin .slide .slide-media video,.showwin .slide .slide-media canvas,.showwin .slide .slide-media img{width:100%;height:100%;object-fit:contain;display:block;}
+/* HEDDY gameplay clip (assets/footy-bots-match.mp4, 1600x1080): fills the 16:10 hero box edge to edge like Kurver's canvas */
+.showwin .slide .slide-media video.heddy-clip{object-fit:cover;}
 .showwin .gtag{position:absolute;bottom:10px;left:10px;font-family:'Press Start 2P',monospace;font-size:8px;letter-spacing:1px;padding:6px 10px;border:2px solid;z-index:3;}
 .showwin .gprize{position:absolute;bottom:10px;right:10px;font-family:'Press Start 2P',monospace;font-size:8px;padding:6px 10px;background:rgba(0,0,0,.82);color:var(--gold);border:2px solid var(--gold2);z-index:3;}
 .showwin .progress{display:flex;gap:6px;justify-content:center;padding:11px;background:transparent;}
@@ -1344,8 +1351,14 @@ async function goToPong(e) {
           <div class="gtag" style="color:#3d9eff;border-color:#0044bb;background:rgba(61,158,255,.12);">PONG</div>
           <div class="gprize">WIN $5</div>
         </div>
+        <!-- SLIDE 4: HEDDY — gameplay clip (assets/footy-bots-match.mp4) -->
+        <div class="slide" data-i="2">
+          <div class="slide-media"><video class="heddy-clip" autoplay loop muted playsinline><source src="/assets/footy-bots-match.mp4" type="video/mp4"></video></div>
+          <div class="gtag" style="color:#f2c14e;border-color:#b8860b;background:rgba(242,193,78,.12);">HEDDY</div>
+          <div class="gprize">WIN $5</div>
+        </div>
       </div>
-      <div class="progress"><div class="pd on"></div><div class="pd"></div></div>
+      <div class="progress"><div class="pd on"></div><div class="pd"></div><div class="pd"></div></div>
     </div>
   </div>
 </div>
@@ -1388,7 +1401,7 @@ END OLD GAMES HIDDEN -->
   <!-- PONG $5/WIN -->
   <div class="pz-card"><div class="pz-media"><canvas id="pong-solo-canvas"></canvas><div class="pz-live"><i></i>LIVE</div></div><div class="pz-body"><div class="pz-name">PONG</div><div class="pz-dev">BEST ON PHONE · PC ok</div><div class="pz-big">$5<i></i>$10</div><div class="pz-desc">Join a live 1v1 room. Unlimited plays.</div><div class="pz-opts"><div class="pz-opt"><span class="e">ENTRY $2.99</span><span class="w">WIN $5</span></div><div class="pz-opt gold"><span class="e">ENTRY $5.99</span><span class="w">WIN $10</span></div></div><a href="https://pong-wju4.onrender.com/" onclick="goToPongMP(event)" class="pz-btn"><svg viewBox="0 0 11 13" aria-hidden="true"><path d="M0 0l11 6.5L0 13z" fill="currentColor"/></svg>PLAY PONG</a></div></div>
   <!-- FOOTY: online 1v1 head football (footy-0ipb.onrender.com). Prices shown like the other 1v1s — display only, the game is free for now. -->
-  <div class="pz-card"><div class="pz-media"><svg class="footy-art" viewBox="0 0 320 190" role="img" aria-label="HEDDY: a football pitch with two big-head players and a ball"><rect width="320" height="190" fill="#0b1a0d"/><g stroke="rgba(242,193,78,0.55)" stroke-width="2" fill="none"><rect x="10" y="20" width="300" height="150" rx="2"/><line x1="160" y1="20" x2="160" y2="170"/><circle cx="160" cy="95" r="26"/><rect x="10" y="62" width="26" height="66"/><rect x="284" y="62" width="26" height="66"/></g><g fill="#f2c14e"><circle cx="96" cy="104" r="17"/><rect x="88" y="120" width="16" height="22" rx="4"/></g><g fill="#e8e8e8"><circle cx="226" cy="104" r="17"/><rect x="218" y="120" width="16" height="22" rx="4"/></g><circle cx="104" cy="99" r="2.5" fill="#000"/><circle cx="218" cy="99" r="2.5" fill="#000"/><circle cx="160" cy="72" r="8" fill="#fff" stroke="#000" stroke-width="1.5"/></svg><div class="pz-live"><i></i>LIVE</div></div><div class="pz-body"><div class="pz-name">HEDDY</div><div class="pz-dev">1V1 HEAD FOOTBALL · PC &amp; phone</div><div class="pz-big">$5<i></i>$10</div><div class="pz-desc">Online 1v1 head football — outscore your opponent to win.</div><div class="pz-opts"><div class="pz-opt"><span class="e">ENTRY $2.99</span><span class="w">WIN $5</span></div><div class="pz-opt gold"><span class="e">ENTRY $5.99</span><span class="w">WIN $10</span></div></div><a href="https://footy-0ipb.onrender.com/rooms.html" onclick="goToFootyMP(event)" class="pz-btn"><svg viewBox="0 0 11 13" aria-hidden="true"><path d="M0 0l11 6.5L0 13z" fill="currentColor"/></svg>PLAY HEDDY</a></div></div>
+  <div class="pz-card"><div class="pz-media"><video class="heddy-clip" autoplay loop muted playsinline><source src="/assets/footy-bots-match.mp4" type="video/mp4"></video><div class="pz-live"><i></i>LIVE</div></div><div class="pz-body"><div class="pz-name">HEDDY</div><div class="pz-dev">1V1 HEAD FOOTBALL · PC &amp; phone</div><div class="pz-big">$5<i></i>$10</div><div class="pz-desc">Online 1v1 head football — outscore your opponent to win.</div><div class="pz-opts"><div class="pz-opt"><span class="e">ENTRY $2.99</span><span class="w">WIN $5</span></div><div class="pz-opt gold"><span class="e">ENTRY $5.99</span><span class="w">WIN $10</span></div></div><a href="https://footy-0ipb.onrender.com/rooms.html" onclick="goToFootyMP(event)" class="pz-btn"><svg viewBox="0 0 11 13" aria-hidden="true"><path d="M0 0l11 6.5L0 13z" fill="currentColor"/></svg>PLAY HEDDY</a></div></div>
 
 
   <!-- KURVER MULTIPLAYER: $2 entry, prize grows with the players -->
@@ -1453,7 +1466,7 @@ END OLD GAMES HIDDEN -->
       <div class="sec-head">
         <div>
           <div class="sec-eyebrow">⬡ PLAY NOW</div>
-          <div class="sec-title">3 GAMES. REAL PRIZES.</div>
+          <div class="sec-title">4 GAMES. REAL PRIZES.</div>
         </div>
       </div>
 
@@ -1529,6 +1542,31 @@ END OLD GAMES HIDDEN -->
               <div class="gc-row">
                 <span class="gc-prize-txt">$2 entry · prize grows</span>
                 <span class="gc-players">812 playing</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- HEDDY (online 1v1 head football) — same card structure as Kurver's; the card opens the game like its PLAY HEDDY button -->
+        <div class="gc" style="--border-c:var(--gold);--shadow:var(--gold2);" onclick="goToFootyMP(event)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();goToFootyMP(event);}">
+          <div class="gc-wrap">
+            <div class="gc-art">
+              <div class="gc-art-inner a-heddy">
+                <video class="heddy-clip" autoplay loop muted playsinline><source src="/assets/footy-bots-match.mp4" type="video/mp4"></video>
+              </div>
+              <div class="gc-scanlines"></div>
+              <div class="gc-fade"></div>
+              <div class="gc-ov"><div class="gc-play-px">▶ PLAY</div></div>
+              <div class="gc-badge b-live">LIVE</div>
+              <div class="gc-prize-tag">WIN $5</div>
+            </div>
+            <div class="gc-info">
+              <div class="plat pc">🖥️ PC &amp; PHONE</div>
+              <div class="gc-name">Heddy</div>
+              <div class="gc-desc">Online 1v1 head football — outscore your opponent to win.</div>
+              <div class="gc-row">
+                <span class="gc-prize-txt">$5 or $10 prize</span>
+                <span class="gc-players">1v1 · live</span>
               </div>
             </div>
           </div>
