@@ -1073,6 +1073,11 @@ body{
 .showwin .slide .slide-media video,.showwin .slide .slide-media canvas,.showwin .slide .slide-media img{width:100%;height:100%;object-fit:contain;display:block;}
 /* HEDDY gameplay clip (assets/footy-bots-match.mp4, 1600x1080): fills the 16:10 hero box edge to edge like Kurver's canvas */
 .showwin .slide .slide-media video.heddy-clip{object-fit:cover;}
+/* PONG HIDDEN FROM THE HOMEPAGE: every Pong block on this page carries class
+   "pong-home" (hero slide + its dot, prize card, solo prize card, games-grid
+   card). Delete this one rule to bring Pong back everywhere — the slideshow and
+   the games heading count adjust by themselves. */
+.pong-home{display:none !important;}
 .showwin .gtag{position:absolute;bottom:10px;left:10px;font-family:'Press Start 2P',monospace;font-size:8px;letter-spacing:1px;padding:6px 10px;border:2px solid;z-index:3;}
 .showwin .gprize{position:absolute;bottom:10px;right:10px;font-family:'Press Start 2P',monospace;font-size:8px;padding:6px 10px;background:rgba(0,0,0,.82);color:var(--gold);border:2px solid var(--gold2);z-index:3;}
 .showwin .progress{display:flex;gap:6px;justify-content:center;padding:11px;background:transparent;}
@@ -1346,7 +1351,7 @@ async function goToPong(e) {
           <div class="gprize">$2 TO PLAY</div>
         </div>
         <!-- SLIDE 3: PONG — same canvas AI-pong preview used on the Pong games-grid card (gc-pong-canvas), same HUD, resized for this slide -->
-        <div class="slide" data-i="1">
+        <div class="slide pong-home" data-i="1">
           <div class="slide-media" id="slide-pong"><div style="width:100%;height:100%;position:relative;"><div style="display:flex;justify-content:space-between;padding:3px 6px;background:rgba(0,0,0,0.95);font-family:'Press Start 2P',monospace;font-size:5px;position:absolute;top:0;left:0;right:0;z-index:2;"><span id="hero-pong-score" style="color:#3d9eff;">0 — 0</span></div><canvas id="hero-pong-canvas-slide" style="display:block;width:100%;height:100%;position:absolute;top:14px;left:0;"></canvas></div></div>
           <div class="gtag" style="color:#3d9eff;border-color:#0044bb;background:rgba(61,158,255,.12);">PONG</div>
           <div class="gprize">WIN $5</div>
@@ -1358,7 +1363,7 @@ async function goToPong(e) {
           <div class="gprize">WIN $5</div>
         </div>
       </div>
-      <div class="progress"><div class="pd on"></div><div class="pd"></div><div class="pd"></div></div>
+      <div class="progress"><div class="pd on"></div><div class="pd pong-home"></div><div class="pd"></div></div>
     </div>
   </div>
 </div>
@@ -1399,7 +1404,7 @@ END OLD GAMES HIDDEN -->
   <div class="pz-card"><div class="pz-media pz-tint"><img src="/assets/arena-hero.jpg" alt="Sketch of a gamer in a chair holding a controller"><div class="pz-live"><i></i>LIVE</div></div><div class="pz-body"><div class="pz-name">1V1 ARENA</div><div class="pz-dev">ANY CONSOLE GAME</div><div class="pz-big">$5<i></i>$10</div><div class="pz-desc">Pick any console game — play 1v1, winner takes the prize.</div><div class="pz-opts"><div class="pz-opt"><span class="e">ENTRY $2.99</span><span class="w">WIN $5</span></div><div class="pz-opt gold"><span class="e">ENTRY $5.99</span><span class="w">WIN $10</span></div></div><a href="https://onev1rg.onrender.com/rooms.html" onclick="goToFifa(event)" class="pz-btn"><svg viewBox="0 0 11 13" aria-hidden="true"><path d="M0 0l11 6.5L0 13z" fill="currentColor"/></svg>PLAY 1V1 ARENA</a></div></div>
 
   <!-- PONG $5/WIN -->
-  <div class="pz-card"><div class="pz-media"><canvas id="pong-solo-canvas"></canvas><div class="pz-live"><i></i>LIVE</div></div><div class="pz-body"><div class="pz-name">PONG</div><div class="pz-dev">BEST ON PHONE · PC ok</div><div class="pz-big">$5<i></i>$10</div><div class="pz-desc">Join a live 1v1 room. Unlimited plays.</div><div class="pz-opts"><div class="pz-opt"><span class="e">ENTRY $2.99</span><span class="w">WIN $5</span></div><div class="pz-opt gold"><span class="e">ENTRY $5.99</span><span class="w">WIN $10</span></div></div><a href="https://pong-wju4.onrender.com/" onclick="goToPongMP(event)" class="pz-btn"><svg viewBox="0 0 11 13" aria-hidden="true"><path d="M0 0l11 6.5L0 13z" fill="currentColor"/></svg>PLAY PONG</a></div></div>
+  <div class="pz-card pong-home"><div class="pz-media"><canvas id="pong-solo-canvas"></canvas><div class="pz-live"><i></i>LIVE</div></div><div class="pz-body"><div class="pz-name">PONG</div><div class="pz-dev">BEST ON PHONE · PC ok</div><div class="pz-big">$5<i></i>$10</div><div class="pz-desc">Join a live 1v1 room. Unlimited plays.</div><div class="pz-opts"><div class="pz-opt"><span class="e">ENTRY $2.99</span><span class="w">WIN $5</span></div><div class="pz-opt gold"><span class="e">ENTRY $5.99</span><span class="w">WIN $10</span></div></div><a href="https://pong-wju4.onrender.com/" onclick="goToPongMP(event)" class="pz-btn"><svg viewBox="0 0 11 13" aria-hidden="true"><path d="M0 0l11 6.5L0 13z" fill="currentColor"/></svg>PLAY PONG</a></div></div>
   <!-- FOOTY: online 1v1 head football (footy-0ipb.onrender.com). Prices shown like the other 1v1s — display only, the game is free for now. -->
   <div class="pz-card"><div class="pz-media"><video class="heddy-clip" autoplay loop muted playsinline><source src="/assets/footy-bots-match.mp4" type="video/mp4"></video><div class="pz-live"><i></i>LIVE</div></div><div class="pz-body"><div class="pz-name">HEDDY</div><div class="pz-dev">1V1 HEAD FOOTBALL · PC &amp; phone</div><div class="pz-big">$5<i></i>$10</div><div class="pz-desc">Online 1v1 head football — outscore your opponent to win.</div><div class="pz-opts"><div class="pz-opt"><span class="e">ENTRY $2.99</span><span class="w">WIN $5</span></div><div class="pz-opt gold"><span class="e">ENTRY $5.99</span><span class="w">WIN $10</span></div></div><a href="https://footy-0ipb.onrender.com/rooms.html" onclick="goToFootyMP(event)" class="pz-btn"><svg viewBox="0 0 11 13" aria-hidden="true"><path d="M0 0l11 6.5L0 13z" fill="currentColor"/></svg>PLAY HEDDY</a></div></div>
 
@@ -1445,7 +1450,7 @@ END OLD GAMES HIDDEN -->
 <div class="offers-wrap" id="offers-wrap-solo">
 
   <!-- PONG SOLO -->
-  <div class="pz-card"><div class="pz-media"><canvas id="pong-solo-canvas-real"></canvas><div class="pz-live"><i></i>LIVE</div></div><div class="pz-body"><div class="pz-name">PONG SOLO</div><div class="pz-dev">BEST ON PHONE · PC ok</div><div class="pz-big">$5</div><div class="pz-desc">Beat the AI to win $5. Unlimited plays.</div><div class="pz-opts"><div class="pz-opt"><span class="e">ENTRY $2.99</span><span class="w">WIN $5</span></div></div><a href="https://all-solo-ggames.vercel.app/pong/" onclick="goToPong(event)" class="pz-btn"><svg viewBox="0 0 11 13" aria-hidden="true"><path d="M0 0l11 6.5L0 13z" fill="currentColor"/></svg>PLAY SOLO</a></div></div>
+  <div class="pz-card pong-home"><div class="pz-media"><canvas id="pong-solo-canvas-real"></canvas><div class="pz-live"><i></i>LIVE</div></div><div class="pz-body"><div class="pz-name">PONG SOLO</div><div class="pz-dev">BEST ON PHONE · PC ok</div><div class="pz-big">$5</div><div class="pz-desc">Beat the AI to win $5. Unlimited plays.</div><div class="pz-opts"><div class="pz-opt"><span class="e">ENTRY $2.99</span><span class="w">WIN $5</span></div></div><a href="https://all-solo-ggames.vercel.app/pong/" onclick="goToPong(event)" class="pz-btn"><svg viewBox="0 0 11 13" aria-hidden="true"><path d="M0 0l11 6.5L0 13z" fill="currentColor"/></svg>PLAY SOLO</a></div></div>
 
   <!-- MORE PRIZES — COMING SOON PLACEHOLDER -->
   <div class="pz-card pz-soon"><em>COMING SOON</em><b>MORE PRIZES</b>New challenges, new payouts.<br>Play now while you wait.</div>
@@ -1466,7 +1471,7 @@ END OLD GAMES HIDDEN -->
       <div class="sec-head">
         <div>
           <div class="sec-eyebrow">⬡ PLAY NOW</div>
-          <div class="sec-title">4 GAMES. REAL PRIZES.</div>
+          <div class="sec-title" id="games-count">2 GAMES. REAL PRIZES.</div>
         </div>
       </div>
 
@@ -1500,8 +1505,33 @@ END OLD GAMES HIDDEN -->
         </div>
 END OLD GAMES HIDDEN -->
 
+        <!-- HEDDY (online 1v1 head football) — same card structure as Kurver's; the card opens the game like its PLAY HEDDY button -->
+        <div class="gc" style="--border-c:var(--gold);--shadow:var(--gold2);" onclick="goToFootyMP(event)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();goToFootyMP(event);}">
+          <div class="gc-wrap">
+            <div class="gc-art">
+              <div class="gc-art-inner a-heddy">
+                <video class="heddy-clip" autoplay loop muted playsinline><source src="/assets/footy-bots-match.mp4" type="video/mp4"></video>
+              </div>
+              <div class="gc-scanlines"></div>
+              <div class="gc-fade"></div>
+              <div class="gc-ov"><div class="gc-play-px">▶ PLAY</div></div>
+              <div class="gc-badge b-live">LIVE</div>
+              <div class="gc-prize-tag">WIN $5</div>
+            </div>
+            <div class="gc-info">
+              <div class="plat pc">🖥️ PC &amp; PHONE</div>
+              <div class="gc-name">Heddy</div>
+              <div class="gc-desc">Online 1v1 head football — outscore your opponent to win.</div>
+              <div class="gc-row">
+                <span class="gc-prize-txt">$5 or $10 prize</span>
+                <span class="gc-players">1v1 · live</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- PONG -->
-        <div class="gc" style="--border-c:var(--blue);--shadow:var(--blue2);" onclick="openGameModal('pong')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openGameModal('pong');}">
+        <div class="gc pong-home" style="--border-c:var(--blue);--shadow:var(--blue2);" onclick="openGameModal('pong')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openGameModal('pong');}">
           <div class="gc-wrap">
             <div class="gc-art">
               <div class="gc-art-inner a-pong">
@@ -1542,31 +1572,6 @@ END OLD GAMES HIDDEN -->
               <div class="gc-row">
                 <span class="gc-prize-txt">$2 entry · prize grows</span>
                 <span class="gc-players">812 playing</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- HEDDY (online 1v1 head football) — same card structure as Kurver's; the card opens the game like its PLAY HEDDY button -->
-        <div class="gc" style="--border-c:var(--gold);--shadow:var(--gold2);" onclick="goToFootyMP(event)" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();goToFootyMP(event);}">
-          <div class="gc-wrap">
-            <div class="gc-art">
-              <div class="gc-art-inner a-heddy">
-                <video class="heddy-clip" autoplay loop muted playsinline><source src="/assets/footy-bots-match.mp4" type="video/mp4"></video>
-              </div>
-              <div class="gc-scanlines"></div>
-              <div class="gc-fade"></div>
-              <div class="gc-ov"><div class="gc-play-px">▶ PLAY</div></div>
-              <div class="gc-badge b-live">LIVE</div>
-              <div class="gc-prize-tag">WIN $5</div>
-            </div>
-            <div class="gc-info">
-              <div class="plat pc">🖥️ PC &amp; PHONE</div>
-              <div class="gc-name">Heddy</div>
-              <div class="gc-desc">Online 1v1 head football — outscore your opponent to win.</div>
-              <div class="gc-row">
-                <span class="gc-prize-txt">$5 or $10 prize</span>
-                <span class="gc-players">1v1 · live</span>
               </div>
             </div>
           </div>
@@ -1964,9 +1969,17 @@ createPongPreview('hero-pong-canvas-slide', 640, 400, '#3d9eff', '#bf5fff', { se
 </script>
 
 <script>
+// Games heading: count the game cards actually shown (not hidden, not "coming soon").
 (function(){
-  const slides=[...document.querySelectorAll('.hero .slide')];
-  const pds=[...document.querySelectorAll('.hero .pd')];
+  const el=document.getElementById('games-count'); if(!el)return;
+  const n=[...document.querySelectorAll('.game-grid > .gc:not(.gc-locked)')].filter(c=>getComputedStyle(c).display!=='none').length;
+  if(n) el.textContent=n+(n===1?' GAME':' GAMES')+'. REAL PRIZES.';
+})();
+(function(){
+  // only the slides (and their dots) that are shown — a hidden slide (e.g. .pong-home) is skipped
+  const shown=el=>getComputedStyle(el).display!=='none';
+  const slides=[...document.querySelectorAll('.hero .slide')].filter(shown);
+  const pds=[...document.querySelectorAll('.hero .pd')].filter(shown);
   if(!slides.length)return;
   let cur=0;
   setInterval(()=>{
