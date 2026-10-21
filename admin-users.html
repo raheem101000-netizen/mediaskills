@@ -281,8 +281,10 @@ tr.creator-off td:last-child{opacity:1;}
             <th>Creator</th>
             <th>Status</th>
             <th>Sign-ups</th>
-            <th>Matches Played</th>
-            <th>Entry Fees Paid</th>
+            <th>Paid Matches</th>
+            <th>Recovered</th>
+            <th>Cashable</th>
+            <th>Commission</th>
             <th>Referral Link</th>
             <th></th>
           </tr>
@@ -611,8 +613,10 @@ function renderCreators(list) {
       <td class="user"><div class="u-name">${esc(c.display_name)}</div><div class="u-email">${esc(c.email)}</div></td>
       <td class="${c.active ? 'c-active' : 'c-inactive'}">${c.active ? 'ACTIVE' : 'INACTIVE'}</td>
       <td class="num">${c.referred_users}</td>
-      <td class="num">${c.matches_played}</td>
-      <td class="balance">$${(c.entry_fees || 0).toFixed(2)}</td>
+      <td class="num">${c.paid_matches}</td>
+      <td class="balance">$${esc(c.recovered)}</td>
+      <td class="balance">$${esc(c.cashable)}</td>
+      <td class="balance">$${esc(c.commission)}</td>
       <td class="link">https://tenten.run/?ref=${esc(c.referral_code)}</td>
       <td>${c.active
         ? `<button class="pxbtn-red" onclick="setCreatorActive(${c.id}, false, '${esc(c.referral_code)}')">DEACTIVATE</button>`
