@@ -1078,6 +1078,11 @@ body{
    card). Delete this one rule to bring Pong back everywhere — the slideshow and
    the games heading count adjust by themselves. */
 .pong-home{display:none !important;}
+/* NOT YET ON THE HOMEPAGE: the SOLO prize row (header + cards) and the
+   "COMING SOON · MORE PRIZES" card in the multiplayer row carry class
+   "later-home". Delete this one rule to show them again (e.g. when there are
+   solo games). */
+.later-home{display:none !important;}
 .showwin .gtag{position:absolute;bottom:10px;left:10px;font-family:'Press Start 2P',monospace;font-size:8px;letter-spacing:1px;padding:6px 10px;border:2px solid;z-index:3;}
 .showwin .gprize{position:absolute;bottom:10px;right:10px;font-family:'Press Start 2P',monospace;font-size:8px;padding:6px 10px;background:rgba(0,0,0,.82);color:var(--gold);border:2px solid var(--gold2);z-index:3;}
 .showwin .progress{display:flex;gap:6px;justify-content:center;padding:11px;background:transparent;}
@@ -1436,18 +1441,18 @@ END OLD GAMES HIDDEN -->
   <div class="offer-card" style="--oc:#7b2fff;--os:#4400bb;"><div style="width:100%;height:200px;overflow:hidden;margin-bottom:12px;background:#000;border:2px solid rgba(123,47,255,0.3);position:relative;"><canvas id="pong-mp-canvas" style="width:100%;height:100%;display:block;"></canvas></div><div class="offer-game-tag" style="color:#7b2fff;border-color:#4400bb;background:rgba(123,47,255,.08);">PONG</div><div class="offer-type">MULTIPLAYER 1V1</div><div class="offer-amount" style="color:#7b2fff;text-shadow:2px 2px 0 #4400bb;">$8</div><div class="offer-desc">Private room, 4-digit code. Both players pay $4.99. First to 3 points wins the pot.</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;"><div style="background:rgba(255,176,32,.15);border:2px solid var(--amber);padding:8px 10px;text-align:center;"><div style="font-size:5px;color:var(--amber);letter-spacing:1px;margin-bottom:4px;text-align:center;">SERVICE FEE</div><div style="font-size:12px;color:var(--amber);">$4.99</div></div><div style="background:rgba(123,47,255,.15);border:2px solid #7b2fff;padding:8px 10px;text-align:center;"><div style="font-size:5px;color:#7b2fff;letter-spacing:1px;margin-bottom:4px;">WINNER GETS</div><div style="font-size:12px;color:#7b2fff;">$8.00</div></div></div><a href="https://pong-x9zj.onrender.com/rooms" class="btn" style="width:100%;justify-content:center;font-size:7px;margin-top:14px;display:block;text-align:center;text-decoration:none;background:#7b2fff;color:#fff;border:2px solid #4400bb;box-shadow:3px 3px 0 #4400bb;">▶ PLAY 1V1</a></div>
 END OLD GAMES HIDDEN -->
 
-  <!-- MORE PRIZES — COMING SOON PLACEHOLDER -->
-  <div class="pz-card pz-soon"><em>COMING SOON</em><b>MORE PRIZES</b>New challenges, new payouts.<br>Play now while you wait.</div>
+  <!-- MORE PRIZES — COMING SOON PLACEHOLDER (hidden: .later-home) -->
+  <div class="pz-card pz-soon later-home"><em>COMING SOON</em><b>MORE PRIZES</b>New challenges, new payouts.<br>Play now while you wait.</div>
 
 </div>
 
-<!-- SOLO ROW -->
-<div class="pz-subrow solo">
+<!-- SOLO ROW (hidden: .later-home — no solo games yet) -->
+<div class="pz-subrow solo later-home">
   <div class="pz-sub"><b>SOLO</b> · Play alone vs AI. Beat the challenge, win the prize.</div>
   <div class="pz-arrows"><button type="button" aria-label="Previous prizes" onclick='document.getElementById("offers-wrap-solo").scrollBy({left:-338,behavior:"smooth"})'><svg width="8" height="12" viewBox="0 0 8 12" aria-hidden="true"><path d="M7 1L2 6l5 5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button><button type="button" aria-label="More prizes" onclick='document.getElementById("offers-wrap-solo").scrollBy({left:338,behavior:"smooth"})'><svg width="8" height="12" viewBox="0 0 8 12" aria-hidden="true"><path d="M1 1l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button></div>
 </div>
 
-<div class="offers-wrap" id="offers-wrap-solo">
+<div class="offers-wrap later-home" id="offers-wrap-solo">
 
   <!-- PONG SOLO -->
   <div class="pz-card pong-home"><div class="pz-media"><canvas id="pong-solo-canvas-real"></canvas><div class="pz-live"><i></i>LIVE</div></div><div class="pz-body"><div class="pz-name">PONG SOLO</div><div class="pz-dev">BEST ON PHONE · PC ok</div><div class="pz-big">$5</div><div class="pz-desc">Beat the AI to win $5. Unlimited plays.</div><div class="pz-opts"><div class="pz-opt"><span class="e">ENTRY $2.99</span><span class="w">WIN $5</span></div></div><a href="https://all-solo-ggames.vercel.app/pong/" onclick="goToPong(event)" class="pz-btn"><svg viewBox="0 0 11 13" aria-hidden="true"><path d="M0 0l11 6.5L0 13z" fill="currentColor"/></svg>PLAY SOLO</a></div></div>
