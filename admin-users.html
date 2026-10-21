@@ -247,6 +247,25 @@ tr.creator-off td:last-child{opacity:1;}
       <div class="empty-note" id="payout-empty-note" style="display:none;">No pending payout requests.</div>
     </div>
 
+    <div class="section-label" id="creator-payouts">Creator Payouts <span>&amp; Requests</span></div>
+    <div class="table-box" style="margin-bottom:32px;">
+      <table>
+        <thead>
+          <tr>
+            <th>Creator</th>
+            <th>PayPal Email</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Requested</th>
+            <th>Paid / Reference</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="creator-payout-rows"></tbody>
+      </table>
+      <div class="empty-note" id="creator-payout-empty-note" style="display:none;">No creator payout requests yet.</div>
+    </div>
+
     <div class="section-label" id="creators">Creators <span>&amp; Referral Codes</span></div>
     <div class="table-box" style="margin-bottom:32px;">
       <form class="creator-form" id="creator-form" onsubmit="createCreator(event)">
@@ -474,6 +493,55 @@ async function markPayoutPaid(userId) {
   }
 }
 
+// Creator payouts: pay by PayPal by hand, then enter the PayPal transaction id
+// (and an optional note) and MARK PAID. Only an open request can be marked.
+function renderCreatorPayouts(data) {
+  const reqs = data.requests || [];
+  const rows = document.getElementById('creator-payout-rows');
+  document.getElementById('creator-payout-empty-note').style.display = reqs.length ? 'none' : 'block';
+  rows.innerHTML = reqs.map(r => {
+    const open = r.status === 'requested';
+    return `
+    <tr id="cp-row-${r.id}">
+      <td class="name">${esc(r.display_name)} <span style="opacity:.6">· ${esc(r.referral_code)}</span><br><span class="email">${esc(r.email)}</span></td>
+      <td class="paypal">${r.paypal_email ? esc(r.paypal_email) : '<span style="color:#ff6b6b">none on file</span>'}</td>
+      <td class="balance">$${esc(r.amount)}</td>
+      <td>${open ? '<b style="color:#F2C14E">REQUESTED</b>' : '<span style="color:#4cff6c">PAID</span>'}</td>
+      <td class="signup">${new Date(r.requested_at).toLocaleString()}</td>
+      <td>${open
+        ? `<input id="cp-ref-${r.id}" placeholder="PayPal transaction id" style="width:150px;margin-bottom:4px"><br><input id="cp-note-${r.id}" placeholder="Note (optional)" style="width:150px">`
+        : `${new Date(r.paid_at).toLocaleString()}<br><span style="opacity:.75">${esc(r.payment_reference || '')}${r.note ? ' · ' + esc(r.note) : ''}</span>`}</td>
+      <td>${open ? `<button class="pxbtn-gold" onclick="markCreatorPayoutPaid(${r.id}, '${esc(r.amount)}', '${esc(r.display_name).replace(/'/g, '&#39;')}')">MARK PAID</button>` : ''}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function loadCreatorPayouts() {
+  try {
+    const res = await fetch(`/api/admin?action=creator-payout-requests&key=${encodeURIComponent(adminKey)}`, { cache: 'no-store' });
+    if (!res.ok) throw new Error('bad response');
+    renderCreatorPayouts(await res.json());
+  } catch (e) {}
+}
+
+async function markCreatorPayoutPaid(id, amount, name) {
+  const reference = (document.getElementById('cp-ref-' + id).value || '').trim();
+  const note = (document.getElementById('cp-note-' + id).value || '').trim();
+  if (!reference) { alert('Enter the PayPal transaction id first.'); return; }
+  if (!confirm(`Mark $${amount} to ${name} as PAID (ref ${reference})?\nOnly do this after you've sent the PayPal payment.`)) return;
+  try {
+    const res = await fetch(`/api/admin?action=creator-mark-paid&key=${encodeURIComponent(adminKey)}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ request_id: id, payment_reference: reference, note })
+    });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok) alert(j.error || 'Error marking creator payout as paid');
+    loadCreatorPayouts();
+  } catch (e) {
+    alert('Error marking creator payout as paid');
+  }
+}
+
 function renderSupport(data) {
   const msgs = data.messages || [];
   const unread = data.unread || 0;
@@ -603,6 +671,7 @@ async function loadAll(isFirstLoad) {
     loadCreators();
     loadSalesStats();
     loadPayoutRequests();
+    loadCreatorPayouts();
     document.getElementById('last-refreshed').textContent = new Date().toLocaleTimeString();
   }
 }

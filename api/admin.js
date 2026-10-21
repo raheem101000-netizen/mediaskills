@@ -876,6 +876,47 @@ async function markPayoutPaid(req, res) {
   res.status(200).json({ ok: true, last_payout_at: rows[0].last_payout_at });
 }
 
+// Creator payouts (reimbursements of "Cashable now"): every request, open
+// first, with where to pay it (the creator's PayPal email). Read-only.
+async function creatorPayoutRequests(req, res) {
+  if (req.method !== 'GET') return res.status(405).end();
+  const rows = await sql`
+    SELECT r.id, r.creator_id, c.referral_code, u.id AS user_id, u.display_name, u.email, u.paypal_email,
+           r.amount, r.status, r.requested_at, r.paid_at, r.payment_reference, r.note
+      FROM creator_reimbursements r
+      JOIN creators c ON c.id = r.creator_id
+      JOIN users u ON u.id = c.user_id
+     ORDER BY (r.status = 'requested') DESC, r.requested_at DESC
+  `;
+  res.status(200).json({ requests: rows.map(r => ({ ...r, amount: parseFloat(r.amount).toFixed(2) })) });
+}
+
+// Mark a creator payout request paid, after paying it by PayPal by hand (like
+// mark-paid for winnings). Only a row that is still 'requested' changes, in one
+// statement — so the same request can't be marked paid twice. No balance or
+// ledger is touched: creator payouts are separate from winnings.
+async function creatorMarkPaid(req, res) {
+  if (req.method !== 'POST') return res.status(405).end();
+  const id = parseInt(req.body && req.body.request_id, 10);
+  const reference = String((req.body && req.body.payment_reference) || '').trim().slice(0, 200);
+  const note = String((req.body && req.body.note) || '').trim().slice(0, 500);
+  if (!id) return res.status(400).json({ error: 'Missing request_id' });
+  if (!reference) return res.status(400).json({ error: 'Enter the PayPal transaction id (payment reference)' });
+  const rows = await sql`
+    UPDATE creator_reimbursements
+       SET status = 'paid', paid_at = now(), payment_reference = ${reference}, note = ${note || null}
+     WHERE id = ${id} AND status = 'requested'
+    RETURNING id, creator_id, amount, paid_at, payment_reference
+  `;
+  if (!rows.length) {
+    const exists = await sql`SELECT status FROM creator_reimbursements WHERE id = ${id}`;
+    if (!exists.length) return res.status(404).json({ error: 'Request not found' });
+    return res.status(409).json({ error: 'This request is already marked paid' });
+  }
+  console.info('[admin] creator payout %d marked paid: $%s, ref %s', rows[0].id, rows[0].amount, rows[0].payment_reference);
+  res.status(200).json({ ok: true, request: rows[0] });
+}
+
 // Dispute-grade, read-only detail view for one user: every entry charge, every logged
 // match (win/loss), every balance-ledger event, and every payout — merged into one
 // timeline. Never edits anything. Two honesty rules throughout: (1) a match_results row
@@ -1286,6 +1327,8 @@ const ACTIONS = {
   'migrate-creator-reimbursements': migrateCreatorReimbursements,
   'create-creator': createCreator,
   'list-creators': listCreators,
+  'creator-payout-requests': creatorPayoutRequests,
+  'creator-mark-paid': creatorMarkPaid,
   'set-creator-active': setCreatorActive,
   'list-support': listSupport,
   'mark-support-read': markSupportRead,
