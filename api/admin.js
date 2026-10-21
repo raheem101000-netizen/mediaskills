@@ -1,4 +1,5 @@
 const sql = require('./_db');
+const { creatorFigures, dollars: creatorDollars } = require('./_creator');
 const { generateReferralCode, normalizeRefCode } = require('./_referral');
 const { ensureTable: ensureSupportTable } = require('./_support');
 const { ensureCountryColumns } = require('./_country');
@@ -780,18 +781,27 @@ async function createCreator(req, res) {
 // many, the matches they've played (each player's own match_results rows —
 // wins and losses, every game incl. solo Pong) and the entry fees they've paid
 // (sessions: real Stripe charges; multiplayer entries aren't charged yet).
+// Each creator with the SAME figures their dashboard shows (_creator.js
+// creatorFigures: charged, counted matches from settled_matches — referred
+// players, within 90 days of signup, Kurver 4+ paying players, shared matches
+// split), so the admin list and the dashboard always agree.
 async function listCreators(req, res) {
   const rows = await sql`
     SELECT c.id, c.user_id, u.display_name, u.email, c.referral_code, c.active, c.created_at,
-           (SELECT COUNT(*) FROM users r WHERE r.referred_by_creator_id = c.id)::int AS referred_users,
-           (SELECT COUNT(*) FROM match_results m JOIN users r ON r.id = m.player_id
-             WHERE r.referred_by_creator_id = c.id)::int AS matches_played,
-           (SELECT COALESCE(SUM(s.amount), 0) FROM sessions s JOIN users r ON r.id = s.user_id
-             WHERE r.referred_by_creator_id = c.id) AS entry_fees
+           (SELECT COUNT(*) FROM users r WHERE r.referred_by_creator_id = c.id)::int AS referred_users
       FROM creators c JOIN users u ON u.id = c.user_id
      ORDER BY c.created_at ASC
   `;
-  res.status(200).json({ creators: rows.map(r => ({ ...r, entry_fees: parseFloat(r.entry_fees) })) });
+  const out = [];
+  for (const r of rows) {
+    const fig = await creatorFigures(r.id, r.user_id);
+    out.push({ ...r,
+      paid_matches: fig.f.community_matches,
+      recovered: creatorDollars(fig.recovered),
+      cashable: creatorDollars(fig.reimbursable),
+      commission: creatorDollars(fig.commission) });
+  }
+  res.status(200).json({ creators: out });
 }
 
 // Deactivate / reactivate a creator's code. An inactive code can't be used to

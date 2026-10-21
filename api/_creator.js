@@ -47,47 +47,8 @@ module.exports = async function handler(req, res) {
     if (!creators.length) return req.method === 'POST' ? res.status(403).json({ error: 'Not a creator' }) : res.status(200).json({ creator: false });
     const creatorId = creators[0].id;
 
-    const [f] = await sql`
-      WITH credited AS (
-        SELECT DISTINCT sm.match_key, u.referred_by_creator_id AS creator_id
-          FROM settled_matches sm
-          JOIN settled_match_players p ON p.match_key = sm.match_key
-          JOIN users u ON u.id = p.user_id
-         WHERE sm.entries_charged
-           AND (sm.game <> 'kurver' OR sm.paying_players >= 4)
-           AND u.referred_by_creator_id IS NOT NULL
-           AND sm.settled_at >= u.referred_at
-           AND sm.settled_at < u.referred_at + interval '90 days'
-      ),
-      shares AS (
-        SELECT match_key, creator_id, 1.0 / COUNT(*) OVER (PARTITION BY match_key) AS share FROM credited
-      ),
-      mine AS (
-        SELECT sm.margin,
-               0::numeric AS fees,   -- Stripe fees per match, once that data exists
-               s.share,
-               EXISTS (SELECT 1 FROM settled_match_players p WHERE p.match_key = sm.match_key AND p.user_id = ${userId}) AS i_played
-          FROM shares s JOIN settled_matches sm ON sm.match_key = s.match_key
-         WHERE s.creator_id = ${creatorId}
-      )
-      SELECT
-        (SELECT COALESCE(SUM(sm.entry_price), 0)
-           FROM settled_matches sm JOIN settled_match_players p ON p.match_key = sm.match_key
-          WHERE p.user_id = ${userId} AND sm.entries_charged)                                   AS spent,
-        (SELECT COALESCE(SUM(margin * share), 0) FROM mine)                                     AS recovered,
-        (SELECT COALESCE(SUM((margin - fees) * share) FILTER (WHERE NOT i_played), 0) FROM mine) AS commission_base,
-        (SELECT AVG(margin) FROM mine)                                                          AS typical_margin,
-        (SELECT COUNT(*) FROM mine)::int                                                        AS community_matches,
-        (SELECT COALESCE(SUM(amount), 0) FROM creator_reimbursements
-          WHERE creator_id = ${creatorId} AND status IN ('requested', 'paid'))                  AS reimbursed,
-        (SELECT COUNT(*) FROM users WHERE referred_by_creator_id = ${creatorId})::int           AS referred_players
-    `;
-
-    const spent = cents(f.spent), recovered = cents(f.recovered), reimbursed = cents(f.reimbursed);
-    // Cashable now: money back up to what was spent, minus everything already
-    // asked for or paid (requested + paid rows), so the same money can't be
-    // requested twice.
-    const reimbursable = Math.max(0, Math.min(spent, recovered) - reimbursed);
+    const fig = await creatorFigures(creatorId, userId);
+    const { f, spent, recovered, reimbursable, gap, commission, typical } = fig;
     const [openRequest] = await sql`
       SELECT id, amount, requested_at FROM creator_reimbursements
        WHERE creator_id = ${creatorId} AND status = 'requested' LIMIT 1`;
@@ -96,9 +57,6 @@ module.exports = async function handler(req, res) {
       return requestPayout(req, res, { userId, creatorId, reimbursable, reimbursedSeen: f.reimbursed, openRequest });
     }
     const [me] = await sql`SELECT paypal_email FROM users WHERE id = ${userId}`;
-    const gap = Math.max(0, spent - recovered);
-    const commission = Math.floor(cents(f.commission_base) * COMMISSION_RATE);
-    const typical = f.typical_margin !== null && cents(f.typical_margin) > 0 ? cents(f.typical_margin) : DEFAULT_TYPICAL_MARGIN_CENTS;
 
     res.status(200).json({
       creator: true,
@@ -159,3 +117,56 @@ async function requestPayout(req, res, { userId, creatorId, reimbursable, reimbu
   console.info('[creator] payout requested: creator %d, $%s (request %d)', creatorId, rows[0].amount, rows[0].id);
   res.status(200).json({ ok: true, request: { id: rows[0].id, amount: dollars(cents(rows[0].amount)), requested_at: rows[0].requested_at } });
 }
+
+// The dashboard's figures for one creator — the single source for both the
+// creator dashboard (above) and the admin creator list (admin.js), so the two
+// can never disagree. Charged, counted matches only (see the top of this file).
+async function creatorFigures(creatorId, userId) {
+  const [f] = await sql`
+    WITH credited AS (
+      SELECT DISTINCT sm.match_key, u.referred_by_creator_id AS creator_id
+        FROM settled_matches sm
+        JOIN settled_match_players p ON p.match_key = sm.match_key
+        JOIN users u ON u.id = p.user_id
+       WHERE sm.entries_charged
+         AND (sm.game <> 'kurver' OR sm.paying_players >= 4)
+         AND u.referred_by_creator_id IS NOT NULL
+         AND sm.settled_at >= u.referred_at
+         AND sm.settled_at < u.referred_at + interval '90 days'
+    ),
+    shares AS (
+      SELECT match_key, creator_id, 1.0 / COUNT(*) OVER (PARTITION BY match_key) AS share FROM credited
+    ),
+    mine AS (
+      SELECT sm.margin,
+             0::numeric AS fees,   -- Stripe fees per match, once that data exists
+             s.share,
+             EXISTS (SELECT 1 FROM settled_match_players p WHERE p.match_key = sm.match_key AND p.user_id = ${userId}) AS i_played
+        FROM shares s JOIN settled_matches sm ON sm.match_key = s.match_key
+       WHERE s.creator_id = ${creatorId}
+    )
+    SELECT
+      (SELECT COALESCE(SUM(sm.entry_price), 0)
+         FROM settled_matches sm JOIN settled_match_players p ON p.match_key = sm.match_key
+        WHERE p.user_id = ${userId} AND sm.entries_charged)                                   AS spent,
+      (SELECT COALESCE(SUM(margin * share), 0) FROM mine)                                     AS recovered,
+      (SELECT COALESCE(SUM((margin - fees) * share) FILTER (WHERE NOT i_played), 0) FROM mine) AS commission_base,
+      (SELECT AVG(margin) FROM mine)                                                          AS typical_margin,
+      (SELECT COUNT(*) FROM mine)::int                                                        AS community_matches,
+      (SELECT COALESCE(SUM(amount), 0) FROM creator_reimbursements
+        WHERE creator_id = ${creatorId} AND status IN ('requested', 'paid'))                  AS reimbursed,
+      (SELECT COUNT(*) FROM users WHERE referred_by_creator_id = ${creatorId})::int           AS referred_players
+  `;
+
+  const spent = cents(f.spent), recovered = cents(f.recovered), reimbursed = cents(f.reimbursed);
+  // Cashable now: money back up to what was spent, minus everything already
+  // asked for or paid (requested + paid rows), so the same money can't be
+  // requested twice.
+  const reimbursable = Math.max(0, Math.min(spent, recovered) - reimbursed);
+  const gap = Math.max(0, spent - recovered);
+  const commission = Math.floor(cents(f.commission_base) * COMMISSION_RATE);
+  const typical = f.typical_margin !== null && cents(f.typical_margin) > 0 ? cents(f.typical_margin) : DEFAULT_TYPICAL_MARGIN_CENTS;
+  return { f, spent, recovered, reimbursed, reimbursable, gap, commission, typical };
+}
+module.exports.creatorFigures = creatorFigures;
+module.exports.dollars = dollars;
