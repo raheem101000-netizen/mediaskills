@@ -4,8 +4,11 @@ const sql = require('./_db');
 // Creator dashboard figures, served as GET /api/creator (vercel.json routes it
 // to auth-misc?action=creator: Vercel's Hobby plan allows 12 functions and
 // this would be the 13th, so it rides on an existing one, like logout/token).
-// Read-only: nothing here charges, pays or moves
-// money. The creator is derived ONLY from the session cookie — no creator_id
+// POST /api/creator asks for a payout of REIMBURSABLE ("Cashable now"): it
+// only writes a 'requested' row to creator_reimbursements — nothing is paid or
+// credited here; an admin pays by PayPal by hand and marks the row paid
+// (admin.js creator-mark-paid), like winnings payouts. Nothing here charges,
+// pays or moves money. The creator is derived ONLY from the session cookie — no creator_id
 // or user_id is ever read from the request, so nobody can read another
 // creator's numbers by changing a parameter.
 //
@@ -29,7 +32,7 @@ const cents = v => Math.floor(Math.round(parseFloat(v || 0) * 1e6) / 1e4);
 const dollars = c => (Math.max(0, c) / 100).toFixed(2);
 
 module.exports = async function handler(req, res) {
-  if (req.method !== 'GET') return res.status(405).end();
+  if (req.method !== 'GET' && req.method !== 'POST') return res.status(405).end();
   res.setHeader('Cache-Control', 'no-store, private, max-age=0');
   res.setHeader('CDN-Cache-Control', 'no-store');
   res.setHeader('Vercel-CDN-Cache-Control', 'no-store');
@@ -41,7 +44,7 @@ module.exports = async function handler(req, res) {
     const userId = sessions[0].user_id;
 
     const creators = await sql`SELECT id, referral_code FROM creators WHERE user_id = ${userId} AND active`;
-    if (!creators.length) return res.status(200).json({ creator: false });
+    if (!creators.length) return req.method === 'POST' ? res.status(403).json({ error: 'Not a creator' }) : res.status(200).json({ creator: false });
     const creatorId = creators[0].id;
 
     const [f] = await sql`
@@ -81,7 +84,18 @@ module.exports = async function handler(req, res) {
     `;
 
     const spent = cents(f.spent), recovered = cents(f.recovered), reimbursed = cents(f.reimbursed);
+    // Cashable now: money back up to what was spent, minus everything already
+    // asked for or paid (requested + paid rows), so the same money can't be
+    // requested twice.
     const reimbursable = Math.max(0, Math.min(spent, recovered) - reimbursed);
+    const [openRequest] = await sql`
+      SELECT id, amount, requested_at FROM creator_reimbursements
+       WHERE creator_id = ${creatorId} AND status = 'requested' LIMIT 1`;
+
+    if (req.method === 'POST') {
+      return requestPayout(req, res, { userId, creatorId, reimbursable, reimbursedSeen: f.reimbursed, openRequest });
+    }
+    const [me] = await sql`SELECT paypal_email FROM users WHERE id = ${userId}`;
     const gap = Math.max(0, spent - recovered);
     const commission = Math.floor(cents(f.commission_base) * COMMISSION_RATE);
     const typical = f.typical_margin !== null && cents(f.typical_margin) > 0 ? cents(f.typical_margin) : DEFAULT_TYPICAL_MARGIN_CENTS;
@@ -99,10 +113,49 @@ module.exports = async function handler(req, res) {
       matches_to_go: gap > 0 ? Math.ceil(gap / typical) : 0,
       reimbursable: dollars(reimbursable),
       commission: dollars(commission),
-      commission_before_fees: true
+      commission_before_fees: true,
+      open_request: openRequest ? { amount: dollars(cents(openRequest.amount)), requested_at: openRequest.requested_at } : null,
+      paypal_email: (me && me.paypal_email) || ''
     });
   } catch (e) {
     console.error('[creator]', e);
     res.status(500).json({ error: 'Server error' });
   }
 };
+
+// Ask for a payout of Cashable now. The amount is the server's own figure —
+// never one sent by the page. Three guards keep the same money from being
+// requested twice:
+//   1. an open request already → refused (the dashboard shows "Payout requested");
+//   2. the row is only written if the already-reimbursed total is still the
+//      one this amount was worked out from (it only ever grows), so a request
+//      that raced another request + payment can't add the same money again;
+//   3. the table's unique index allows one 'requested' row per creator, so two
+//      requests at the same moment can't both be written.
+// The creator's PayPal email (where the admin sends it) is kept on their
+// account, as a winnings payout request does — without making it a winnings
+// request (payout_requested_at is untouched).
+async function requestPayout(req, res, { userId, creatorId, reimbursable, reimbursedSeen, openRequest }) {
+  if (openRequest) return res.status(409).json({ error: 'You already have a payout request open.', open_request: true });
+  if (reimbursable <= 0) return res.status(400).json({ error: 'Nothing to cash out yet.' });
+  const paypal = String((req.body && req.body.paypal_email) || '').trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(paypal) || paypal.length > 254) {
+    return res.status(400).json({ error: 'Enter the PayPal email we should pay.' });
+  }
+  await sql`UPDATE users SET paypal_email = ${paypal} WHERE id = ${userId}`;
+  let rows;
+  try {
+    rows = await sql`
+      INSERT INTO creator_reimbursements (creator_id, amount, status)
+      SELECT ${creatorId}, ${dollars(reimbursable)}::numeric, 'requested'
+       WHERE (SELECT COALESCE(SUM(amount), 0) FROM creator_reimbursements
+               WHERE creator_id = ${creatorId} AND status IN ('requested', 'paid')) = ${String(reimbursedSeen)}::numeric
+      RETURNING id, amount, requested_at`;
+  } catch (e) {
+    if (e && e.code === '23505') return res.status(409).json({ error: 'You already have a payout request open.', open_request: true });
+    throw e;
+  }
+  if (!rows.length) return res.status(409).json({ error: 'Your figures just changed — refresh and try again.' });
+  console.info('[creator] payout requested: creator %d, $%s (request %d)', creatorId, rows[0].amount, rows[0].id);
+  res.status(200).json({ ok: true, request: { id: rows[0].id, amount: dollars(cents(rows[0].amount)), requested_at: rows[0].requested_at } });
+}

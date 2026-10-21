@@ -36,6 +36,13 @@ h1{font-size:26px;font-weight:600;line-height:1.25;margin-bottom:18px;}
 .state p{color:var(--muted);line-height:1.6;margin:10px 0 20px;}
 .muted{color:var(--muted);}
 [hidden]{display:none !important;}
+.payout{margin-top:14px;padding-top:14px;border-top:1px solid var(--line);}
+.payout input{width:100%;font:15px 'Outfit',sans-serif;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:#000;color:#fff;margin-bottom:10px;}
+.payout .btn{width:100%;}
+.payout .btn:disabled{background:#2a2a2a;color:var(--muted);cursor:default;filter:none;}
+.payout-msg{font-size:13px;line-height:1.45;margin-top:8px;color:var(--muted);}
+.payout-msg.ok{color:#4cff6c;}
+.payout-msg.err{color:#ff6b6b;}
 @media(max-width:520px){
   h1{font-size:22px;}
   .hero{grid-template-columns:1fr;gap:16px;}
@@ -86,6 +93,11 @@ h1{font-size:26px;font-weight:600;line-height:1.25;margin-bottom:18px;}
         <div class="k">Cashable now</div>
         <div class="v" id="reimbursable">$0.00</div>
         <div class="note">Money back you can cash out.</div>
+        <div class="payout">
+          <input id="payout-paypal" type="email" placeholder="PayPal email to pay" autocomplete="email" maxlength="254">
+          <button class="btn" id="payout-btn" type="button" disabled>Request payout</button>
+          <div class="payout-msg" id="payout-msg"></div>
+        </div>
       </div>
       <div class="card">
         <div class="k">Commission earned</div>
@@ -110,7 +122,7 @@ h1{font-size:26px;font-weight:600;line-height:1.25;margin-bottom:18px;}
   function money(v) { var n = Number(v); return '$' + (isFinite(n) && n > 0 ? n : 0).toFixed(2); }
   function count(v) { var n = parseInt(v, 10); return isFinite(n) && n > 0 ? n : 0; }
 
-  fetch('/api/creator', { credentials: 'same-origin', cache: 'no-store' })
+  function load() { return fetch('/api/creator', { credentials: 'same-origin', cache: 'no-store' })
     .then(function (r) {
       if (r.status === 401) { show('logged-out'); return null; }
       if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -123,6 +135,7 @@ h1{font-size:26px;font-weight:600;line-height:1.25;margin-bottom:18px;}
       document.getElementById('recovered').textContent = money(d.recovered);
       document.getElementById('gap').textContent = money(d.gap);
       document.getElementById('reimbursable').textContent = money(d.reimbursable);
+      showPayout(d);
       document.getElementById('commission').textContent = money(d.commission);
 
       var toGo = count(d.matches_to_go), line;
@@ -137,8 +150,44 @@ h1{font-size:26px;font-weight:600;line-height:1.25;margin-bottom:18px;}
       document.getElementById('referred').textContent = n === 0 ? 'No one has joined with your link yet.' : n + (n === 1 ? ' player has' : ' players have') + ' joined with your link.';
       show('dash');
     })
-    .catch(function () { show('error'); });
+    .catch(function () { show('error'); }); }
+  load();
 
+  // Payout request: only when Cashable now > $0 and no request is open. The
+  // server works out the amount itself and refuses a second open request.
+  function showPayout(d) {
+    var btn = document.getElementById('payout-btn'), input = document.getElementById('payout-paypal'), msg = document.getElementById('payout-msg');
+    msg.className = 'payout-msg';
+    if (d.open_request) {
+      btn.disabled = true; btn.textContent = 'Payout requested'; input.hidden = true;
+      msg.className = 'payout-msg ok';
+      msg.textContent = 'Payout of ' + money(d.open_request.amount) + ' requested on ' + new Date(d.open_request.requested_at).toLocaleDateString() + ' — we\'ll pay it out manually to your PayPal.';
+      return;
+    }
+    input.hidden = false;
+    if (!input.value) input.value = d.paypal_email || '';
+    btn.textContent = 'Request payout';
+    btn.disabled = !(Number(d.reimbursable) > 0);
+    msg.textContent = btn.disabled ? 'Nothing to cash out yet.' : '';
+  }
+  document.getElementById('payout-btn').addEventListener('click', function () {
+    var btn = this, msg = document.getElementById('payout-msg');
+    btn.disabled = true; btn.textContent = 'Requesting…';
+    fetch('/api/creator', { method: 'POST', credentials: 'same-origin', cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ paypal_email: document.getElementById('payout-paypal').value.trim() }) })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok, j: j }; }); })
+      .then(function (x) {
+        if (!x.ok) {
+          msg.className = 'payout-msg err'; msg.textContent = x.j.error || 'Couldn\'t request the payout — try again.';
+          btn.textContent = 'Request payout'; btn.disabled = false;
+          if (x.j.open_request) load();
+          return;
+        }
+        load();
+      })
+      .catch(function () { msg.className = 'payout-msg err'; msg.textContent = 'Couldn\'t request the payout — try again.'; btn.textContent = 'Request payout'; btn.disabled = false; });
+  });
   document.getElementById('copy-btn').addEventListener('click', function () {
     var btn = this, text = document.getElementById('ref-link').textContent;
     function done() { btn.textContent = 'Copied!'; setTimeout(function () { btn.textContent = 'Copy'; }, 1600); }
