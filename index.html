@@ -894,6 +894,12 @@ body{
 .pz-opt .w{font-size:18px;font-weight:600;}
 .pz-opt.gold{border-color:#F2C14E;background:rgba(242,193,78,.07);}
 .pz-opt.gold .w{color:#F2C14E;}
+/* $10 TIER HIDDEN: the $5.99 -> $10 prize parts on the 1V1 ARENA / PONG / HEDDY
+   cards, the HEDDY tile and the Pong mode modal carry class "tier10".
+   Delete these two rules to show them again. (Display only: the game servers
+   refuse $10 via TEN_TIER_OFFERED in each game's server/src/prizes.ts.) */
+.tier10{display:none!important;}
+.prize-opts:has(> .tier10){grid-template-columns:1fr;}
 .pz-btn{margin-top:16px;background:#F2C14E;color:#171100;border-radius:12px;padding:14px;font-size:15px;font-weight:600;letter-spacing:.5px;display:flex;align-items:center;justify-content:center;gap:9px;text-decoration:none;}
 /* Each card's PLAY button sits at the bottom, so the buttons line up whatever the text length */
 .pz-card{display:flex;flex-direction:column;}
@@ -1406,12 +1412,12 @@ END OLD GAMES HIDDEN -->
 
 
   <!-- 1v1 ARENA (any console game; the FIFA lobby service, onev1rg) -->
-  <div class="pz-card"><div class="pz-media pz-tint"><img src="/assets/arena-hero.jpg" alt="Sketch of a gamer in a chair holding a controller"><div class="pz-live"><i></i>LIVE</div></div><div class="pz-body"><div class="pz-name">1V1 ARENA</div><div class="pz-dev">ANY CONSOLE GAME</div><div class="pz-big">$5<i></i>$10</div><div class="pz-desc">Pick any console game — play 1v1, winner takes the prize.</div><div class="pz-opts"><div class="pz-opt"><span class="e">ENTRY $2.99</span><span class="w">WIN $5</span></div><div class="pz-opt gold"><span class="e">ENTRY $5.99</span><span class="w">WIN $10</span></div></div><a href="https://onev1rg.onrender.com/rooms.html" onclick="goToFifa(event)" class="pz-btn"><svg viewBox="0 0 11 13" aria-hidden="true"><path d="M0 0l11 6.5L0 13z" fill="currentColor"/></svg>PLAY 1V1 ARENA</a></div></div>
+  <div class="pz-card"><div class="pz-media pz-tint"><img src="/assets/arena-hero.jpg" alt="Sketch of a gamer in a chair holding a controller"><div class="pz-live"><i></i>LIVE</div></div><div class="pz-body"><div class="pz-name">1V1 ARENA</div><div class="pz-dev">ANY CONSOLE GAME</div><div class="pz-big">$5<i class="tier10"></i><span class="tier10">$10</span></div><div class="pz-desc">Pick any console game — play 1v1, winner takes the prize.</div><div class="pz-opts"><div class="pz-opt"><span class="e">ENTRY $2.99</span><span class="w">WIN $5</span></div><div class="pz-opt gold tier10"><span class="e">ENTRY $5.99</span><span class="w">WIN $10</span></div></div><a href="https://onev1rg.onrender.com/rooms.html" onclick="goToFifa(event)" class="pz-btn"><svg viewBox="0 0 11 13" aria-hidden="true"><path d="M0 0l11 6.5L0 13z" fill="currentColor"/></svg>PLAY 1V1 ARENA</a></div></div>
 
   <!-- PONG $5/WIN -->
-  <div class="pz-card pong-home"><div class="pz-media"><canvas id="pong-solo-canvas"></canvas><div class="pz-live"><i></i>LIVE</div></div><div class="pz-body"><div class="pz-name">PONG</div><div class="pz-dev">BEST ON PHONE · PC ok</div><div class="pz-big">$5<i></i>$10</div><div class="pz-desc">Join a live 1v1 room. Unlimited plays.</div><div class="pz-opts"><div class="pz-opt"><span class="e">ENTRY $2.99</span><span class="w">WIN $5</span></div><div class="pz-opt gold"><span class="e">ENTRY $5.99</span><span class="w">WIN $10</span></div></div><a href="https://pong-wju4.onrender.com/" onclick="goToPongMP(event)" class="pz-btn"><svg viewBox="0 0 11 13" aria-hidden="true"><path d="M0 0l11 6.5L0 13z" fill="currentColor"/></svg>PLAY PONG</a></div></div>
+  <div class="pz-card pong-home"><div class="pz-media"><canvas id="pong-solo-canvas"></canvas><div class="pz-live"><i></i>LIVE</div></div><div class="pz-body"><div class="pz-name">PONG</div><div class="pz-dev">BEST ON PHONE · PC ok</div><div class="pz-big">$5<i class="tier10"></i><span class="tier10">$10</span></div><div class="pz-desc">Join a live 1v1 room. Unlimited plays.</div><div class="pz-opts"><div class="pz-opt"><span class="e">ENTRY $2.99</span><span class="w">WIN $5</span></div><div class="pz-opt gold tier10"><span class="e">ENTRY $5.99</span><span class="w">WIN $10</span></div></div><a href="https://pong-wju4.onrender.com/" onclick="goToPongMP(event)" class="pz-btn"><svg viewBox="0 0 11 13" aria-hidden="true"><path d="M0 0l11 6.5L0 13z" fill="currentColor"/></svg>PLAY PONG</a></div></div>
   <!-- FOOTY: online 1v1 head football (footy-0ipb.onrender.com). Prices shown like the other 1v1s — display only, the game is free for now. -->
-  <div class="pz-card"><div class="pz-media"><video class="heddy-clip" autoplay loop muted playsinline><source src="/assets/footy-bots-match.mp4" type="video/mp4"></video><div class="pz-live"><i></i>LIVE</div></div><div class="pz-body"><div class="pz-name">HEDDY</div><div class="pz-dev">1V1 HEAD FOOTBALL · PC only</div><div class="pz-big">$5<i></i>$10</div><div class="pz-desc">Online 1v1 head football — outscore your opponent to win.</div><div class="pz-opts"><div class="pz-opt"><span class="e">ENTRY $2.99</span><span class="w">WIN $5</span></div><div class="pz-opt gold"><span class="e">ENTRY $5.99</span><span class="w">WIN $10</span></div></div><a href="https://footy-0ipb.onrender.com/rooms.html" onclick="goToFootyMP(event)" class="pz-btn"><svg viewBox="0 0 11 13" aria-hidden="true"><path d="M0 0l11 6.5L0 13z" fill="currentColor"/></svg>PLAY HEDDY</a></div></div>
+  <div class="pz-card"><div class="pz-media"><video class="heddy-clip" autoplay loop muted playsinline><source src="/assets/footy-bots-match.mp4" type="video/mp4"></video><div class="pz-live"><i></i>LIVE</div></div><div class="pz-body"><div class="pz-name">HEDDY</div><div class="pz-dev">1V1 HEAD FOOTBALL · PC only</div><div class="pz-big">$5<i class="tier10"></i><span class="tier10">$10</span></div><div class="pz-desc">Online 1v1 head football — outscore your opponent to win.</div><div class="pz-opts"><div class="pz-opt"><span class="e">ENTRY $2.99</span><span class="w">WIN $5</span></div><div class="pz-opt gold tier10"><span class="e">ENTRY $5.99</span><span class="w">WIN $10</span></div></div><a href="https://footy-0ipb.onrender.com/rooms.html" onclick="goToFootyMP(event)" class="pz-btn"><svg viewBox="0 0 11 13" aria-hidden="true"><path d="M0 0l11 6.5L0 13z" fill="currentColor"/></svg>PLAY HEDDY</a></div></div>
 
 
   <!-- KURVER MULTIPLAYER: $2 entry, prize grows with the players -->
@@ -1528,7 +1534,7 @@ END OLD GAMES HIDDEN -->
               <div class="gc-name">Heddy</div>
               <div class="gc-desc">Online 1v1 head football — outscore your opponent to win.</div>
               <div class="gc-row">
-                <span class="gc-prize-txt">$5 or $10 prize</span>
+                <span class="gc-prize-txt">$5<span class="tier10"> or $10</span> prize</span>
                 <span class="gc-players">1v1 · live</span>
               </div>
             </div>
@@ -1710,14 +1716,15 @@ const PONG_CARD_SHOW_PRIZE = false;
 function pongPrizeCard(mode, href, onclickAttr) {
   const solo = mode === 'SOLO';
   const barColor = solo ? 'var(--amber)' : 'var(--teal)';
-  // Solo is one prize ($2.99 -> $5). 1v1 offers two: $2.99 -> $5 or $5.99 -> $10.
+  // Solo is one prize ($2.99 -> $5). 1v1 offers two: $2.99 -> $5 or $5.99 -> $10
+  // (the $10 parts carry class "tier10", hidden for now — see the .tier10 CSS rule).
   const amountHtml = solo
     ? `<div class="offer-amount" style="color:var(--blue);text-shadow:2px 2px 0 var(--blue2);">$5</div>`
-    : `<div class="offer-amount two" style="color:var(--blue);text-shadow:2px 2px 0 var(--blue2);">$5<span class="or">OR</span>$10</div>`;
-  const descHtml = solo ? 'Win $5 per match. Play as many times as you want.' : 'Play 1v1 for $5 or $10. Play as many times as you want.';
+    : `<div class="offer-amount two" style="color:var(--blue);text-shadow:2px 2px 0 var(--blue2);">$5<span class="or tier10">OR</span><span class="tier10">$10</span></div>`;
+  const descHtml = solo ? 'Win $5 per match. Play as many times as you want.' : 'Play 1v1 for $5<span class="tier10"> or $10</span>. Play as many times as you want.';
   const feesHtml = solo
     ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;"><div style="background:rgba(255,176,32,.15);border:2px solid var(--amber);padding:8px 10px;text-align:center;"><div style="font-size:5px;color:var(--amber);letter-spacing:1px;margin-bottom:4px;text-align:center;">ENTRY FEE</div><div style="font-size:12px;color:var(--amber);">$2.99</div></div><div style="background:rgba(61,158,255,.15);border:2px solid var(--blue);padding:8px 10px;text-align:center;"><div style="font-size:5px;color:var(--blue);letter-spacing:1px;margin-bottom:4px;">PER WIN</div><div style="font-size:12px;color:var(--blue);">$5.00</div></div></div>`
-    : `<div class="prize-opts"><div class="po"><div class="po-l">ENTRY $2.99</div><div class="po-w">WIN $5</div></div><div class="po gold"><div class="po-l">ENTRY $5.99</div><div class="po-w">WIN $10</div></div></div>`;
+    : `<div class="prize-opts"><div class="po"><div class="po-l">ENTRY $2.99</div><div class="po-w">WIN $5</div></div><div class="po gold tier10"><div class="po-l">ENTRY $5.99</div><div class="po-w">WIN $10</div></div></div>`;
   return `<div class="offer-card" style="--oc:var(--blue);--os:var(--blue2);">
         <div style="background:${barColor};color:#000;font-family:'Press Start 2P',monospace;font-size:11px;letter-spacing:1.5px;text-align:center;padding:10px 0;margin:-18px -18px 16px;">★ ${mode}</div>
         <div class="offer-game-tag" style="color:var(--blue);border-color:var(--blue2);background:rgba(61,158,255,.08);">PONG</div>
