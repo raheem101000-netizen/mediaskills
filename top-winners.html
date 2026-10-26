@@ -309,6 +309,13 @@ async function load(win) {
   });
   document.getElementById('panel-title').textContent = LABELS[win].title;
   document.getElementById('resets-label').textContent = LABELS[win].resets;
+  // Never leave the other tab's list under this tab's title while loading.
+  const list = document.getElementById('list');
+  if (!list.querySelector('.loading')) {
+    document.getElementById('cols').style.display = 'none';
+    document.getElementById('countdown').textContent = '--';
+    const s = el('div', 'state'); s.append(el('div', 'loading', 'LOADING')); list.replaceChildren(s);
+  }
   try {
     const r = await fetch('/api/leaderboard?window=' + win);
     if (!r.ok) throw new Error(r.status);
