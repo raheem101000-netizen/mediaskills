@@ -49,7 +49,8 @@ async function verify(req, res) {
 
 // creator: the creator dashboard's figures (api/_creator.js; GET /api/creator).
 // push-subscribe: room-alert subscriptions (api/_push.js; GET/POST /api/push-subscribe).
-const ACTIONS = { logout, generate, verify, creator: require('./_creator'), 'push-subscribe': require('./_push'), support: require('./_support') };
+// leaderboard: the public Top Winners list (api/_leaderboard.js; GET /api/leaderboard).
+const ACTIONS = { logout, generate, verify, creator: require('./_creator'), 'push-subscribe': require('./_push'), support: require('./_support'), leaderboard: require('./_leaderboard') };
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', 'https://all-solo-ggames.vercel.app');

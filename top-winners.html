@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TENTEN · Top Winners</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="theme-color" content="#000000">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Outfit:wght@400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+/* Same tokens and pixel treatment as index.html (sharp 3px borders, hard
+   offset shadows, Press Start 2P / Share Tech Mono for numbers). */
+*{margin:0;padding:0;box-sizing:border-box;image-rendering:pixelated;}
+:root{
+  --bg:#000000;
+  --text:#f0eeff;
+  --muted:rgba(200,195,255,0.5);
+  --teal:#00f5d4;   --teal2:#00b89a;
+  --green:#22ff6e;  --green2:#00a030;
+  --purple:#bf5fff; --purple2:#6600bb;
+  --amber:#ffb020;  --amber2:#996000;
+  --red:#ff4757;    --red2:#aa0011;
+  --gold:#ffe44d;   --gold2:#997700;
+  --blue:#3d9eff;   --blue2:#0044bb;
+  --pink:#ff4fa0;
+  --px-teal:3px 3px 0 0 var(--teal2);
+}
+html{scroll-behavior:smooth;}
+body{
+  background-color:var(--bg);
+  background-image:
+    linear-gradient(rgba(0,245,212,.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,245,212,.04) 1px,transparent 1px);
+  background-size:8px 8px;
+  font-family:'Press Start 2P',monospace;
+  color:var(--text);
+  overflow-x:hidden;
+  min-height:100vh;
+  display:flex;flex-direction:column;
+}
+
+/* ── NAV (as index.html) ── */
+.nav{position:sticky;top:0;z-index:500;height:60px;
+  background:rgba(0,0,0,0.98);border-bottom:4px solid rgba(255,255,255,0.1);
+  display:flex;align-items:center;justify-content:space-between;padding:0 28px;}
+.nav-logo{display:flex;align-items:center;gap:12px;text-decoration:none;}
+.logo-text{font-size:12px;letter-spacing:2px;color:#fff;}
+.nav-links{flex:1;display:flex;justify-content:center;gap:0;}
+.nav-links a{font-size:7px;letter-spacing:0.5px;color:var(--muted);text-decoration:none;
+  padding:8px 14px;border:2px solid transparent;transition:all .1s;}
+.nav-links a.on{color:var(--teal);border-bottom:3px solid var(--teal);}
+.nav-r{display:flex;gap:8px;align-items:center;}
+.pts-chip{font-size:8px;padding:6px 12px;background:rgba(255,228,77,0.08);color:var(--gold);
+  border:2px solid var(--gold2);box-shadow:2px 2px 0 var(--gold2);}
+.nav-avatar{width:48px;height:48px;border-radius:50%;border:2px solid var(--teal);background:#1a1a2e;object-fit:cover;display:block;cursor:pointer;}
+
+.btn{font-family:'Press Start 2P',monospace;font-size:7px;padding:10px 18px;border:none;cursor:pointer;
+  text-transform:uppercase;transition:transform .05s;display:inline-flex;align-items:center;gap:6px;text-decoration:none;}
+.btn:active{transform:translate(3px,3px)!important;box-shadow:none!important;}
+.btn-ghost{background:transparent;color:var(--muted);border:2px solid rgba(255,255,255,0.15);box-shadow:2px 2px 0 rgba(0,0,0,0.5);}
+.btn-teal{background:var(--teal);color:#020c0a;border:2px solid var(--teal2);box-shadow:var(--px-teal);}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--amber));color:#1a0800;
+  border:2px solid var(--gold2);box-shadow:4px 4px 0 var(--gold2);font-size:8px;padding:12px 24px;}
+
+.rainbow{height:6px;background:repeating-linear-gradient(90deg,
+  var(--teal) 0,var(--teal) 40px,var(--purple) 40px,var(--purple) 80px,
+  var(--green) 80px,var(--green) 120px,var(--gold) 120px,var(--gold) 160px,
+  var(--red) 160px,var(--red) 200px,var(--amber) 200px,var(--amber) 240px);}
+
+/* ── PAGE ── */
+.tw{flex:1;width:100%;max-width:820px;margin:0 auto;padding:44px 20px 56px;}
+.tw-eyebrow{font-size:7px;color:var(--purple);letter-spacing:2px;margin-bottom:12px;text-transform:uppercase;}
+.tw-title{font-size:26px;line-height:1.4;letter-spacing:1px;color:var(--text);margin-bottom:12px;}
+.tw-title .g{color:var(--gold);text-shadow:3px 3px 0 var(--gold2);}
+.tw-sub{font-family:'Outfit',sans-serif;font-size:14px;font-weight:500;color:var(--muted);line-height:1.6;margin-bottom:26px;}
+
+.tabs{display:flex;gap:8px;margin-bottom:16px;}
+.tab{font-family:'Press Start 2P',monospace;font-size:8px;letter-spacing:1px;padding:11px 16px;cursor:pointer;
+  background:rgba(255,255,255,.03);color:rgba(200,195,255,.45);border:2px solid rgba(255,255,255,.1);transition:all .1s;}
+.tab.on{background:rgba(0,245,212,.1);color:var(--teal);border-color:var(--teal);box-shadow:2px 2px 0 var(--teal2);}
+
+.panel{background:#0f0f0f;border:3px solid rgba(255,255,255,.08);box-shadow:4px 4px 0 rgba(0,0,0,.6);position:relative;}
+/* coloured top pixel bar, as the How It Works steps */
+.panel::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;
+  background:repeating-linear-gradient(90deg,var(--gold) 0,var(--gold) 4px,transparent 4px,transparent 8px);}
+.panel-head{padding:18px 18px 14px;border-bottom:3px solid rgba(255,255,255,.06);background:rgba(255,255,255,.015);
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.panel-title{font-size:10px;letter-spacing:1px;color:var(--text);}
+.resets{display:flex;align-items:center;gap:8px;font-size:6px;letter-spacing:1px;color:rgba(200,195,255,.4);text-transform:uppercase;}
+.resets .cd{font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:0;color:var(--teal);
+  background:rgba(0,245,212,.08);border:2px solid rgba(0,245,212,.2);padding:3px 8px;}
+
+.cols{display:grid;grid-template-columns:36px 34px 1fr 64px 110px;gap:12px;align-items:center;
+  padding:9px 18px;font-size:5px;letter-spacing:1px;color:rgba(200,195,255,.25);border-bottom:2px solid rgba(255,255,255,.04);}
+.cols .r{text-align:right;}
+.row{display:grid;grid-template-columns:36px 34px 1fr 64px 110px;gap:12px;align-items:center;
+  padding:12px 18px;border-bottom:2px solid rgba(255,255,255,.04);}
+.row:last-child{border-bottom:none;}
+.rank{font-family:'Share Tech Mono',monospace;font-size:15px;color:rgba(200,195,255,.35);text-align:center;}
+.row.r1 .rank{color:var(--gold);text-shadow:2px 2px 0 var(--gold2);}
+.row.r2 .rank{color:#d7dcff;}
+.row.r3 .rank{color:var(--amber);}
+.av{width:34px;height:34px;clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+  display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;text-shadow:1px 1px 0 rgba(0,0,0,.5);}
+.who{min-width:0;}
+.name{font-size:8px;color:var(--text);margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.4;}
+.games{display:flex;gap:4px;flex-wrap:wrap;}
+.gtag{font-size:5px;letter-spacing:.5px;padding:3px 5px;border:2px solid;}
+.g-1V1-ARENA{color:var(--purple);border-color:var(--purple2);background:rgba(191,95,255,.08);}
+.g-HEDDY{color:var(--gold);border-color:var(--gold2);background:rgba(255,228,77,.08);}
+.g-KURVER{color:var(--teal);border-color:var(--teal2);background:rgba(0,245,212,.08);}
+.g-PONG{color:var(--blue);border-color:var(--blue2);background:rgba(61,158,255,.08);}
+.wins{font-family:'Share Tech Mono',monospace;font-size:12px;color:rgba(200,195,255,.55);text-align:right;}
+.wins small{font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(200,195,255,.3);margin-left:4px;}
+.won{font-family:'Share Tech Mono',monospace;font-size:17px;color:var(--green);text-align:right;text-shadow:2px 2px 0 rgba(0,160,48,.45);}
+
+.state{padding:44px 20px;text-align:center;}
+.state-big{font-size:10px;line-height:1.8;color:var(--text);margin-bottom:10px;}
+.state-sub{font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;color:var(--muted);margin-bottom:22px;line-height:1.5;}
+.loading{font-size:7px;color:var(--muted);}
+.loading::after{content:'▮';margin-left:6px;animation:blink .8s steps(1) infinite;}
+@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+
+.note{font-family:'Outfit',sans-serif;font-size:12px;font-weight:500;color:rgba(200,195,255,.35);margin-top:16px;line-height:1.6;}
+
+.footer{background:#080808;border-top:4px solid var(--purple);padding:20px 28px;display:flex;align-items:center;justify-content:flex-end;gap:20px;}
+.footer-links{display:flex;gap:16px;flex-wrap:wrap;}
+.footer-links a{font-size:6px;color:rgba(200,195,255,.25);text-decoration:none;letter-spacing:.5px;border-bottom:1px solid rgba(200,195,255,.1);}
+
+@media(max-width:600px){
+  .nav{padding:0 16px;}
+  .nav-links{display:none;}
+  .tw{padding:32px 16px 44px;}
+  .tw-title{font-size:18px;}
+  .cols{display:none;}
+  .row{grid-template-columns:26px 30px 1fr auto;gap:10px;padding:12px 14px;}
+  .row .wins{display:none;}
+  .av{width:30px;height:30px;font-size:8px;}
+  .rank{font-size:13px;}
+  .won{font-size:15px;}
+  .panel-head{padding:16px 14px 12px;}
+}
+@media (hover: hover) and (pointer: fine) {
+  .nav-links a:hover{color:var(--text);background:rgba(0,245,212,0.06);border-color:var(--teal);}
+  .btn-ghost:hover{border-color:rgba(255,255,255,0.3);color:var(--text);}
+  .btn-teal:hover{background:#1ffcde;}
+  .btn-gold:hover{background:linear-gradient(135deg,#fff066,#ffc030);}
+  .tab:not(.on):hover{border-color:rgba(255,255,255,.2);color:var(--text);}
+  .row:hover{background:rgba(255,255,255,.03);}
+  .footer-links a:hover{color:var(--teal);border-color:var(--teal);}
+}
+</style>
+<script src="/ref.js"></script>
+</head>
+<body>
+
+<!-- ════════ NAV (same as the homepage) ════════ -->
+<nav class="nav">
+  <a class="nav-logo" href="/">
+    <div class="logo-text">TENTEN</div>
+  </a>
+  <div class="nav-links">
+    <a href="/#games">Games</a>
+    <a href="/#how">How It Works</a>
+    <a href="/top-winners" class="on">Top Winners</a>
+  </div>
+  <!-- Auth nav — both hidden until /api/me resolves, so we never show a state that flips -->
+  <div class="nav-r" id="nav-auth-guest" style="display:none;">
+    <a href="/login.html" class="btn btn-ghost" style="font-size:6px;padding:8px 14px;">LOG IN</a>
+    <a href="/signup.html" class="btn btn-teal" style="font-size:6px;padding:8px 14px;">SIGN UP</a>
+  </div>
+  <div class="nav-r" id="nav-auth-user" style="display:none;">
+    <a href="/profile.html" class="pts-chip" id="nav-balance" style="text-decoration:none;cursor:pointer;">$0.00</a>
+    <a href="/profile.html" class="btn btn-ghost" id="nav-username" style="font-size:6px;padding:8px 14px;">PROFILE</a>
+  </div>
+</nav>
+<div class="rainbow"></div>
+
+<main class="tw">
+  <div class="tw-eyebrow">▶ Leaderboard</div>
+  <h1 class="tw-title">TOP <span class="g">WINNERS</span></h1>
+  <p class="tw-sub">The players who won the most across 1V1 Arena, HEDDY, Kurver and Pong. Prizes won in real matches.</p>
+
+  <div class="tabs" role="tablist">
+    <button class="tab on" role="tab" data-window="week" aria-selected="true">THIS WEEK</button>
+    <button class="tab" role="tab" data-window="month" aria-selected="false">THIS MONTH</button>
+  </div>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div class="panel-title" id="panel-title">THIS WEEK</div>
+      <div class="resets"><span id="resets-label">Resets Monday 00:00</span><span class="cd" id="countdown">--</span></div>
+    </div>
+    <div class="cols" id="cols" style="display:none"><span>#</span><span></span><span>PLAYER</span><span class="r">WINS</span><span class="r">WON</span></div>
+    <div id="list"><div class="state"><div class="loading">LOADING</div></div></div>
+  </section>
+
+  <p class="note">Top 50. Ranked by total prize money won in the period (Oslo time). Week starts Monday 00:00, month on the 1st.</p>
+</main>
+
+<div class="footer">
+  <div class="footer-links">
+    <a href="#">TERMS</a>
+    <a href="#">PRIVACY</a>
+    <a href="#">RESPONSIBLE PLAY</a>
+    <a href="#">SUPPORT</a>
+  </div>
+</div>
+
+<script>
+// ── Nav auth + wallet chip (as index.html) ──
+(async function() {
+  try {
+    const r = await fetch('/api/me', { cache: 'no-store' });
+    if (!r.ok) { document.getElementById('nav-auth-guest').style.display = 'flex'; return; }
+    const u = await r.json();
+    document.getElementById('nav-auth-user').style.display = 'flex';
+    document.getElementById('nav-balance').textContent = '$' + parseFloat(u.balance).toFixed(2);
+    if (u.avatar_url) {
+      const link = document.createElement('a');
+      link.href = '/profile.html';
+      link.id = 'nav-username';
+      const img = document.createElement('img');
+      img.className = 'nav-avatar';
+      img.alt = '';
+      img.src = u.avatar_url;
+      link.appendChild(img);
+      document.getElementById('nav-username').replaceWith(link);
+    } else {
+      document.getElementById('nav-username').textContent = u.display_name;
+    }
+  } catch (_) {
+    document.getElementById('nav-auth-guest').style.display = 'flex';
+  }
+})();
+async function refreshBalance() {
+  if (document.getElementById('nav-auth-user').style.display !== 'flex') return;
+  try {
+    const r = await fetch('/api/me', { cache: 'no-store' });
+    if (!r.ok) return;
+    const u = await r.json();
+    document.getElementById('nav-balance').textContent = '$' + parseFloat(u.balance).toFixed(2);
+  } catch (_) {}
+}
+window.addEventListener('pageshow', e => { if (e.persisted) refreshBalance(); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refreshBalance(); });
+window.addEventListener('focus', refreshBalance);
+setInterval(() => { if (document.visibilityState === 'visible') refreshBalance(); }, 30000);
+
+// ── Leaderboard (GET /api/leaderboard?window=week|month — winnings only) ──
+const AV_COLORS = [['#bf5fff','#6600bb'], ['#00f5d4','#00b89a'], ['#22ff6e','#00a030'], ['#ffb020','#996000'], ['#3d9eff','#0044bb'], ['#ff4fa0','#aa0066'], ['#ff4757','#aa0011']];
+const LABELS = { week: { title: 'THIS WEEK', resets: 'Resets Monday 00:00', empty: 'NO WINNERS YET THIS WEEK' },
+                 month: { title: 'THIS MONTH', resets: 'Resets on the 1st', empty: 'NO WINNERS YET THIS MONTH' } };
+let current = 'week', resetsAt = null, loadSeq = 0;
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+function hash(s) { let h = 0; for (const c of s) h = (h * 31 + c.codePointAt(0)) | 0; return Math.abs(h); }
+function initials(name) {
+  const parts = name.trim().split(/[\s_.-]+/).filter(Boolean);
+  const s = parts.length > 1 ? parts[0][0] + parts[1][0] : name.trim().slice(0, 2);
+  return s.toUpperCase();
+}
+function money(v) {
+  const n = Number(v);
+  return '+$' + n.toLocaleString('en-US', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 });
+}
+
+function render(data) {
+  const list = document.getElementById('list');
+  list.replaceChildren();
+  document.getElementById('cols').style.display = data.rows.length ? '' : 'none';
+  if (!data.rows.length) {
+    const s = el('div', 'state');
+    s.append(el('div', 'state-big', LABELS[current].empty),
+             el('div', 'state-sub', 'Win a match and your name goes up here.'));
+    const a = el('a', 'btn btn-gold', '▶ PLAY NOW'); a.href = '/#games';
+    s.append(a); list.append(s);
+    return;
+  }
+  for (const r of data.rows) {
+    const row = el('div', 'row' + (r.rank <= 3 ? ' r' + r.rank : ''));
+    const [c1, c2] = AV_COLORS[hash(r.display_name) % AV_COLORS.length];
+    const av = el('div', 'av', initials(r.display_name));
+    av.style.background = `linear-gradient(135deg,${c1},${c2})`;
+    const who = el('div', 'who');
+    who.append(el('div', 'name', r.display_name));
+    const games = el('div', 'games');
+    for (const g of r.games) games.append(el('span', 'gtag g-' + g.replace(/\s+/g, '-'), g));
+    who.append(games);
+    const wins = el('div', 'wins', String(r.wins)); wins.append(el('small', '', r.wins === 1 ? 'WIN' : 'WINS'));
+    row.append(el('div', 'rank', String(r.rank)), av, who, wins, el('div', 'won', money(r.total_won)));
+    list.append(row);
+  }
+}
+
+async function load(win) {
+  const seq = ++loadSeq;
+  current = win;
+  document.querySelectorAll('.tab').forEach(t => {
+    const on = t.dataset.window === win;
+    t.classList.toggle('on', on); t.setAttribute('aria-selected', on);
+  });
+  document.getElementById('panel-title').textContent = LABELS[win].title;
+  document.getElementById('resets-label').textContent = LABELS[win].resets;
+  try {
+    const r = await fetch('/api/leaderboard?window=' + win);
+    if (!r.ok) throw new Error(r.status);
+    const data = await r.json();
+    if (seq !== loadSeq) return;   // a newer tab click won
+    resetsAt = new Date(data.resets_at);
+    tick();
+    render(data);
+  } catch (_) {
+    if (seq !== loadSeq) return;
+    const list = document.getElementById('list');
+    list.replaceChildren();
+    const s = el('div', 'state');
+    s.append(el('div', 'state-big', 'LEADERBOARD OFFLINE'), el('div', 'state-sub', 'Couldn’t load the winners. Try again in a moment.'));
+    list.append(s);
+  }
+}
+
+function tick() {
+  const cd = document.getElementById('countdown');
+  if (!resetsAt) return;
+  let s = Math.max(0, Math.floor((resetsAt - Date.now()) / 1000));
+  if (s === 0) { load(current); return; }
+  const d = Math.floor(s / 86400); s %= 86400;
+  const h = Math.floor(s / 3600); s %= 3600;
+  const m = Math.floor(s / 60);
+  cd.textContent = (d ? d + 'd ' : '') + String(h).padStart(2, '0') + 'h ' + String(m).padStart(2, '0') + 'm';
+}
+setInterval(tick, 30000);
+
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => { if (t.dataset.window !== current) load(t.dataset.window); }));
+load('week');
+</script>
+</body>
+</html>
