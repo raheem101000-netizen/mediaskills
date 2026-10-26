@@ -9,6 +9,7 @@
     { "src": "/login", "dest": "/login.html" },
     { "src": "/profile", "dest": "/profile.html" },
     { "src": "/creator", "dest": "/creator.html" },
+    { "src": "/top-winners", "dest": "/top-winners.html" },
     { "src": "/fifa-match/([0-9]+)", "dest": "/fifa-match.html?id=$1" },
     { "src": "/fifa-match", "dest": "/fifa-match.html" },
     { "src": "/api/logout", "dest": "/api/auth-misc?action=logout" },
@@ -16,6 +17,7 @@
     { "src": "/api/creator", "dest": "/api/auth-misc?action=creator" },
     { "src": "/api/push-subscribe", "dest": "/api/auth-misc?action=push-subscribe" },
     { "src": "/api/support", "dest": "/api/auth-misc?action=support" },
+    { "src": "/api/leaderboard", "dest": "/api/auth-misc?action=leaderboard" },
     { "src": "/api/(.*)", "dest": "/api/$1" }
   ]
 }
