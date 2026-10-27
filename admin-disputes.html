@@ -102,6 +102,7 @@ body::after{
 .pxbtn-grant:hover{background:#66ff9e;}
 .pxbtn-grant:active{transform:translate(1px,1px);box-shadow:1px 1px 0 var(--green2);}
 </style>
+<script src="/admin-key.js"></script>
 </head>
 <body>
 
@@ -118,7 +119,7 @@ body::after{
 </div>
 
 <script>
-const KEY = 'TENTEN2025';
+const KEY = tentenAdminKey();   // asked once per tab — admin-key.js
 // The admin page uploads images directly to the live FIFA service, and
 // resolves chat images' relative /api/uploads/:id paths against it, the
 // same way admin.html already calls other game servers' /admin/* endpoints

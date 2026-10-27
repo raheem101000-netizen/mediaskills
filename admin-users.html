@@ -161,6 +161,7 @@ tr.creator-off td:last-child{opacity:1;}
 .pxbtn-gold:hover{background:#ffe066;}
 .pxbtn-gold:active{transform:translate(1px,1px);box-shadow:1px 1px 0 #aa9000;}
 </style>
+<script src="/admin-key.js"></script>
 </head>
 <body>
 
@@ -331,7 +332,7 @@ tr.creator-off td:last-child{opacity:1;}
 </div>
 
 <script>
-const adminKey = 'TENTEN2025';
+const adminKey = tentenAdminKey();   // asked once per tab — admin-key.js
 let users = [];
 let sortDir = 'desc'; // API already returns balance DESC by default
 
