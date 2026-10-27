@@ -184,6 +184,7 @@ body::after{
 .pxbtn-gold:active{transform:translate(1px,1px);box-shadow:1px 1px 0 #aa9000;}
 .claims-empty{padding:24px 18px;font-size:7px;color:rgba(200,195,255,.25);letter-spacing:.5px;}
 </style>
+<script src="/admin-key.js"></script>
 </head>
 <body>
 
@@ -390,7 +391,7 @@ const GAME_SERVERS = [
   { key: 'kurver',    label: 'Kurver',      base: 'https://kurver-e7ow.onrender.com',         color: '#00f5d4' },
   { key: 'puzroyale', label: 'Puz Royale',  base: 'https://battle-royale-agnc.onrender.com',  color: '#ffb020' },
 ];
-const KEY = 'TENTEN2025';
+const KEY = tentenAdminKey();   // asked once per tab — admin-key.js
 
 function toggleClaim(rowId) {
   const details = document.getElementById('claim-details-' + rowId);

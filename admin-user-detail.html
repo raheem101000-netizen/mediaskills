@@ -108,6 +108,7 @@ td.pi{color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:7px;}
 
 .export-row{display:flex;justify-content:flex-end;margin-bottom:8px;}
 </style>
+<script src="/admin-key.js"></script>
 </head>
 <body>
 
@@ -201,7 +202,7 @@ td.pi{color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:7px;}
 </div>
 
 <script>
-const adminKey = 'TENTEN2025';
+const adminKey = tentenAdminKey();   // asked once per tab — admin-key.js
 // Vercel's routes rewrite (/admin-users/([0-9]+) -> admin-user-detail.html?id=$1) is a
 // transparent server-side rewrite for a static file, not a redirect — the browser's
 // address bar (and therefore location.search) still shows the original /admin-users/19,

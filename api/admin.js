@@ -7,7 +7,17 @@ const { ensurePlayCredit } = require('./_playCredit');
 const Stripe = require('stripe');
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
-const ADMIN_KEY = 'TENTEN2025';
+// The admin key lives only in the ADMIN_KEY environment variable (Vercel →
+// Settings → Environment Variables). No fallback: without it (or with a short
+// one) every admin call is refused. The same value is sent to the 1v1 Arena
+// service's admin bridge (its FIFA_ADMIN_KEY must match).
+const ADMIN_KEY = process.env.ADMIN_KEY || '';
+const ADMIN_KEY_MIN_LENGTH = 32;
+function adminKeyOk(given) {
+  if (ADMIN_KEY.length < ADMIN_KEY_MIN_LENGTH || typeof given !== 'string') return false;
+  const a = Buffer.from(given), b = Buffer.from(ADMIN_KEY);
+  return a.length === b.length && require('crypto').timingSafeEqual(a, b);
+}
 const PONG_CYCLE_LENGTH = 20;
 const PONG_WIN_PAYOUT = 5.00;
 // The FIFA service (~/fifa-match, standalone Colyseus/Express) shares this
@@ -375,7 +385,7 @@ async function getFifaRoomMessages(req, res) {
   const { matchId } = req.query;
   if (!matchId) return res.status(400).json({ error: 'Missing matchId' });
   try {
-    const r = await fetch(`${FIFA_SERVICE_URL}/api/admin/fifa-room/${encodeURIComponent(matchId)}/messages?key=${ADMIN_KEY}`);
+    const r = await fetch(`${FIFA_SERVICE_URL}/api/admin/fifa-room/${encodeURIComponent(matchId)}/messages?key=${encodeURIComponent(ADMIN_KEY)}`);
     const data = await r.json().catch(() => ({}));
     res.status(r.status).json(data);
   } catch (e) {
@@ -395,7 +405,7 @@ async function postFifaDisputeMessage(req, res) {
   const { matchId, text, imageUrl } = req.body || {};
   if (!matchId || (!text && !imageUrl)) return res.status(400).json({ error: 'Missing matchId, or missing both text and imageUrl' });
   try {
-    const r = await fetch(`${FIFA_SERVICE_URL}/api/admin/fifa-room/${encodeURIComponent(matchId)}/message?key=${ADMIN_KEY}`, {
+    const r = await fetch(`${FIFA_SERVICE_URL}/api/admin/fifa-room/${encodeURIComponent(matchId)}/message?key=${encodeURIComponent(ADMIN_KEY)}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text, imageUrl }),
@@ -419,7 +429,7 @@ async function resolveFifaDispute(req, res) {
     return res.status(400).json({ error: "Missing disputeId or invalid winner ('A'|'B')" });
   }
   try {
-    const r = await fetch(`${FIFA_SERVICE_URL}/api/admin/disputes/${disputeId}/resolve?key=${ADMIN_KEY}`, {
+    const r = await fetch(`${FIFA_SERVICE_URL}/api/admin/disputes/${disputeId}/resolve?key=${encodeURIComponent(ADMIN_KEY)}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ winner }),
@@ -1350,7 +1360,11 @@ const ACTIONS = {
 };
 
 module.exports = async function handler(req, res) {
-  if (req.query.key !== ADMIN_KEY) return res.status(401).json({ error: 'Unauthorized' });
+  if (ADMIN_KEY.length < ADMIN_KEY_MIN_LENGTH) {
+    console.error('[admin] ADMIN_KEY is not set (or too short) — refusing every admin call');
+    return res.status(503).json({ error: 'Admin is not configured' });
+  }
+  if (!adminKeyOk(req.query.key)) return res.status(401).json({ error: 'Unauthorized' });
   const fn = ACTIONS[req.query.action];
   if (!fn) return res.status(400).json({ error: 'Unknown action' });
   try {
